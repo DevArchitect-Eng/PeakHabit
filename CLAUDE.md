@@ -28,7 +28,8 @@ duplizieren. Kurzfassung:
 - State Management: Riverpod
 - Routing: go_router mit `StatefulShellRoute` (eigener Stack je Tab)
 - Persistenz: lokal, kein Account, kein Backend. Drift ist vorgesehen, aber noch nicht
-  eingebaut
+  eingebaut. **Tabellen entstehen pro Feature**, nicht als vorab entworfenes Gesamtschema —
+  jedes Ticket bringt die Tabelle mit, die es braucht, samt Migration
 - Design: dark-first, hellblauer Akzent (`#38BDF8`), `themeMode` fest auf dark
 
 Package-Strategie: zurückhaltend. Neue Abhängigkeiten nur, wenn sie ein echtes Problem lösen.

@@ -49,8 +49,15 @@ gewechselt wird.
 ### Persistenz: lokal, noch nicht implementiert
 
 Geplant ist Drift (SQLite): typsichere Queries, echte Migrationen und Streams, die sich direkt
-an Riverpod anbinden lassen. Bewusst noch nicht eingebaut, damit kein leeres Schema ohne
-Nutzung im Repository liegt — kommt mit dem ersten Feature, das Daten speichert.
+an Riverpod anbinden lassen.
+
+**Das Schema wächst pro Feature, nicht vorab.** Das Fundament — Datenbank öffnen, über einen
+Provider bereitstellen, Migrationsmechanismus, Testhilfe — wird einmal angelegt und enthält
+selbst keine fachlichen Tabellen. Jede Tabelle entsteht in dem Feature-Ticket, das sie
+tatsächlich braucht, zusammen mit ihrer Migration.
+
+Der Grund: Ein vorab entworfenes Gesamtschema müsste beim Anbinden der einzelnen Features
+ohnehin wieder geändert werden, und ungenutzte Tabellen lassen sich nicht sinnvoll testen.
 
 Das Datenmodell wird so entworfen, dass eine spätere Cloud-Synchronisation nachrüstbar bleibt
 (stabile IDs, Zeitstempel), ohne dass jetzt Sync-Code entsteht.
