@@ -47,6 +47,67 @@ flutter test
 Diese drei Prüfungen nach jeder inhaltlichen Änderung ausführen. Die CI
 (`.github/workflows/ci.yml`) prüft dasselbe bei PRs und Pushes auf `main`.
 
+## Commits
+
+Gilt für **jeden** Commit — Ticket-Arbeit, Setup-Änderungen, Doku, alles.
+
+### Format
+
+```
+<prefix>: <kurz, worum es geht>
+
+- einzelne Änderung
+- noch eine, wenn sie eigenständig erklärungswürdig ist
+```
+
+Betreff imperativ, englisch, kleingeschrieben nach dem Doppelpunkt, kein Punkt am Ende,
+möglichst unter 72 Zeichen. Die `-`-Punkte sind optional: Bei einem Einzeiler-Commit weglassen,
+statt Selbstverständliches aufzuzählen. Wo das *Warum* nicht offensichtlich ist, gehört es in
+einen Absatz unter die Liste.
+
+### Prefixe
+
+| Prefix | Wofür |
+| --- | --- |
+| `feature` | neue Funktionalität |
+| `fix` | Fehlerbehebung |
+| `refactor` | Umbau ohne Verhaltensänderung |
+| `test` | nur Tests |
+| `doc` | nur Dokumentation |
+| `ci` | Workflows, Build-Pipeline |
+| `chore` | Abhängigkeiten, Konfiguration, Aufräumen |
+
+Passt nichts eindeutig, entscheidet der Hauptzweck der Änderung — nicht die Mehrheit der
+Zeilen.
+
+### Zuschnitt
+
+**Kleine Commits, nicht ein großer am Ende.** Ein Commit umfasst eine abgeschlossene,
+nachvollziehbare Einheit — auch innerhalb eines einzelnen Features. Sobald ein Teilschritt
+für sich funktioniert und die Prüfungen grün sind: committen.
+
+Konkret heißt das:
+
+- Datenmodell, UI und Tests eines Features werden getrennt committet, wenn sie je für sich
+  Sinn ergeben.
+- Braucht der Betreff ein „und", ist es vermutlich mehr als ein Commit.
+- Mischt ein Commit mehrere Prefixe (z.B. Feature *und* CI-Änderung), aufteilen.
+- Reines Formatieren oder Umbenennen kommt in einen eigenen `refactor`/`chore`-Commit, damit
+  die inhaltliche Änderung im Diff sichtbar bleibt.
+
+Jeder Commit soll für sich lauffähig sein — `flutter analyze` und `flutter test` grün. Keine
+absichtlich kaputten Zwischenstände.
+
+### Beispiel
+
+```
+feature: add body weight entry to the home screen
+
+- add BodyWeightEntry model and Drift table
+- add repository with insert and latest-value query
+- wire the home screen widget to the repository
+```
+
 ## UI prüfen
 
 Verfügbar: `apple_ios_simulator`, `Medium_Phone_API_36.0`, `Medium_Tablet`.

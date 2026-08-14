@@ -18,12 +18,12 @@ umbenennen.
 
 ## Commits
 
-Imperativ, englisch, eine Zeile Betreff ohne abschließenden Punkt. Bei Bedarf ein
-erklärender Absatz darunter (das Warum, nicht das Was).
+Format und Zuschnitt stehen in `CLAUDE.md` § Commits — sie gelten für **jeden** Commit im
+Projekt, nicht nur für Ticket-Arbeit. Kurzform: `<prefix>: <betreff>`, darunter `-`-Punkte,
+und lieber mehrere kleine Commits als einen großen.
 
-```
-Add body weight entry widget to the home screen
-```
+Für Ticket-Arbeit zusätzlich: Der erste Commit auf einem Ticket-Branch nennt die Ticketnummer
+im Body (`Ticket: #42`), damit die Zuordnung auch ohne PR erkennbar bleibt.
 
 ## Verifikationskette
 
