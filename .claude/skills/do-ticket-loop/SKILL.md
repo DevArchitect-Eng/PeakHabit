@@ -15,12 +15,16 @@ Lies zuerst `../ticket-workflow-shared/references/conventions.md`,
 
 ## Tickets auswählen
 
-Alle Tickets mit Board-Status **Ready**, die nicht blockiert sind und keine offenen
-Abhängigkeiten haben. Sortierung: Priority (Critical → Low), dann geschätzte Größe
-(klein zuerst), dann Alter (älteste zuerst).
+Alle Tickets mit Board-Status **Ready**, die nicht blockiert sind. Sortierung: Priority
+(P0 → P2), dann Size (klein zuerst), dann Alter (älteste zuerst).
 
-Ein Size-Feld existiert nicht — Größe heuristisch aus Labels/Issue-Text schätzen und die
-Schätzung als solche kennzeichnen. Fehlt jedes Signal, nicht raten.
+Priority und Size sind echte Board-Felder — übernehmen statt schätzen. Fehlt ein Wert, das
+Ticket ans Ende der jeweiligen Gruppe sortieren.
+
+Blocker werden nur an Formulierungen im Issue-Text erkannt („nach #49", „blockiert durch #49",
+„braucht #49", „Rest aus #49", „siehe #49" — Liste in
+`../ticket-workflow-shared/references/ticket-format.md`). Verweist ein Ticket auf ein noch
+offenes Issue, überspringen. Verweist es auf ein geschlossenes, ist es nicht blockiert.
 
 Tickets, die dieselben Dateien anfassen, nicht gleichzeitig einplanen.
 

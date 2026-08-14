@@ -3,6 +3,12 @@
 Gilt für alle Ticket-Workflow-Skills. Projektregeln in `CLAUDE.md` und `docs/ARCHITECTURE.md`
 haben Vorrang und werden hier nicht dupliziert.
 
+Weitere Referenzen in diesem Ordner:
+
+- `board.md` — Project- und Feld-IDs, Labels
+- `ticket-format.md` — Issue-Body-Formate, Feld-Heuristiken, Abhängigkeits-Formulierungen
+- `log-format.md` — Log-Datei für den Loop-Modus
+
 ## Branches
 
 Schema: `<nummer>-<inhaltlicher-slug>`, z.B. `42-koerpergewicht-eintragen`.
@@ -64,6 +70,11 @@ Getroffene Annahmen, die nicht aus Code oder Ticket ableitbar waren.
 
 `.github/workflows/ci.yml` prüft bei PRs und Pushes auf `main`:
 `dart format --set-exit-if-changed .`, `flutter analyze`, `flutter test`.
+Ein einziger Job namens `verify`.
+
+Auf `main` gibt es **keine Branch-Protection** — die CI ist das einzige Gate, technisch
+erzwingt nichts einen grünen Lauf vor dem Merge. Umso strikter gilt: nicht mergen, solange die
+CI nicht grün ist, auch wenn GitHub es zuließe.
 
 Bei roter CI gezielt reparieren, **maximal 3 Versuche**. Danach anhalten, den PR offen lassen
 und klar als blockiert melden — keine Endlosschleife.

@@ -33,13 +33,35 @@ Feld-ID: `PVTSSF_lAHOEuK3vc4BgVOlzhahy5I`
 
 | Option | ID |
 | --- | --- |
-| Low | `3e66fb9b` |
-| Medium | `b4951a0b` |
-| High | `54a44841` |
-| Critical | `6a834128` |
+| P0 | `2560a17d` |
+| P1 | `e7507e91` |
+| P2 | `1e132445` |
 
-Ein Size-Feld existiert nicht. Wo Sortierung nach Size verlangt ist, stattdessen heuristisch
-aus Labels/Issue-Text schätzen und die Schätzung als solche kennzeichnen.
+## Size-Feld
+
+Feld-ID: `PVTSSF_lAHOEuK3vc4BgVOlzhah6WI`
+
+| Option | ID |
+| --- | --- |
+| XS | `b32985d7` |
+| S | `02c9a8d3` |
+| M | `e7259ab5` |
+| L | `0c4271c6` |
+| XL | `caae0fa8` |
+
+## Quelle-Feld
+
+Feld-ID: `PVTSSF_lAHOEuK3vc4BgVOlzhah6WM`
+
+| Option | ID |
+| --- | --- |
+| User | `0fd00558` |
+| Claude | `c3f8a275` |
+
+Bedeutung und Vergabe-Heuristik der Felder stehen in `ticket-format.md`.
+
+Ein **Blocker-Feld existiert nicht** — Abhängigkeiten werden im Issue-Text ausgedrückt
+(Formulierungen in `ticket-format.md`).
 
 ## Status setzen
 
@@ -63,8 +85,16 @@ gh project item-list 1 --owner DevArchitect-Eng --format json
 gh project item-add 1 --owner DevArchitect-Eng --url <ISSUE_URL>
 ```
 
+## Weitere Felder setzen
+
+Priority, Size und Quelle laufen über denselben `item-edit`-Aufruf, nur mit anderer
+`--field-id` und `--single-select-option-id`.
+
 ## Labels
 
-Im Repository vorhanden: `bug`, `enhancement`, `documentation`, `accessibility`, `duplicate`,
-`good first issue`, `help wanted`, `invalid`, `question`, `wontfix`. Keine neuen Labels anlegen,
-ohne dass sie gebraucht werden.
+Im Repository vorhanden: `bug`, `enhancement`, `claude-found`, `documentation`,
+`accessibility`, `duplicate`, `good first issue`, `help wanted`, `invalid`, `question`,
+`wontfix`.
+
+`bug` oder `enhancement` ist Pflicht, `claude-found` kommt bei selbst gefundenen Tickets dazu
+(siehe `ticket-format.md`). Keine neuen Labels anlegen, ohne dass sie gebraucht werden.

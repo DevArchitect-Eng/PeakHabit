@@ -58,9 +58,19 @@ Bericht offenlegen, nicht stillschweigend wechseln.
 
 ## Ticket-Workflow
 
-Neun Skills unter `.claude/skills/`. Gemeinsame Konventionen, Board-IDs und Log-Format liegen
-in `.claude/skills/ticket-workflow-shared/references/` — dort nachschlagen statt Werte neu zu
-ermitteln.
+Neun Skills unter `.claude/skills/`. Die geteilten Referenzen liegen in
+`.claude/skills/ticket-workflow-shared/references/` — dort nachschlagen statt Werte neu zu
+ermitteln:
+
+| Datei | Inhalt |
+| --- | --- |
+| `board.md` | Project- und Feld-IDs (Status, Priority, Size, Quelle), Labels |
+| `ticket-format.md` | Issue-Body-Formate, Feld-Heuristiken, Abhängigkeits-Formulierungen |
+| `conventions.md` | Branch-, Commit-, PR-, CI- und Merge-Konventionen |
+| `log-format.md` | Log-Datei für den Loop-Modus |
+
+Das Board hat **kein** Blocker-Feld: Abhängigkeiten müssen als Text im Issue stehen
+(„braucht #49", „nach #49"). Fehlt so eine Formulierung, gilt ein Ticket als unabhängig.
 
 **Merge-Policy ist konservativ:** Code Review vor jedem Merge, Security Review zusätzlich bei
 sicherheits-/datenrelevanten Änderungen, und **niemals selbst mergen** — Merge braucht immer

@@ -22,21 +22,28 @@ Board-Daten mit Issues zusammenführen, damit Status und Priority mit ausgegeben
 
 ## Ausgabe
 
-| # | Titel | Status | Priority | Unabhängig | Alter |
-| --- | --- | --- | --- | --- | --- |
+| # | Titel | Status | Priority | Size | Quelle | Unabhängig | Alter |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Sortierung: Priority (Critical → Low), dann unabhängige vor blockierten Tickets, dann Alter.
+Sortierung: Priority (P0 → P2), dann unabhängige vor blockierten Tickets, dann Size (klein
+zuerst), dann Alter.
+
+Status, Priority, Size und Quelle sind echte Board-Felder — direkt übernehmen, nicht schätzen.
+Ist ein Feld leer, `—` eintragen.
 
 ## Ableitungen kennzeichnen
 
-Das Board hat **keine** Felder für Risiko, Größe oder Blocker. Solche Angaben dürfen nur
-heuristisch aus Labels und Issue-Text abgeleitet werden — und müssen dann sichtbar als
-Schätzung markiert sein, z.B. `unabhängig?` oder ein Suffix `(geschätzt)`.
+Für **Blocker und Risiko gibt es keine Board-Felder**. Diese Angaben werden bei jedem Lauf
+heuristisch abgeleitet und müssen sichtbar als Schätzung markiert sein, z.B. mit einem Suffix
+`(geschätzt)`.
 
-Signale für „blockiert": Issue-Text nennt ein anderes Ticket als Voraussetzung, GitHub-
-Verlinkung auf ein offenes Issue, Label `help wanted`/`question`.
+„Blockiert" wird ausschließlich an Formulierungen im Titel/Body erkannt: „nach #49",
+„blockiert durch #49", „braucht #49", „Rest aus #49", „siehe #49" (Liste in
+`../ticket-workflow-shared/references/ticket-format.md`). Referenziert ein Ticket ein
+**geschlossenes** Issue, zählt das nicht als Blocker.
 
-**Fehlt ein Signal, nicht raten** — Feld leer lassen oder `unbekannt` eintragen.
+**Fehlt ein Signal, nicht raten** — dann gilt das Ticket als unabhängig, so wie es in
+`ticket-format.md` festgelegt ist.
 
 ## Zusammenfassung
 

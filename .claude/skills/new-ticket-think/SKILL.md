@@ -7,7 +7,10 @@ description: Durchsucht Code und Dokumentation nach offenen Punkten (TODOs, doku
 
 Aufruf: `/new-ticket-think`
 
-Lies zuerst `../ticket-workflow-shared/references/board.md`.
+Lies zuerst `../ticket-workflow-shared/references/ticket-format.md` und
+`../ticket-workflow-shared/references/board.md`.
+
+Gezielt suchen, **nicht** die ganze Codebase auf einmal durchgehen.
 
 ## 1. Suchen
 
@@ -41,16 +44,20 @@ Jeden Kandidaten dagegen abgleichen. Bereits erfasste Punkte verwerfen.
 
 **Erst bestätigen lassen, dann anlegen.** Tabelle ausgeben:
 
-| # | Titel | Quelle | Vorgeschlagene Priority | Begründung |
-| --- | --- | --- | --- | --- |
+| # | Titel | Fundstelle | Priority | Size | Begründung |
+| --- | --- | --- | --- | --- | --- |
 
-Quelle meint die konkrete Fundstelle, z.B. `lib/core/router/app_router.dart:22` oder
+Fundstelle ist die konkrete Quelle, z.B. `lib/core/router/app_router.dart:22` oder
 `docs/ARCHITECTURE.md § Fehlerbehandlung`.
 
 ## 4. Nach Bestätigung anlegen
 
-Nur die bestätigten Punkte. Format und Board-Anbindung wie in `/new-ticket`:
-Backlog-Status, Priority, passendes Label.
+Nur die bestätigten Punkte. Body-Format nach Größe wählen (siehe `ticket-format.md`), die
+Fundstelle im Body nennen.
 
-Im Issue-Body die Fundstelle nennen und kennzeichnen, dass der Punkt aus einer
-automatisierten Durchsicht stammt — so bleibt später nachvollziehbar, woher er kommt.
+Labels: `bug` oder `enhancement` **plus `claude-found`** — diese Tickets stammen aus einer
+automatisierten Durchsicht, nicht vom Nutzer.
+
+Board: Status **Backlog**, Priority, Size, **Quelle = Claude**.
+
+So bleibt später nachvollziehbar, welche Tickets aus dieser Durchsicht stammen.

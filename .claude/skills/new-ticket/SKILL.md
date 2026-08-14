@@ -1,67 +1,59 @@
 ---
 name: new-ticket
-description: Erstellt aus einer freien Beschreibung ein strukturiertes GitHub-Issue und legt es mit Backlog-Status, Priority-Schätzung und Label aufs Board.
+description: Erstellt aus einer freien Beschreibung ein strukturiertes GitHub-Issue und legt es mit Backlog-Status, Priority-/Size-Schätzung und passendem Label aufs Board.
 ---
 
 # new-ticket
 
 Aufruf: `/new-ticket <freie Beschreibung>`
 
-Lies zuerst `../ticket-workflow-shared/references/board.md`.
+Lies zuerst `../ticket-workflow-shared/references/ticket-format.md` (Body-Formate,
+Labels, Feld-Heuristiken) und `../ticket-workflow-shared/references/board.md` (Feld-IDs).
 
 ## Ablauf
 
-### 1. Kontext prüfen
-
-Kurz gegen bestehende Issues abgleichen, um Duplikate zu vermeiden:
+### 1. Duplikate ausschließen
 
 ```bash
 gh issue list --state all --search "<stichworte>"
 ```
 
-Bei einem klaren Duplikat: darauf hinweisen statt neu anzulegen.
+Bei einem klaren Duplikat darauf hinweisen statt neu anzulegen.
 
 ### 2. Issue formulieren
 
-Aus dem Freitext ableiten — **nicht** nachfragen, außer es lässt sich nicht einmal ein
+Format nach Größe wählen — leichtgewichtig für einen klaren Bug, ausführlich für ein
+größeres Feature. Beide Vorlagen stehen in `ticket-format.md`.
+
+Aus dem Freitext ableiten, **nicht** nachfragen — außer es lässt sich nicht einmal ein
 sinnvoller Titel bilden.
 
-```markdown
-## Ziel
-Was soll erreicht werden und warum.
-
-## Akzeptanzkriterien
-- [ ] konkret und prüfbar
-- [ ] ...
-
-## Kontext
-Betroffene Bereiche der App, relevante Dateien, bekannte Einschränkungen.
-```
-
 Titel: kurz, imperativ, konkret. Kein „Verbessere X", sondern was tatsächlich passieren soll.
+
+Hängt das Ticket erkennbar an einem anderen, die Abhängigkeit **explizit in den Text**
+schreiben („braucht #49", „nach #49") — das Board hat kein Blocker-Feld, und ohne diese
+Formulierung gilt das Ticket später als unabhängig.
 
 ### 3. Anlegen
 
 ```bash
-gh issue create --title "<titel>" --body "<body>" --label "<label>"
+gh issue create --title "<titel>" --body "<body>" --label "<bug|enhancement>"
 ```
 
-Label aus den vorhandenen wählen (Liste in `board.md`). Keine neuen Labels erfinden.
+`bug` oder `enhancement` ist Pflicht. `claude-found` gehört hier **nicht** dazu — das Ticket
+kommt vom Nutzer.
 
 ### 4. Aufs Board
 
-Issue hinzufügen, Status auf **Backlog**, Priority grob schätzen (Befehle in `board.md`).
+Issue hinzufügen und setzen (Befehle und IDs in `board.md`):
 
-Priority-Heuristik:
+- **Status:** Backlog
+- **Priority:** grobe Schätzung (P0/P1/P2)
+- **Size:** grobe Schätzung (XS–XL)
+- **Quelle:** User
 
-- `Critical` — App unbenutzbar, Datenverlust
-- `High` — Kernfunktion betroffen, blockiert andere Tickets
-- `Medium` — Standardfall
-- `Low` — Politur, Nice-to-have
-
-Ein Size-Feld existiert nicht; Größenangaben gehören in den Issue-Text und sind als Schätzung
-zu kennzeichnen.
+Alle Schätzungen sind vorläufig und dürfen später korrigiert werden.
 
 ### 5. Melden
 
-Issue-Nummer, URL, gesetztes Label und Priority ausgeben.
+Issue-Nummer, URL, Label und die gesetzten Feldwerte ausgeben.

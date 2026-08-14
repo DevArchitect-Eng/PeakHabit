@@ -9,7 +9,8 @@ Aufruf: `/check-ticket [nummer]`
 
 Ohne Nummer werden alle offenen Tickets geprüft, mit Nummer nur das eine.
 
-Lies zuerst `../ticket-workflow-shared/references/board.md`.
+Lies zuerst `../ticket-workflow-shared/references/board.md` und
+`../ticket-workflow-shared/references/ticket-format.md`.
 
 ## Was übersprungen wird
 
@@ -27,7 +28,13 @@ Nicht nur den Issue-Text lesen, sondern **gegen den echten Code prüfen**:
    - **Überholt?** Bezieht sich das Ticket auf Code, der so nicht mehr existiert?
    - **Duplikat?** Deckt ein anderes offenes Issue dasselbe ab?
    - **Falsche Spalte?** Ausreichend spezifiziert und unabhängig → gehört nach Ready.
-     Vage oder blockiert → gehört ins Backlog.
+     Vage oder blockiert → gehört ins Backlog. Maßstab für „ausreichend spezifiziert" steht
+     in `ticket-format.md`.
+   - **Abhängigkeit noch aktuell?** Nennt der Text einen Blocker („nach #49", „braucht #49",
+     …), prüfen, ob das referenzierte Issue noch offen ist. Ist es inzwischen geschlossen,
+     ist das Ticket nicht mehr blockiert — das ist ein Befund.
+   - **Felder plausibel?** Priority, Size und Quelle gegen den tatsächlichen Umfang prüfen.
+     Grobe Fehlschätzungen melden.
 
 ## Ausgabe
 
@@ -42,7 +49,8 @@ sei erledigt.
 
 - **Keine Tickets eigenständig schließen.** Erledigt- und Duplikat-Kandidaten werden zur
   Bestätigung vorgelegt, nicht ausgeführt.
-- Board-Status darf nach Bestätigung angepasst werden (Backlog ↔ Ready).
+- Board-Status darf nach Bestätigung angepasst werden (Backlog ↔ Ready). Priority- und
+  Size-Korrekturen ebenfalls erst nach Bestätigung.
 - Bei Unsicherheit `unklar` melden statt zu raten.
 
 ## Zusammenfassung

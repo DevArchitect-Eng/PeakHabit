@@ -11,6 +11,9 @@ Lies zuerst `../ticket-workflow-shared/references/conventions.md` und
 `../ticket-workflow-shared/references/board.md`. Projektregeln in `CLAUDE.md` und
 `docs/ARCHITECTURE.md` gelten zusätzlich.
 
+Gibt es einen QA-/Test-Agenten im Projekt, diesen für die Verifikation verwenden statt einen
+eigenen Ablauf zu erfinden. Aktuell existiert keiner (`.claude/agents/` ist nicht vorhanden).
+
 ## Ablauf
 
 ### 1. Ticket verstehen
@@ -87,5 +90,7 @@ danach auf „Done" setzen.
 
 ### 11. Nebenbefunde
 
-Echte Funde außerhalb des Scopes als eigenes Issue anlegen (`/new-ticket`), nicht nur im Chat
-erwähnen.
+Echte Funde außerhalb des Scopes als eigenes Issue anlegen, nicht nur im Chat erwähnen.
+Format nach `../ticket-workflow-shared/references/ticket-format.md`, dabei Label
+**`claude-found`** setzen und **Quelle = Claude** — diese Tickets stammen aus der eigenen
+Arbeit, nicht vom Nutzer. Im Body auf das Ursprungsticket verweisen.
