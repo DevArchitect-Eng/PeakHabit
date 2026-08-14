@@ -9,6 +9,12 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  # Generated code is not ours to style. Real problems in it still surface when
+  # the code is compiled by `flutter test` or `flutter build`.
+  exclude:
+    - "**/*.g.dart"
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
