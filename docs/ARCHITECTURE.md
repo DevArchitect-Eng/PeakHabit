@@ -75,14 +75,3 @@ Vier Tabs in der Bottom-Navigation:
 | Ernährung | `/nutrition` | Mahlzeiten und Nährwerte tracken |
 | Training | `/training` | Trainingspläne erstellen, Workouts starten |
 | Statistik | `/stats` | Trainingsfortschritt, Gewichtsverlauf, Auswertungen |
-
-## Geplante Erweiterungen
-
-Nicht Teil der ersten Version, aber bei Designentscheidungen mitgedacht:
-
-- Lokale Push-Erinnerungen für Workouts und Gewichtseinträge
-- Apple Health / Google Fit Integration
-- Achievements und Streaks
-
-Eine Store-Veröffentlichung ist perspektivisch geplant, daher werden App-Icons,
-Berechtigungstexte und Datenschutzanforderungen früh mitgedacht.
