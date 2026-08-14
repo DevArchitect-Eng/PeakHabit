@@ -4,64 +4,85 @@ GitHub Project mit den unten festgehaltenen IDs. **Nicht bei jeder Skill-Ausfüh
 ermitteln** — diese Datei ist die Quelle. Nur aktualisieren, wenn ein `gh`-Aufruf tatsächlich
 fehlschlägt, weil sich eine ID geändert hat.
 
-## Projekt
+## Ticket-Board (das produktive Board)
 
 | Feld | Wert |
 | --- | --- |
 | Repository | `DevArchitect-Eng/PeakHabit` |
 | Default-Branch | `main` |
-| Project-Nummer | `1` |
+| Project-Nummer | `2` |
 | Project-Owner | `DevArchitect-Eng` (User, nicht Org) |
-| Project-ID | `PVT_kwHOEuK3vc4BgVOl` |
-| URL | https://github.com/users/DevArchitect-Eng/projects/1 |
+| Project-ID | `PVT_kwHOEuK3vc4BgVVq` |
+| URL | https://github.com/users/DevArchitect-Eng/projects/2 |
 
 ## Status-Feld
 
-Feld-ID: `PVTSSF_lAHOEuK3vc4BgVOlzhahyiw`
+Feld-ID: `PVTSSF_lAHOEuK3vc4BgVVqzhah5Iw`
 
 | Option | ID |
 | --- | --- |
-| Backlog | `b210ac7b` |
-| Ready | `d9339a19` |
-| In Progress | `a05323cc` |
-| In Review | `db24b512` |
-| Done | `addf73f6` |
+| Backlog | `f75ad846` |
+| Ready | `61e4505c` |
+| In progress | `47fc9ee4` |
+| In review | `df73e18b` |
+| Done | `98236657` |
+
+Schreibweise beachten: „In progress" und „In review" klein nach dem ersten Wort.
 
 ## Priority-Feld
 
-Feld-ID: `PVTSSF_lAHOEuK3vc4BgVOlzhahy5I`
+Feld-ID: `PVTSSF_lAHOEuK3vc4BgVVqzhah5LQ`
 
 | Option | ID |
 | --- | --- |
-| P0 | `2560a17d` |
-| P1 | `e7507e91` |
-| P2 | `1e132445` |
+| P0 | `79628723` |
+| P1 | `0a877460` |
+| P2 | `da944a9c` |
 
 ## Size-Feld
 
-Feld-ID: `PVTSSF_lAHOEuK3vc4BgVOlzhah6WI`
+Feld-ID: `PVTSSF_lAHOEuK3vc4BgVVqzhah5LU`
 
 | Option | ID |
 | --- | --- |
-| XS | `b32985d7` |
-| S | `02c9a8d3` |
-| M | `e7259ab5` |
-| L | `0c4271c6` |
-| XL | `caae0fa8` |
-
-## Quelle-Feld
-
-Feld-ID: `PVTSSF_lAHOEuK3vc4BgVOlzhah6WM`
-
-| Option | ID |
-| --- | --- |
-| User | `0fd00558` |
-| Claude | `c3f8a275` |
+| XS | `6c6483d2` |
+| S | `f784b110` |
+| M | `7515a9f1` |
+| L | `817d0097` |
+| XL | `db339eb2` |
 
 Bedeutung und Vergabe-Heuristik der Felder stehen in `ticket-format.md`.
 
+Dieses Board hat **kein Quelle-Feld**. Von Claude gefundene Tickets werden allein über das
+Label `claude-found` gekennzeichnet.
+
 Ein **Blocker-Feld existiert nicht** — Abhängigkeiten werden im Issue-Text ausgedrückt
 (Formulierungen in `ticket-format.md`).
+
+## Ideen-Board (kein Ticket-Board)
+
+Für Ideen, die noch keine Tickets sind. Einträge sind **Draft-Items**, keine Issues, und
+lassen sich in GitHub per Klick in ein echtes Issue umwandeln.
+
+| Feld | Wert |
+| --- | --- |
+| Project-Nummer | `1` |
+| Project-ID | `PVT_kwHOEuK3vc4BgVOl` |
+| URL | https://github.com/users/DevArchitect-Eng/projects/1 |
+| Status-Feld-ID | `PVTSSF_lAHOEuK3vc4BgVOlzhahyiw` |
+
+Status-Optionen: Idee `b195c0a3`, Angenommen `863d27f2`, Später `e7f98d4e`,
+Verworfen `2c9a1dff`.
+
+Neue Idee anlegen:
+
+```bash
+gh project item-create 1 --owner DevArchitect-Eng --title "<titel>" --body "<beschreibung>"
+```
+
+**Die Ticket-Skills fassen dieses Board nicht an.** Es wird nur bespielt, wenn ausdrücklich
+nach einer Idee-Notiz gefragt wird. Wird eine Idee zum Ticket, entsteht daraus ein normales
+Issue auf Board 2, und der Draft wird auf „Angenommen" gesetzt.
 
 ## Status setzen
 

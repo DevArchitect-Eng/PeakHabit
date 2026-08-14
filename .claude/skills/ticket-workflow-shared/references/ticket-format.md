@@ -47,10 +47,11 @@ Funktionsumfang-Überschrift.
 
 | Feld | Werte | Hinweis |
 | --- | --- | --- |
-| Status | Backlog → Ready → In Progress → In Review → Done | Skills pflegen ihn entlang des Workflows |
+| Status | Backlog → Ready → In progress → In review → Done | Skills pflegen ihn entlang des Workflows |
 | Priority | P0 / P1 / P2 | grobe Schätzung bei Anlage, keine endgültige Festlegung |
 | Size | XS / S / M / L / XL | grobe Schätzung, dient der Sortierung im Loop-Modus |
-| Quelle | User / Claude | wer die Idee eingebracht hat |
+
+Ein Quelle-Feld gibt es auf dem Board nicht — die Herkunft steckt im Label `claude-found`.
 
 Neue Tickets starten immer auf **Backlog**. Feld-IDs stehen in `board.md`.
 

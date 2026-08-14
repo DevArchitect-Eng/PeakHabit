@@ -15,20 +15,20 @@ Lies zuerst `../ticket-workflow-shared/references/board.md`.
 
 ```bash
 gh issue list --state open --limit 100 --json number,title,labels,createdAt,url
-gh project item-list 1 --owner DevArchitect-Eng --format json
+gh project item-list 2 --owner DevArchitect-Eng --limit 100 --format json
 ```
 
 Board-Daten mit Issues zusammenführen, damit Status und Priority mit ausgegeben werden.
 
 ## Ausgabe
 
-| # | Titel | Status | Priority | Size | Quelle | Unabhängig | Alter |
-| --- | --- | --- | --- | --- | --- | --- | --- |
+| # | Titel | Status | Priority | Size | Unabhängig | Alter |
+| --- | --- | --- | --- | --- | --- | --- |
 
 Sortierung: Priority (P0 → P2), dann unabhängige vor blockierten Tickets, dann Size (klein
 zuerst), dann Alter.
 
-Status, Priority, Size und Quelle sind echte Board-Felder — direkt übernehmen, nicht schätzen.
+Status, Priority und Size sind echte Board-Felder — direkt übernehmen, nicht schätzen.
 Ist ein Feld leer, `—` eintragen.
 
 ## Ableitungen kennzeichnen

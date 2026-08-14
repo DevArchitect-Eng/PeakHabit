@@ -58,6 +58,6 @@ Fundstelle im Body nennen.
 Labels: `bug` oder `enhancement` **plus `claude-found`** — diese Tickets stammen aus einer
 automatisierten Durchsicht, nicht vom Nutzer.
 
-Board: Status **Backlog**, Priority, Size, **Quelle = Claude**.
+Board: Status **Backlog**, Priority, Size. Die Herkunft steckt im Label `claude-found`.
 
 So bleibt später nachvollziehbar, welche Tickets aus dieser Durchsicht stammen.

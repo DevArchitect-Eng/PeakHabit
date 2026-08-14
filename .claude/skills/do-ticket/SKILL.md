@@ -92,5 +92,5 @@ danach auf „Done" setzen.
 
 Echte Funde außerhalb des Scopes als eigenes Issue anlegen, nicht nur im Chat erwähnen.
 Format nach `../ticket-workflow-shared/references/ticket-format.md`, dabei Label
-**`claude-found`** setzen und **Quelle = Claude** — diese Tickets stammen aus der eigenen
+**`claude-found`** setzen — diese Tickets stammen aus der eigenen
 Arbeit, nicht vom Nutzer. Im Body auf das Ursprungsticket verweisen.

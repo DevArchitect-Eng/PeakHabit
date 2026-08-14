@@ -50,7 +50,6 @@ Issue hinzufügen und setzen (Befehle und IDs in `board.md`):
 - **Status:** Backlog
 - **Priority:** grobe Schätzung (P0/P1/P2)
 - **Size:** grobe Schätzung (XS–XL)
-- **Quelle:** User
 
 Alle Schätzungen sind vorläufig und dürfen später korrigiert werden.
 

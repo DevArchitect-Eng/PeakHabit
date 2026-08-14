@@ -138,8 +138,16 @@ sicherheits-/datenrelevanten Änderungen, und **niemals selbst mergen** — Merg
 die ausdrückliche Freigabe des Nutzers. Details in
 `.claude/skills/ticket-workflow-shared/references/conventions.md`.
 
-## Geplant, aber nicht umgesetzt
+## Boards
 
-Lokale Push-Erinnerungen, Apple Health / Google Fit, Achievements/Streaks. Eine
-Store-Veröffentlichung ist perspektivisch geplant — App-Icons, Berechtigungstexte und
-Datenschutzanforderungen früh mitdenken.
+| Board | Zweck |
+| --- | --- |
+| [Kanban](https://github.com/users/DevArchitect-Eng/projects/2) | echte Tickets, von den Skills gepflegt |
+| [Ideen](https://github.com/users/DevArchitect-Eng/projects/1) | Vormerkungen, die noch keine Tickets sind |
+
+Das Ideen-Board enthält Draft-Items, die sich per Klick in Issues umwandeln lassen — dort
+stehen unter anderem Push-Erinnerungen, Health-Integration, Achievements, Cloud-Sync und die
+Store-Veröffentlichung. Die Ticket-Skills fassen dieses Board nicht an.
+
+Eine Store-Veröffentlichung ist perspektivisch geplant — App-Icons, Berechtigungstexte und
+Datenschutzanforderungen daher früh mitdenken.

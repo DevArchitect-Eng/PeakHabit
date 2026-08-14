@@ -33,7 +33,7 @@ Nicht nur den Issue-Text lesen, sondern **gegen den echten Code prüfen**:
    - **Abhängigkeit noch aktuell?** Nennt der Text einen Blocker („nach #49", „braucht #49",
      …), prüfen, ob das referenzierte Issue noch offen ist. Ist es inzwischen geschlossen,
      ist das Ticket nicht mehr blockiert — das ist ein Befund.
-   - **Felder plausibel?** Priority, Size und Quelle gegen den tatsächlichen Umfang prüfen.
+   - **Felder plausibel?** Priority und Size gegen den tatsächlichen Umfang prüfen.
      Grobe Fehlschätzungen melden.
 
 ## Ausgabe
