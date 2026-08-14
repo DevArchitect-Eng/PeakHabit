@@ -6,7 +6,8 @@ Auswertungen über den Verlauf. Alle Daten bleiben lokal auf dem Gerät.
 ## Stand
 
 Navigationsgerüst mit vier Tabs (Start, Ernährung, Training, Statistik) und Platzhalter-Screens.
-Noch keine Features und keine Datenhaltung.
+Die lokale Datenbank (Drift) ist eingerichtet, hat aber noch keine fachlichen Tabellen.
+Noch keine Features.
 
 ## Entwicklung
 

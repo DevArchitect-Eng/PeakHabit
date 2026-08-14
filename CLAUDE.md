@@ -16,8 +16,8 @@ Vier Tabs in der Bottom-Navigation:
 | Training | `/training` | Trainingspläne erstellen, Workouts starten |
 | Statistik | `/stats` | Trainingsfortschritt, Gewichtsverlauf |
 
-Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens. Noch keine Features, keine
-Datenhaltung.
+Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens. Die Drift-Datenbank ist
+eingerichtet, enthält aber noch keine fachlichen Tabellen. Noch keine Features.
 
 ## Technisches
 
@@ -27,9 +27,10 @@ duplizieren. Kurzfassung:
 - Feature-first unter `lib/features/`, Geteiltes unter `lib/core/`
 - State Management: Riverpod
 - Routing: go_router mit `StatefulShellRoute` (eigener Stack je Tab)
-- Persistenz: lokal, kein Account, kein Backend. Drift ist vorgesehen, aber noch nicht
-  eingebaut. **Tabellen entstehen pro Feature**, nicht als vorab entworfenes Gesamtschema —
-  jedes Ticket bringt die Tabelle mit, die es braucht, samt Migration
+- Persistenz: Drift (SQLite) unter `lib/core/database/`, lokal, kein Account, kein Backend.
+  **Tabellen entstehen pro Feature**, nicht als vorab entworfenes Gesamtschema — jedes Ticket
+  bringt die Tabelle mit, die es braucht, samt Migration. Die Schritte dafür stehen in
+  `docs/ARCHITECTURE.md`
 - Design: dark-first, hellblauer Akzent (`#38BDF8`), `themeMode` fest auf dark
 
 Package-Strategie: zurückhaltend. Neue Abhängigkeiten nur, wenn sie ein echtes Problem lösen.
@@ -43,9 +44,11 @@ flutter run
 dart format .
 flutter analyze
 flutter test
+dart run build_runner build   # nach Änderungen am Datenbankschema
 ```
 
-Diese drei Prüfungen nach jeder inhaltlichen Änderung ausführen. Die CI
+Die drei Prüfungen `dart format .`, `flutter analyze` und `flutter test` nach jeder
+inhaltlichen Änderung ausführen. Die CI
 (`.github/workflows/ci.yml`) prüft dasselbe bei PRs und Pushes auf `main`.
 
 ## Commits

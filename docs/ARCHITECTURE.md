@@ -17,6 +17,7 @@ lib/
   main.dart                     Einstiegspunkt, setzt ProviderScope
   app.dart                      MaterialApp.router, Theme- und Router-Bindung
   core/
+    database/                   Drift-Datenbank, Verbindung, Provider
     router/app_router.dart      go_router-Konfiguration
     theme/app_theme.dart        Farbschema, Light/Dark
   features/
@@ -46,21 +47,64 @@ Ein Wechsel zwischen Tabs verliert damit nicht die Position im jeweiligen Tab �
 z.B. ein laufendes Workout im Training-Tab erhalten bleiben muss, wenn kurz in die Statistik
 gewechselt wird.
 
-### Persistenz: lokal, noch nicht implementiert
+### Persistenz: Drift (SQLite), lokal
 
-Geplant ist Drift (SQLite): typsichere Queries, echte Migrationen und Streams, die sich direkt
-an Riverpod anbinden lassen.
+Drift, weil es typsichere Queries, echte Migrationen und Streams bietet, die sich direkt an
+Riverpod anbinden lassen.
 
-**Das Schema wächst pro Feature, nicht vorab.** Das Fundament — Datenbank öffnen, über einen
-Provider bereitstellen, Migrationsmechanismus, Testhilfe — wird einmal angelegt und enthält
-selbst keine fachlichen Tabellen. Jede Tabelle entsteht in dem Feature-Ticket, das sie
-tatsächlich braucht, zusammen mit ihrer Migration.
+Die Teile liegen in `lib/core/database/`:
+
+| Datei | Inhalt |
+| --- | --- |
+| `app_database.dart` | `AppDatabase`, Schema-Version, `MigrationStrategy` |
+| `database_connection.dart` | Verbindung zur Datei bzw. In-Memory-Verbindung für Tests |
+| `database_provider.dart` | `databaseProvider` — die eine Instanz der App |
+
+Die Datei heißt `peakhabit.sqlite` und liegt im Dokumentenverzeichnis der App. Geöffnet wird
+sie in `main.dart` vor dem ersten Frame, damit Migrationen an einer definierten Stelle laufen
+und nicht bei der ersten Query, die zufällig zuerst kommt. Fremdschlüssel sind per
+`PRAGMA foreign_keys = ON` eingeschaltet — SQLite ignoriert sie sonst.
+
+**Das Schema wächst pro Feature, nicht vorab.** Das Fundament enthält selbst keine fachlichen
+Tabellen. Jede Tabelle entsteht in dem Feature-Ticket, das sie tatsächlich braucht, zusammen
+mit ihrer Migration.
 
 Der Grund: Ein vorab entworfenes Gesamtschema müsste beim Anbinden der einzelnen Features
 ohnehin wieder geändert werden, und ungenutzte Tabellen lassen sich nicht sinnvoll testen.
 
 Das Datenmodell wird so entworfen, dass eine spätere Cloud-Synchronisation nachrüstbar bleibt
 (stabile IDs, Zeitstempel), ohne dass jetzt Sync-Code entsteht.
+
+#### Eine neue Tabelle ergänzen
+
+1. Tabellenklasse im Feature anlegen, z.B. `lib/features/home/data/body_weight_table.dart`.
+2. In `app_database.dart` bei `@DriftDatabase(tables: [...])` eintragen.
+3. `schemaVersion` um eins erhöhen.
+4. In `onUpgrade` einen Block für die neue Version ergänzen:
+
+   ```dart
+   if (from < 2) {
+     await m.createTable(bodyWeightEntries);
+   }
+   ```
+
+5. Code generieren: `dart run build_runner build`.
+6. Testen: gegen `AppDatabase.inMemory()` schreiben und lesen. Wer eine bestehende Datenbank
+   simulieren will, prüft den Schritt zusätzlich über `onUpgrade`.
+
+Schritt 3 und 4 gehören zusammen: Ohne Migration bekommt die Tabelle nur, wer die App neu
+installiert. Bestehende Installationen laufen sonst gegen eine fehlende Tabelle.
+
+#### Generierte Dateien
+
+Die `.g.dart`-Dateien werden **eingecheckt**. Damit bleibt die CI ein einziger Job aus
+Format-, Analyse- und Testschritt; ein frischer Klon lässt sich ohne Codegenerierung bauen.
+Der Preis ist ein größerer Diff, wenn sich das Schema ändert. Der Analyzer schließt
+`**/*.g.dart` aus (siehe `analysis_options.yaml`) — generierter Code folgt nicht unseren
+Lints, echte Fehler darin fallen trotzdem beim Kompilieren auf.
+
+Nach jeder Schemaänderung `dart run build_runner build` laufen lassen und das Ergebnis
+mit committen.
 
 ### Design: dark-first mit hellblauem Akzent
 
