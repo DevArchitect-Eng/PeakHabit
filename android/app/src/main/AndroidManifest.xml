@@ -1,8 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- allowBackup is off because the fitness data is meant to stay on the
+         device: Auto Backup would copy the database to the user's Google Drive,
+         and on older Android versions `adb backup` could pull it off the
+         device. Device-to-device transfer to a new phone is unaffected. -->
     <application
         android:label="peakhabit"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"

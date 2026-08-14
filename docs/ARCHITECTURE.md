@@ -60,10 +60,27 @@ Die Teile liegen in `lib/core/database/`:
 | `database_connection.dart` | Verbindung zur Datei bzw. In-Memory-Verbindung für Tests |
 | `database_provider.dart` | `databaseProvider` — die eine Instanz der App |
 
-Die Datei heißt `peakhabit.sqlite` und liegt im Dokumentenverzeichnis der App. Geöffnet wird
-sie in `main.dart` vor dem ersten Frame, damit Migrationen an einer definierten Stelle laufen
-und nicht bei der ersten Query, die zufällig zuerst kommt. Fremdschlüssel sind per
-`PRAGMA foreign_keys = ON` eingeschaltet — SQLite ignoriert sie sonst.
+Die Datei heißt `peakhabit.sqlite` und liegt im App-Support-Verzeichnis
+(`getApplicationSupportDirectory()`), nicht im Dokumentenverzeichnis: Letzteres ist für
+Dateien gedacht, die der Nutzer selbst sieht, und taucht in der Files-App auf, sobald File
+Sharing aktiviert wird. Geöffnet wird die Datei in `main.dart` vor dem ersten Frame, damit
+Migrationen an einer definierten Stelle laufen und nicht bei der ersten Query, die zufällig
+zuerst kommt. Fremdschlüssel sind per `PRAGMA foreign_keys = ON` eingeschaltet — SQLite
+ignoriert sie sonst.
+
+#### Backups
+
+Die Aussage „alle Daten bleiben lokal" gilt auch gegenüber den Backup-Mechanismen der
+Plattform:
+
+- **Android:** `android:allowBackup="false"` im Manifest. Ohne das kopiert Auto Backup die
+  Datenbank in die Google Drive des Nutzers, und auf Android 11 und älter ließe sie sich per
+  `adb backup` vom Gerät ziehen. Die Geräte-zu-Geräte-Übertragung auf ein neues Telefon
+  bleibt davon unberührt.
+- **iOS:** offen. Das App-Support-Verzeichnis liegt weiterhin im iCloud-Backup; das
+  auszuschließen braucht `NSURLIsExcludedFromBackupKey`, was `path_provider` nicht anbietet.
+  Ob das überhaupt gewollt ist, ist eine Produktentscheidung — ein iCloud-Backup ist
+  verschlüsselt und gehört dem Nutzer selbst.
 
 **Das Schema wächst pro Feature, nicht vorab.** Das Fundament enthält selbst keine fachlichen
 Tabellen. Jede Tabelle entsteht in dem Feature-Ticket, das sie tatsächlich braucht, zusammen
