@@ -15,8 +15,10 @@ void main() {
 
     await database.open();
 
+    // Pinned to the literal version on purpose: raising `schemaVersion` should
+    // force a look at this test, and with it at the matching migration step.
     final row = await database.customSelect('PRAGMA user_version').getSingle();
-    expect(row.read<int>('user_version'), database.schemaVersion);
+    expect(row.read<int>('user_version'), 1);
   });
 
   test('enforces foreign keys', () async {
