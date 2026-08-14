@@ -2,32 +2,73 @@
 
 Hinweise für Claude Code in diesem Repository.
 
-## Stand
+## Produkt
 
-Frisches Flutter-Projekt (Standard-`flutter create`-Grundgerüst, kein Custom-Code, keine
-Architekturentscheidung getroffen). Ziel ist eine Habit-Tracking-App namens PeakHabit für
-Android und iOS.
+PeakHabit ist eine Fitness-App für Android und iOS. Getrackt werden Ernährung, Training und
+Körpergewicht, dazu Auswertungen über den Verlauf.
 
-- Package/App-Name: `peakhabit`
-- Android-Applikations-ID / iOS-Bundle-Prefix: `com.devarchitecteng.peakhabit`
-- Zielplattformen: Android, iOS (siehe `pubspec.yaml`, `android/`, `ios/`)
+Vier Tabs in der Bottom-Navigation:
 
-Bevor Features, Architektur (State Management, Routing, Datenhaltung), CI oder ein
-Ticket-Workflow aufgesetzt werden, müssen Produktumfang und ein paar Policy-Fragen geklärt sein
-(Zweck/Zielgruppe, Screens, Design, Login/Speicherung, Merge-/Review-Policy). Bis dahin nichts
-davon vorab erfinden.
+| Tab | Route | Inhalt |
+| --- | --- | --- |
+| Start | `/home` | Übersicht, Körpergewicht eintragen |
+| Ernährung | `/nutrition` | Mahlzeiten und Nährwerte |
+| Training | `/training` | Trainingspläne erstellen, Workouts starten |
+| Statistik | `/stats` | Trainingsfortschritt, Gewichtsverlauf |
+
+Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens. Noch keine Features, keine
+Datenhaltung.
+
+## Technisches
+
+Entscheidungen und Begründungen stehen in `docs/ARCHITECTURE.md` — dort nachlesen, nicht hier
+duplizieren. Kurzfassung:
+
+- Feature-first unter `lib/features/`, Geteiltes unter `lib/core/`
+- State Management: Riverpod
+- Routing: go_router mit `StatefulShellRoute` (eigener Stack je Tab)
+- Persistenz: lokal, kein Account, kein Backend. Drift ist vorgesehen, aber noch nicht
+  eingebaut
+- Design: dark-first, hellblauer Akzent (`#38BDF8`), `themeMode` fest auf dark
+
+Package-Strategie: zurückhaltend. Neue Abhängigkeiten nur, wenn sie ein echtes Problem lösen.
+Cloud-Dienste, Bezahlservices, Analytik, Werbung oder Tracking **nie ohne Freigabe** einbauen.
 
 ## Befehle
 
 ```bash
-flutter pub get       # Dependencies installieren
-flutter run           # App auf verbundenem Gerät/Emulator starten
-dart format .          # Formatieren
-flutter analyze       # Statische Analyse (analysis_options.yaml: flutter_lints)
-flutter test          # Tests ausführen
+flutter pub get
+flutter run
+dart format .
+flutter analyze
+flutter test
 ```
 
-## Emulatoren/Simulatoren
+Diese drei Prüfungen nach jeder inhaltlichen Änderung ausführen. Die CI
+(`.github/workflows/ci.yml`) prüft dasselbe bei PRs und Pushes auf `main`.
 
-Lokal verfügbar (siehe `flutter emulators`): `apple_ios_simulator`, `Medium_Phone_API_36.0`,
-`Medium_Tablet`. Vor UI-Änderungen einen Emulator/Simulator starten und die App darauf prüfen.
+## UI prüfen
+
+Verfügbar: `apple_ios_simulator`, `Medium_Phone_API_36.0`, `Medium_Tablet`.
+
+Die native Simulator-Integration braucht einmalig
+`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer` durch den Nutzer. Schlägt
+sie fehl, ersatzweise über `xcrun simctl` bauen/installieren/screenshotten — und das im
+Bericht offenlegen, nicht stillschweigend wechseln.
+
+## Ticket-Workflow
+
+Neun Skills unter `.claude/skills/`. Gemeinsame Konventionen, Board-IDs und Log-Format liegen
+in `.claude/skills/ticket-workflow-shared/references/` — dort nachschlagen statt Werte neu zu
+ermitteln.
+
+**Merge-Policy ist konservativ:** Code Review vor jedem Merge, Security Review zusätzlich bei
+sicherheits-/datenrelevanten Änderungen, und **niemals selbst mergen** — Merge braucht immer
+die ausdrückliche Freigabe des Nutzers. Details in
+`.claude/skills/ticket-workflow-shared/references/conventions.md`.
+
+## Geplant, aber nicht umgesetzt
+
+Lokale Push-Erinnerungen, Apple Health / Google Fit, Achievements/Streaks. Eine
+Store-Veröffentlichung ist perspektivisch geplant — App-Icons, Berechtigungstexte und
+Datenschutzanforderungen früh mitdenken.

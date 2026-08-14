@@ -1,11 +1,12 @@
 # PeakHabit
 
-Habit-Tracking-App. Zielplattformen: Android (Windows-Entwicklung mit Android-Emulator) und iOS (Mac mit Xcode).
+Fitness-App für Android und iOS: Ernährung, Training und Körpergewicht tracken, plus
+Auswertungen über den Verlauf. Alle Daten bleiben lokal auf dem Gerät.
 
-## Status
+## Stand
 
-Frisches Flutter-Grundgerüst — noch keine Features. Produktentscheidungen (Zielgruppe, Screens,
-Design, Datenhaltung) stehen noch aus.
+Navigationsgerüst mit vier Tabs (Start, Ernährung, Training, Statistik) und Platzhalter-Screens.
+Noch keine Features und keine Datenhaltung.
 
 ## Entwicklung
 
@@ -27,3 +28,12 @@ dart format .
 flutter analyze
 flutter test
 ```
+
+Dieselben Prüfungen laufen in der CI bei jedem Pull Request und Push auf `main`.
+
+## Dokumentation
+
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — Ordnerstruktur, Technologieentscheidungen
+  und ihre Begründung
+- [`CLAUDE.md`](CLAUDE.md) — Hinweise für die Arbeit mit Claude Code
+- `.claude/skills/` — Ticket-Workflow als Slash-Commands
