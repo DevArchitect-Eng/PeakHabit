@@ -7,7 +7,7 @@ Hinweise für Claude Code in diesem Repository.
 PeakHabit ist eine Fitness-App für Android und iOS. Getrackt werden Ernährung, Training und
 Körpergewicht, dazu Auswertungen über den Verlauf.
 
-Vier Tabs in der Bottom-Navigation:
+Fünf Tabs in der Bottom-Navigation:
 
 | Tab | Route | Inhalt |
 | --- | --- | --- |
@@ -15,10 +15,12 @@ Vier Tabs in der Bottom-Navigation:
 | Ernährung | `/nutrition` | Mahlzeiten und Nährwerte |
 | Training | `/training` | Trainingspläne erstellen, Workouts starten |
 | Statistik | `/stats` | Trainingsfortschritt, Gewichtsverlauf |
+| Optionen | `/settings` | Darstellung, Zugang zum Profil |
 
-Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens. Die Drift-Datenbank ist
-eingerichtet; als erste fachliche Tabelle liegt das Nutzerprofil darin (Datenschicht ohne
-UI). Ansonsten noch keine Features.
+Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens für die ersten vier Tabs. Der
+Einstellungen-Tab ist ausgebaut: Theme-Auswahl (Dark/Light/System, gespeichert) und ein
+Formular fürs Nutzerprofil unter `/settings/profile`. Die Drift-Datenbank hält dafür die
+Tabellen `user_profiles` und `app_settings`. Ansonsten noch keine Features.
 
 ## Technisches
 
