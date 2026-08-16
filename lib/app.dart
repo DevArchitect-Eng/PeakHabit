@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'core/logging/app_lifecycle_logger.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 
@@ -14,6 +15,8 @@ class PeakHabitApp extends StatelessWidget {
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.dark,
       routerConfig: appRouter,
+      builder: (context, child) =>
+          AppLifecycleLogger(child: child ?? const SizedBox.shrink()),
     );
   }
 }
