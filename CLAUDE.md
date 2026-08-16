@@ -17,7 +17,8 @@ Vier Tabs in der Bottom-Navigation:
 | Statistik | `/stats` | Trainingsfortschritt, Gewichtsverlauf |
 
 Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens. Die Drift-Datenbank ist
-eingerichtet, enthält aber noch keine fachlichen Tabellen. Noch keine Features.
+eingerichtet; als erste fachliche Tabelle liegt das Nutzerprofil darin (Datenschicht ohne
+UI). Ansonsten noch keine Features.
 
 ## Technisches
 
