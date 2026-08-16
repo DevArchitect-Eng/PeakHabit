@@ -93,7 +93,10 @@ Konservativ, vom Nutzer festgelegt:
 - Kostenpflichtige oder nutzergetriggerte Review-Modi (z.B. `/code-review ultra`) **nie**
   selbst auslösen.
 
-Merge-Methode: Squash-Merge, Branch danach löschen.
+Merge-Methode: **Merge Commit** (nicht Squash) — die einzelnen Commits eines PRs bleiben damit
+auch auf `main` erhalten, statt beim Merge zu einem zusammengefasst zu werden. Genau dafür
+gibt es die Commit-Konvention in `CLAUDE.md`: Sie soll die Historie von `main` lesbar machen,
+nicht nur die PR-Ansicht während der Review. Branch nach dem Merge löschen.
 
 ## GitHub-Schreibaktionen
 
