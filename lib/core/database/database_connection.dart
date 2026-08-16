@@ -26,3 +26,8 @@ QueryExecutor openDatabaseFile() {
 /// A throwaway database that only lives in memory, so unit and widget tests
 /// run without touching the file system.
 QueryExecutor openInMemoryDatabase() => NativeDatabase.memory();
+
+/// A database on an explicit file. Used by tests that need to reopen the same
+/// data on a fresh connection; the app itself goes through [openDatabaseFile],
+/// which picks the location on its own.
+QueryExecutor openDatabaseAtFile(File file) => NativeDatabase(file);

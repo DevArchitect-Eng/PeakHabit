@@ -1,24 +1,35 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 
+import '../../features/profile/data/user_profile_table.dart';
+// The generated part file names the enums and converters used by the tables
+// below, so the library that owns it has to import them too.
+import '../../features/profile/domain/user_profile.dart';
 import '../logging/app_logger.dart';
 import 'database_connection.dart';
+import 'date_only_converter.dart';
 
 part 'app_database.g.dart';
 
 /// The app's local SQLite database.
 ///
-/// It deliberately carries no feature tables. Every table is added by the
-/// feature that needs it, together with the migration step that creates it —
-/// see `docs/ARCHITECTURE.md` for how to do that.
-@DriftDatabase(tables: [])
+/// Every table is added by the feature that needs it, together with the
+/// migration step that creates it — see `docs/ARCHITECTURE.md` for how to do
+/// that.
+@DriftDatabase(tables: [UserProfiles])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openDatabaseFile());
 
   /// In-memory database for tests.
   AppDatabase.inMemory() : super(openInMemoryDatabase());
 
+  /// Database on an explicit file, for tests that need data to outlive a
+  /// single connection.
+  AppDatabase.atFile(File file) : super(openDatabaseAtFile(file));
+
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -30,6 +41,9 @@ class AppDatabase extends _$AppDatabase {
       AppLogger.database.info('Migrating database from $from to $to');
       // Each feature that raises `schemaVersion` to n adds its own
       // `if (from < n) { ... }` block here.
+      if (from < 2) {
+        await m.createTable(userProfiles);
+      }
       AppLogger.database.info('Migration to $to complete');
     },
     beforeOpen: (details) async {
