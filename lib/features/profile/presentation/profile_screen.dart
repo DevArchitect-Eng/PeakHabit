@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../data/user_profile_providers.dart';
 import '../domain/user_profile.dart';
+
+const _logger = AppLogger('profile');
 
 /// Edits the one user profile.
 ///
@@ -163,26 +166,37 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    await ref
-        .read(userProfileRepositoryProvider)
-        .save(
-          UserProfile(
-            heightCm: int.tryParse(_heightController.text),
-            sex: _sex,
-            birthDate: _birthDate,
-            activityLevel: _activityLevel,
-            goal: _goal,
-            calorieTarget: int.tryParse(_calorieTargetController.text),
-            // Carried over untouched — this screen does not edit the split.
-            macros: widget.profile.macros,
-          ),
-        );
+    try {
+      await ref
+          .read(userProfileRepositoryProvider)
+          .save(
+            UserProfile(
+              heightCm: int.tryParse(_heightController.text),
+              sex: _sex,
+              birthDate: _birthDate,
+              activityLevel: _activityLevel,
+              goal: _goal,
+              calorieTarget: int.tryParse(_calorieTargetController.text),
+              // Carried over untouched — this screen does not edit the split.
+              macros: widget.profile.macros,
+            ),
+          );
+    } catch (error, stackTrace) {
+      // Without this the write fails silently: the button callback drops the
+      // error and the screen looks exactly as it does after a success.
+      _logger.error('Saving the profile failed', error, stackTrace);
+      if (!mounted) return;
+      _show('Das Profil konnte nicht gespeichert werden.');
+      return;
+    }
 
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Profil gespeichert')));
+    _show('Profil gespeichert');
   }
+
+  void _show(String message) => ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(message)));
 }
 
 /// Birth date as a tappable row, because a date is easier to pick than to type.
@@ -196,19 +210,21 @@ class _BirthDateField extends StatelessWidget {
   Widget build(BuildContext context) {
     final value = this.value;
 
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: 'Geburtsdatum',
-        suffixIcon: value == null
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.clear),
-                tooltip: 'Geburtsdatum entfernen',
-                onPressed: () => onChanged(null),
-              ),
-      ),
-      child: InkWell(
-        onTap: () => _pick(context),
+    // The tap target is the whole row, like the dropdowns above and below it —
+    // wrapping only the text would leave most of the field dead.
+    return InkWell(
+      onTap: () => _pick(context),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Geburtsdatum',
+          suffixIcon: value == null
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.clear),
+                  tooltip: 'Geburtsdatum entfernen',
+                  onPressed: () => onChanged(null),
+                ),
+        ),
         child: Text(value == null ? 'Keine Angabe' : _formatted(value)),
       ),
     );

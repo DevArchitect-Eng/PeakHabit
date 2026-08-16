@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../data/settings_providers.dart';
 import '../domain/app_theme_mode.dart';
+
+const _logger = AppLogger('settings');
 
 /// The settings tab.
 ///
 /// Laid out as titled sections so later settings — units, notifications — are
-/// added as another [SettingsSection] instead of growing one long flat list.
+/// added as another [_SettingsSection] instead of growing one long flat list.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -19,11 +22,11 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: const [
-          SettingsSection(
+          _SettingsSection(
             title: 'Darstellung',
             children: [_ThemeModeSetting()],
           ),
-          SettingsSection(title: 'Persönliches', children: [_ProfileTile()]),
+          _SettingsSection(title: 'Persönliches', children: [_ProfileTile()]),
         ],
       ),
     );
@@ -31,12 +34,8 @@ class SettingsScreen extends StatelessWidget {
 }
 
 /// A titled group of settings.
-class SettingsSection extends StatelessWidget {
-  const SettingsSection({
-    required this.title,
-    required this.children,
-    super.key,
-  });
+class _SettingsSection extends StatelessWidget {
+  const _SettingsSection({required this.title, required this.children});
 
   final String title;
   final List<Widget> children;
@@ -98,10 +97,29 @@ class _ThemeModeSetting extends ConsumerWidget {
         selected: {mode},
         // Nothing is kept in widget state: the write goes to the database and
         // comes back through the provider, which is what repaints the app.
-        onSelectionChanged: (selection) {
-          ref.read(settingsRepositoryProvider).saveThemeMode(selection.single);
-        },
+        onSelectionChanged: (selection) =>
+            _save(context, ref, selection.single),
       ),
     );
+  }
+
+  /// A failed write would otherwise be invisible: the button snaps back to the
+  /// old choice, because only the stored value drives what is selected.
+  Future<void> _save(
+    BuildContext context,
+    WidgetRef ref,
+    AppThemeMode mode,
+  ) async {
+    try {
+      await ref.read(settingsRepositoryProvider).saveThemeMode(mode);
+    } catch (error, stackTrace) {
+      _logger.error('Saving the theme mode failed', error, stackTrace);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Die Auswahl konnte nicht gespeichert werden.'),
+        ),
+      );
+    }
   }
 }
