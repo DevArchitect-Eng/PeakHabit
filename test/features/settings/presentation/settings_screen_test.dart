@@ -9,6 +9,9 @@ void main() {
   Brightness renderedBrightness(WidgetTester tester) =>
       Theme.of(tester.element(find.byType(SettingsScreen))).brightness;
 
+  ThemeMode? themeModeOf(WidgetTester tester) =>
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode;
+
   Future<void> openSettings(WidgetTester tester) async {
     await tester.tap(find.widgetWithText(NavigationDestination, 'Optionen'));
     await tester.pumpAndSettle();
@@ -49,6 +52,23 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(renderedBrightness(tester), Brightness.dark);
+  });
+
+  testWidgets('the system option hands the choice to the platform', (
+    tester,
+  ) async {
+    // The test platform reports light, so following it has to end up light
+    // even though dark is the app's own default.
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    await pumpApp(tester);
+    await openSettings(tester);
+
+    await tester.tap(find.text('System'));
+    await tester.pumpAndSettle();
+
+    expect(themeModeOf(tester), ThemeMode.system);
+    expect(renderedBrightness(tester), Brightness.light);
   });
 
   testWidgets('the app starts in the theme that was chosen before', (

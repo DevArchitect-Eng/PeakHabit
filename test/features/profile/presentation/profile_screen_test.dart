@@ -4,8 +4,6 @@ import 'package:peakhabit/features/profile/domain/macro_distribution.dart';
 import 'package:peakhabit/features/profile/domain/user_profile.dart';
 import 'package:peakhabit/features/profile/presentation/profile_screen.dart';
 
-import '../../../support/in_memory_settings_repository.dart';
-import '../../../support/in_memory_user_profile_repository.dart';
 import '../../../support/pump_app.dart';
 
 void main() {
@@ -34,15 +32,10 @@ void main() {
   });
 
   testWidgets('shows the values that are already stored', (tester) async {
-    final stores = (
-      settings: InMemorySettingsRepository(),
-      profile: InMemoryUserProfileRepository(
-        UserProfile(heightCm: 182, calorieTarget: 2200),
-      ),
+    await pumpApp(
+      tester,
+      on: storesWith(profile: UserProfile(heightCm: 182, calorieTarget: 2200)),
     );
-    addTearDown(stores.settings.dispose);
-    addTearDown(stores.profile.dispose);
-    await pumpApp(tester, on: stores);
 
     await openProfile(tester);
 
@@ -99,12 +92,7 @@ void main() {
         fatPercent: 30,
       ),
     );
-    final stores = (
-      settings: InMemorySettingsRepository(),
-      profile: InMemoryUserProfileRepository(stored),
-    );
-    addTearDown(stores.settings.dispose);
-    addTearDown(stores.profile.dispose);
+    final stores = storesWith(profile: stored);
     await pumpApp(tester, on: stores);
     await openProfile(tester);
 

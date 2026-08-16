@@ -5,10 +5,10 @@ import 'package:peakhabit/features/settings/domain/app_theme_mode.dart';
 
 /// A [SettingsRepository] that keeps its values in memory.
 ///
-/// Widget tests run in a fake-async zone in which drift's queries never
-/// complete, so a widget test cannot drive the real database. What the
-/// database does with the settings is covered by the repository tests
-/// instead, which run without that zone.
+/// Widget tests that drove the real database hung instead of finishing — the
+/// fake-async zone `testWidgets` runs in and drift's asynchronous queries do
+/// not get along. What the database does with the settings is covered by the
+/// repository tests, which run outside that zone.
 class InMemorySettingsRepository implements SettingsRepository {
   InMemorySettingsRepository([this._themeMode = AppThemeMode.dark]);
 

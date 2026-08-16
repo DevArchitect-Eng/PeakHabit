@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:peakhabit/app.dart';
 import 'package:peakhabit/core/router/app_router.dart';
 import 'package:peakhabit/features/profile/data/user_profile_providers.dart';
+import 'package:peakhabit/features/profile/domain/user_profile.dart';
 import 'package:peakhabit/features/settings/data/settings_providers.dart';
+import 'package:peakhabit/features/settings/domain/app_theme_mode.dart';
 
 import 'in_memory_settings_repository.dart';
 import 'in_memory_user_profile_repository.dart';
@@ -16,11 +18,12 @@ typedef AppStores = ({
   InMemoryUserProfileRepository profile,
 });
 
-/// Stores with nothing in them yet, closed again when the test ends.
-AppStores emptyStores() {
+/// Stores holding what a test wants to find there, closed again when the test
+/// ends. Left empty they hold the same defaults a fresh install would.
+AppStores storesWith({AppThemeMode? themeMode, UserProfile? profile}) {
   final stores = (
-    settings: InMemorySettingsRepository(),
-    profile: InMemoryUserProfileRepository(),
+    settings: InMemorySettingsRepository(themeMode ?? AppThemeMode.dark),
+    profile: InMemoryUserProfileRepository(profile ?? UserProfile.empty),
   );
   addTearDown(stores.settings.dispose);
   addTearDown(stores.profile.dispose);
@@ -35,7 +38,7 @@ AppStores emptyStores() {
 /// Passing [on] back in starts the app on values that are already stored,
 /// which is as close to a restart as a widget test gets.
 Future<AppStores> pumpApp(WidgetTester tester, {AppStores? on}) async {
-  final stores = on ?? emptyStores();
+  final stores = on ?? storesWith();
   // The router is one global object shared by every test in a file, so without
   // this a test would start wherever the previous one happened to stop.
   appRouter.go('/home');
