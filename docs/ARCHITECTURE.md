@@ -27,6 +27,7 @@ lib/
     nutrition/                  Ernährungstracking
     training/                   Trainingspläne und Workouts
     stats/                      Auswertungen und Diagramme
+    profile/                    Nutzerprofil, Kalorien- und Makroziele
 ```
 
 Innerhalb eines Features wird nach Bedarf in `presentation/`, `domain/` und `data/`
@@ -60,6 +61,11 @@ Die Teile liegen in `lib/core/database/`:
 | `app_database.dart` | `AppDatabase`, Schema-Version, `MigrationStrategy` |
 | `database_connection.dart` | Verbindung zur Datei bzw. In-Memory-Verbindung für Tests |
 | `database_provider.dart` | `databaseProvider` — die eine Instanz der App |
+| `date_only_converter.dart` | `DateOnlyConverter` für reine Kalenderdaten |
+
+Reine Kalenderdaten (Geburtstag, Tag eines Eintrags) laufen über `DateOnlyConverter` und
+liegen als `yyyy-MM-dd` in einer Textspalte. Eine `dateTime()`-Spalte hält einen Zeitpunkt;
+der verschiebt sich zwischen Zeitzonen um Stunden und landet dann auf dem Nachbartag.
 
 Die Datei heißt `peakhabit.sqlite` und liegt im App-Support-Verzeichnis
 (`getApplicationSupportDirectory()`), nicht im Dokumentenverzeichnis: Letzteres ist für
@@ -86,6 +92,12 @@ Plattform:
 **Das Schema wächst pro Feature, nicht vorab.** Das Fundament enthält selbst keine fachlichen
 Tabellen. Jede Tabelle entsteht in dem Feature-Ticket, das sie tatsächlich braucht, zusammen
 mit ihrer Migration.
+
+Vorhandene Tabellen:
+
+| Tabelle | Ab Version | Wo |
+| --- | --- | --- |
+| `user_profiles` | 2 | `lib/features/profile/data/user_profile_table.dart` |
 
 Der Grund: Ein vorab entworfenes Gesamtschema müsste beim Anbinden der einzelnen Features
 ohnehin wieder geändert werden, und ungenutzte Tabellen lassen sich nicht sinnvoll testen.
