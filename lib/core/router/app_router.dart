@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/nutrition/presentation/nutrition_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/shell/presentation/app_shell.dart';
 import '../../features/stats/presentation/stats_screen.dart';
 import '../../features/training/presentation/training_screen.dart';
@@ -20,6 +21,7 @@ final appRouter = GoRouter(
         _branch('/nutrition', const NutritionScreen()),
         _branch('/training', const TrainingScreen()),
         _branch('/stats', const StatsScreen()),
+        _branch('/settings', const SettingsScreen()),
       ],
     ),
   ],
