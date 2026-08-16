@@ -27,7 +27,7 @@ enum ActivityLevel {
 /// may be skipped. Only the goal and the macro split start with a value, so a
 /// fresh profile is already usable.
 class UserProfile {
-  const UserProfile({
+  const UserProfile._({
     this.heightCm,
     this.sex,
     this.birthDate,
@@ -35,14 +35,50 @@ class UserProfile {
     this.goal = WeightGoal.maintain,
     this.calorieTarget,
     this.macros = MacroDistribution.standard,
-  }) : assert(
-         heightCm == null || heightCm > 0,
-         'height in cm must be positive',
-       ),
-       assert(
-         calorieTarget == null || calorieTarget > 0,
-         'calorie target in kcal must be positive',
-       );
+  });
+
+  /// Throws an [ArgumentError] on a height or calorie target that cannot be
+  /// meant seriously.
+  ///
+  /// Checked here rather than by an `assert`, which only holds in debug builds:
+  /// a release build would take a negative calorie target, store it, and then
+  /// fail somewhere entirely different when the gram targets are derived from
+  /// it. Rejecting it right at the entry point puts the error where the value
+  /// comes from, which is where the UI can react to it.
+  factory UserProfile({
+    int? heightCm,
+    BiologicalSex? sex,
+    DateTime? birthDate,
+    ActivityLevel? activityLevel,
+    WeightGoal goal = WeightGoal.maintain,
+    int? calorieTarget,
+    MacroDistribution macros = MacroDistribution.standard,
+  }) {
+    if (heightCm != null && heightCm <= 0) {
+      throw ArgumentError.value(heightCm, 'heightCm', 'must be positive');
+    }
+    if (calorieTarget != null && calorieTarget <= 0) {
+      throw ArgumentError.value(
+        calorieTarget,
+        'calorieTarget',
+        'must be positive',
+      );
+    }
+
+    return UserProfile._(
+      heightCm: heightCm,
+      sex: sex,
+      birthDate: birthDate,
+      activityLevel: activityLevel,
+      goal: goal,
+      calorieTarget: calorieTarget,
+      macros: macros,
+    );
+  }
+
+  /// A profile with nothing filled in — what the app starts on before the user
+  /// has entered anything.
+  static const empty = UserProfile._();
 
   /// Body height in centimetres.
   final int? heightCm;

@@ -52,7 +52,7 @@ class UserProfileRepository {
   }
 
   UserProfile _toProfile(UserProfileRow? row) {
-    if (row == null) return const UserProfile();
+    if (row == null) return UserProfile.empty;
 
     return UserProfile(
       heightCm: row.heightCm,

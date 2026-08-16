@@ -37,7 +37,7 @@ void main() {
 
   group('read', () {
     test('reports the default profile before anything was saved', () async {
-      expect(await repository.read(), const UserProfile());
+      expect(await repository.read(), UserProfile.empty);
     });
 
     test('gives back every value that was saved', () async {
@@ -101,7 +101,7 @@ void main() {
       await repository.save(filledProfile);
       await pumpEventQueue();
 
-      expect(seen, [const UserProfile(), filledProfile]);
+      expect(seen, [UserProfile.empty, filledProfile]);
     });
   });
 

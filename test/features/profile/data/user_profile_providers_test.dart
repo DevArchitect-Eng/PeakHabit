@@ -27,7 +27,7 @@ void main() {
   test('hands out a repository on the app database', () async {
     final repository = container.read(userProfileRepositoryProvider);
 
-    await repository.save(const UserProfile(heightCm: 175));
+    await repository.save(UserProfile(heightCm: 175));
 
     final rows = await database.select(database.userProfiles).get();
     expect(rows.single.heightCm, 175);
@@ -41,19 +41,16 @@ void main() {
     );
     addTearDown(subscription.close);
 
-    expect(
-      await container.read(userProfileProvider.future),
-      const UserProfile(),
-    );
+    expect(await container.read(userProfileProvider.future), UserProfile.empty);
 
     await container
         .read(userProfileRepositoryProvider)
-        .save(const UserProfile(heightCm: 175, goal: WeightGoal.gain));
+        .save(UserProfile(heightCm: 175, goal: WeightGoal.gain));
     await pumpEventQueue();
 
     expect(
       container.read(userProfileProvider).value,
-      const UserProfile(heightCm: 175, goal: WeightGoal.gain),
+      UserProfile(heightCm: 175, goal: WeightGoal.gain),
     );
   });
 }

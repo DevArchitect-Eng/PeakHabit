@@ -3,9 +3,30 @@ import 'package:peakhabit/features/profile/domain/macro_distribution.dart';
 import 'package:peakhabit/features/profile/domain/user_profile.dart';
 
 void main() {
+  group('validation', () {
+    test('rejects a calorie target of zero or less', () {
+      // Rejected outright, not by an assert: a release build would otherwise
+      // store the value and only fail later, when the grams are derived.
+      expect(() => UserProfile(calorieTarget: 0), throwsArgumentError);
+      expect(() => UserProfile(calorieTarget: -100), throwsArgumentError);
+    });
+
+    test('rejects a height of zero or less', () {
+      expect(() => UserProfile(heightCm: 0), throwsArgumentError);
+      expect(() => UserProfile(heightCm: -5), throwsArgumentError);
+    });
+
+    test('rejects a bad value passed through copyWith as well', () {
+      expect(
+        () => UserProfile.empty.copyWith(calorieTarget: -1),
+        throwsArgumentError,
+      );
+    });
+  });
+
   group('defaults', () {
     test('a fresh profile keeps the goal and the standard macro split', () {
-      const profile = UserProfile();
+      final profile = UserProfile();
 
       expect(profile.goal, WeightGoal.maintain);
       expect(profile.macros, MacroDistribution.standard);
@@ -19,18 +40,18 @@ void main() {
 
   group('macro targets', () {
     test('stay null while no calorie target is set', () {
-      expect(const UserProfile().macroTargets, isNull);
+      expect(UserProfile.empty.macroTargets, isNull);
     });
 
     test('come from the calorie target and the split', () {
-      const profile = UserProfile(calorieTarget: 2000);
+      final profile = UserProfile(calorieTarget: 2000);
 
       expect(profile.macroTargets?.proteinGrams, 150);
       expect(profile.macroTargets?.carbGrams, 200);
     });
 
     test('change with the calorie target without touching the split', () {
-      const profile = UserProfile(calorieTarget: 2000);
+      final profile = UserProfile(calorieTarget: 2000);
 
       final raised = profile.copyWith(calorieTarget: 2400);
 
@@ -41,7 +62,7 @@ void main() {
 
   group('age', () {
     test('is null without a birth date', () {
-      expect(const UserProfile().ageOn(DateTime(2026, 8, 16)), isNull);
+      expect(UserProfile.empty.ageOn(DateTime(2026, 8, 16)), isNull);
     });
 
     test('counts full years after the birthday', () {
@@ -85,7 +106,7 @@ void main() {
     });
 
     test('clears a value that is passed as null', () {
-      const profile = UserProfile(heightCm: 182, calorieTarget: 2200);
+      final profile = UserProfile(heightCm: 182, calorieTarget: 2200);
 
       final cleared = profile.copyWith(calorieTarget: null);
 

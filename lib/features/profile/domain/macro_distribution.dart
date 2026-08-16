@@ -15,9 +15,9 @@ class MacroDistribution {
     required int carbPercent,
     required int fatPercent,
   }) {
-    _requirePositiveShare('proteinPercent', proteinPercent);
-    _requirePositiveShare('carbPercent', carbPercent);
-    _requirePositiveShare('fatPercent', fatPercent);
+    _requireNonNegativeShare('proteinPercent', proteinPercent);
+    _requireNonNegativeShare('carbPercent', carbPercent);
+    _requireNonNegativeShare('fatPercent', fatPercent);
 
     final total = proteinPercent + carbPercent + fatPercent;
     if (total != 100) {
@@ -63,7 +63,7 @@ class MacroDistribution {
     );
   }
 
-  static void _requirePositiveShare(String name, int value) {
+  static void _requireNonNegativeShare(String name, int value) {
     if (value < 0) {
       throw ArgumentError.value(value, name, 'must not be negative');
     }
