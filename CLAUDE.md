@@ -31,6 +31,8 @@ duplizieren. Kurzfassung:
   **Tabellen entstehen pro Feature**, nicht als vorab entworfenes Gesamtschema — jedes Ticket
   bringt die Tabelle mit, die es braucht, samt Migration. Die Schritte dafür stehen in
   `docs/ARCHITECTURE.md`
+- Logging: zentraler `AppLogger` unter `lib/core/logging/`, rein lokal — kein Analytik- oder
+  Crash-Reporting-Dienst. Details in `docs/ARCHITECTURE.md`
 - Design: dark-first, hellblauer Akzent (`#38BDF8`), `themeMode` fest auf dark
 
 Package-Strategie: zurückhaltend. Neue Abhängigkeiten nur, wenn sie ein echtes Problem lösen.

@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../logging/app_logger.dart';
 import 'database_connection.dart';
 
 part 'app_database.g.dart';
@@ -21,10 +22,15 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (m) => m.createAll(),
+    onCreate: (m) async {
+      AppLogger.database.info('Creating schema at version $schemaVersion');
+      await m.createAll();
+    },
     onUpgrade: (m, from, to) async {
+      AppLogger.database.info('Migrating database from $from to $to');
       // Each feature that raises `schemaVersion` to n adds its own
       // `if (from < n) { ... }` block here.
+      AppLogger.database.info('Migration to $to complete');
     },
     beforeOpen: (details) async {
       // SQLite ignores foreign keys unless they are switched on per connection.
@@ -36,5 +42,16 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// Called once at app start so the schema is brought up to date at a defined
   /// point instead of on whichever query happens to run first.
-  Future<void> open() => executor.ensureOpen(this);
+  Future<void> open() async {
+    AppLogger.database.info('Opening database');
+    await executor.ensureOpen(this);
+    AppLogger.database.info('Database opened');
+  }
+
+  @override
+  Future<void> close() async {
+    AppLogger.database.info('Closing database');
+    await super.close();
+    AppLogger.database.info('Database closed');
+  }
 }
