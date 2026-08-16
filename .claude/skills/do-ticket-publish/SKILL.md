@@ -51,7 +51,9 @@ gh pr checks --watch
 ```
 
 Bei Rot gezielt reparieren, **maximal 3 Versuche**. Danach PR offen lassen und als blockiert
-melden.
+melden. Hat eine Reparatur den Code verändert, betroffene Akzeptanzkriterien im Issue erneut
+prüfen und bei Bedarf nachträglich abhaken (Details in `conventions.md`) — beim
+`/do-ticket-prepare`-Schritt waren sie noch nicht davon betroffen.
 
 ### 5. Merge-Gate
 

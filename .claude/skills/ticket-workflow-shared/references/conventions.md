@@ -43,6 +43,30 @@ Hinweis: Die native Simulator-Integration setzt voraus, dass der Nutzer einmalig
 fehl, ersatzweise über `xcrun simctl` bauen/installieren/screenshotten und das im Bericht
 offenlegen.
 
+## Akzeptanzkriterien abhaken
+
+Sobald Umsetzung, lokale Verifikation und Review abgeschlossen sind — in `/do-ticket` und
+`/do-ticket-prepare` also nach Schritt „Review", vor PR bzw. vor dem Stopp —, das
+Issue erneut lesen und jedes Akzeptanzkriterium **einzeln** gegen das tatsächliche Ergebnis
+prüfen: bestandener Test, beobachtetes Verhalten im Simulator/Emulator, tatsächlich
+vorhandener Code. Nicht raten und nicht pauschal alles abhaken, nur weil das Ticket
+insgesamt fertig wirkt.
+
+- Nachweislich erfüllte Kriterien im Issue-Body von `- [ ]` auf `- [x]` setzen:
+  ```bash
+  gh issue edit <nummer> --body "<vollständiger, aktualisierter Body>"
+  ```
+  Der gesamte Body wird neu geschrieben — nur die betroffenen Checkbox-Zeilen ändern sich,
+  alles andere bleibt wortgleich erhalten.
+- Nicht erfüllte Kriterien bleiben unverändert. Grund im Abschlussbericht bzw. im PR-Body
+  unter „Offene Risiken / Annahmen" nennen, nicht stillschweigend übergehen.
+- Tickets im leichtgewichtigen Bug-Format (kein `## Akzeptanzkriterien`-Block) — dieser
+  Schritt entfällt ersatzlos, da nichts zum Abhaken existiert.
+- Das ist eine normale Issue-Bearbeitung, keine Merge-Aktion — läuft ohne Rückfrage
+  (siehe „GitHub-Schreibaktionen").
+- Ändert eine spätere CI-Reparatur in `/do-ticket-publish` noch den Code, die betroffenen
+  Kriterien vor dem Merge-Gate erneut prüfen.
+
 ## Pull Requests
 
 Titel wie der Commit-Betreff, plus Referenz aufs Issue im Body (`Closes #42`).
@@ -100,8 +124,8 @@ nicht nur die PR-Ansicht während der Review. Branch nach dem Merge löschen.
 
 ## GitHub-Schreibaktionen
 
-Erlaubt ohne Rückfrage: Issues anlegen/kommentieren, Board-Status setzen, Branch pushen,
-PR öffnen.
+Erlaubt ohne Rückfrage: Issues anlegen/kommentieren/bearbeiten (inkl. Akzeptanzkriterien
+abhaken), Board-Status setzen, Branch pushen, PR öffnen.
 
 Nur mit ausdrücklicher Freigabe: Merge, Issues schließen, Branch-Protection, Repository-
 Einstellungen, Secrets, Labels löschen.

@@ -69,26 +69,34 @@ erneut ausführen.
 
 Kostenpflichtige oder nutzergetriggerte Review-Modi nie selbst auslösen.
 
-### 8. PR öffnen
+### 8. Akzeptanzkriterien abhaken
+
+Jedes Akzeptanzkriterium einzeln gegen das tatsächliche Ergebnis prüfen und nachweislich
+erfüllte im Issue-Body abhaken. **Selbständig, ohne nachzufragen** — Details und der
+`gh issue edit`-Befehl stehen in `conventions.md`. Nicht erfüllte bleiben unverändert und
+werden im PR-Body unter „Offene Risiken / Annahmen" genannt.
+
+### 9. PR öffnen
 
 Push, dann PR mit der Body-Struktur aus `conventions.md`. Board auf „In Review".
 
-### 9. CI
+### 10. CI
 
 ```bash
 gh pr checks --watch
 ```
 
 Bei Rot gezielt reparieren, maximal 3 Versuche. Danach anhalten, PR offen lassen, als
-blockiert melden.
+blockiert melden. Hat eine Reparatur den Code verändert, betroffene Akzeptanzkriterien aus
+Schritt 8 erneut prüfen.
 
-### 10. Merge-Gate
+### 11. Merge-Gate
 
 Policy ist konservativ: **niemals selbst mergen.** Bei grüner CI und sauberem Review den PR
 zur Freigabe vorlegen und anhalten. Board bleibt auf „In Review", bis der Nutzer gemergt hat;
 danach auf „Done" setzen.
 
-### 11. Nebenbefunde
+### 12. Nebenbefunde
 
 Echte Funde außerhalb des Scopes als eigenes Issue anlegen, nicht nur im Chat erwähnen.
 Format nach `../ticket-workflow-shared/references/ticket-format.md`, dabei Label
