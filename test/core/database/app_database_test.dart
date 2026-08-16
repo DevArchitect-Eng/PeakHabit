@@ -29,14 +29,14 @@ void main() {
     final messages = captured.map((entry) => entry.message).toList();
     expect(messages, [
       'Opening database',
-      'Creating schema at version 2',
+      'Creating schema at version 3',
       'Database opened',
       'Closing database',
       'Database closed',
     ]);
   });
 
-  test('creates a fresh database at schema version 2', () async {
+  test('creates a fresh database at schema version 3', () async {
     final database = AppDatabase.inMemory();
     addTearDown(database.close);
 
@@ -45,7 +45,7 @@ void main() {
     // Pinned to the literal version on purpose: raising `schemaVersion` should
     // force a look at this test, and with it at the matching migration step.
     final row = await database.customSelect('PRAGMA user_version').getSingle();
-    expect(row.read<int>('user_version'), 2);
+    expect(row.read<int>('user_version'), 3);
   });
 
   test('enforces foreign keys', () async {
@@ -58,39 +58,63 @@ void main() {
     expect(row.read<int>('foreign_keys'), 1);
   });
 
-  test('carries the profile table', () async {
+  test('carries the feature tables', () async {
     final database = AppDatabase.inMemory();
     addTearDown(database.close);
 
     expect(
       database.allTables.map((table) => table.actualTableName),
-      contains('user_profiles'),
+      containsAll(['user_profiles', 'app_settings']),
     );
   });
 
-  test('migrates an installation that still runs version 1', () async {
-    final directory = await Directory.systemTemp.createTemp('peakhabit_test');
-    addTearDown(() => directory.delete(recursive: true));
-    final file = File(p.join(directory.path, 'peakhabit.sqlite'));
+  group('migration', () {
+    late Directory directory;
+    late File file;
 
-    // Rewind a fresh database to what a version-1 installation left behind:
-    // the plumbing, but none of the feature tables.
-    final legacy = AppDatabase.atFile(file);
-    await legacy.open();
-    await legacy.customStatement('DROP TABLE user_profiles');
-    await legacy.customStatement('PRAGMA user_version = 1');
-    await legacy.close();
+    setUp(() async {
+      directory = await Directory.systemTemp.createTemp('peakhabit_test');
+      file = File(p.join(directory.path, 'peakhabit.sqlite'));
+    });
 
-    final migrated = AppDatabase.atFile(file);
-    addTearDown(migrated.close);
-    await migrated.open();
+    tearDown(() => directory.delete(recursive: true));
 
-    final tables = await migrated
-        .customSelect(
-          "SELECT name FROM sqlite_master "
-          "WHERE type = 'table' AND name = 'user_profiles'",
-        )
-        .get();
-    expect(tables, hasLength(1));
+    /// Rewinds a fresh database to what an older installation left behind:
+    /// the plumbing, minus the tables that only came later.
+    Future<void> rewindTo(int version, List<String> droppedTables) async {
+      final legacy = AppDatabase.atFile(file);
+      await legacy.open();
+      for (final table in droppedTables) {
+        await legacy.customStatement('DROP TABLE $table');
+      }
+      await legacy.customStatement('PRAGMA user_version = $version');
+      await legacy.close();
+    }
+
+    Future<List<String>> tablesAfterOpening() async {
+      final migrated = AppDatabase.atFile(file);
+      addTearDown(migrated.close);
+      await migrated.open();
+
+      final rows = await migrated
+          .customSelect("SELECT name FROM sqlite_master WHERE type = 'table'")
+          .get();
+      return rows.map((row) => row.read<String>('name')).toList();
+    }
+
+    test('brings an installation on version 1 up to date', () async {
+      await rewindTo(1, ['user_profiles', 'app_settings']);
+
+      expect(
+        await tablesAfterOpening(),
+        containsAll(['user_profiles', 'app_settings']),
+      );
+    });
+
+    test('adds the settings table to an installation on version 2', () async {
+      await rewindTo(2, ['app_settings']);
+
+      expect(await tablesAfterOpening(), contains('app_settings'));
+    });
   });
 }
