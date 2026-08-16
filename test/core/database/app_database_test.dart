@@ -1,12 +1,36 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peakhabit/core/database/app_database.dart';
+import 'package:peakhabit/core/logging/app_logger.dart';
 
 void main() {
+  setUp(() {
+    AppLogger.output = (_) {};
+  });
+
   test('opens an in-memory database and closes it again', () async {
     final database = AppDatabase.inMemory();
 
     await database.open();
     await database.close();
+  });
+
+  test('logs opening, schema creation and closing', () async {
+    final captured = <LogEntry>[];
+    AppLogger.output = captured.add;
+    final database = AppDatabase.inMemory();
+
+    await database.open();
+    await database.close();
+
+    expect(captured.every((entry) => entry.component == 'database'), isTrue);
+    final messages = captured.map((entry) => entry.message).toList();
+    expect(messages, [
+      'Opening database',
+      'Creating schema at version 1',
+      'Database opened',
+      'Closing database',
+      'Database closed',
+    ]);
   });
 
   test('creates a fresh database at schema version 1', () async {
