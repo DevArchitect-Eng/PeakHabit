@@ -18,6 +18,7 @@ lib/
   app.dart                      MaterialApp.router, Theme- und Router-Bindung
   core/
     database/                   Drift-Datenbank, Verbindung, Provider
+    logging/                    AppLogger, Lifecycle- und Fehler-Hooks
     router/app_router.dart      go_router-Konfiguration
     theme/app_theme.dart        Farbschema, Light/Dark
   features/
@@ -130,8 +131,43 @@ vorhanden und gepflegt, wird aktuell aber nicht angesteuert.
 
 ### Fehlerbehandlung und Logging
 
-Noch nicht festgelegt. Wird entschieden, sobald der erste echte I/O-Pfad (Datenbank) existiert —
-vorher gäbe es nichts zu behandeln.
+Ein zentraler `AppLogger` unter `lib/core/logging/app_logger.dart` macht den Zustand der App
+während der Entwicklung nachvollziehbar — statt verstreuter `print`-Aufrufe oder gar keiner
+Diagnoseausgabe. **Rein lokal:** Es ist kein Analytik-, Tracking- oder Crash-Reporting-Dienst,
+nichts verlässt das Gerät.
+
+| Datei | Inhalt |
+| --- | --- |
+| `app_logger.dart` | `AppLogger`, Log-Level, `LogEntry`, austauschbare Ausgabe (`AppLogger.output`) |
+| `app_lifecycle_logger.dart` | Widget, das Vordergrund-/Hintergrund-/Inaktiv-Wechsel loggt |
+| `error_logging.dart` | `installGlobalErrorLogging()` für unbehandelte Fehler |
+
+`AppLogger` trägt ein `component`-Tag (z.B. `lifecycle`, `database`, `routing`, `app`) und kennt
+vier Level (`debug`, `info`, `warning`, `error`). Ausgegeben wird über `dart:developer`s `log()`
+auf die Konsole; `AppLogger.minLevel` filtert davor (`debug` im Debug-Build, `warning` sonst),
+`AppLogger.output` lässt sich in Tests durch eine sammelnde Funktion ersetzen, statt echte
+Konsolenausgabe zu erzeugen.
+
+Bereits angebunden:
+
+- **Lifecycle:** `AppLifecycleLogger` umschließt den Router-Inhalt in `app.dart` (`builder:` von
+  `MaterialApp.router`) und loggt jeden `AppLifecycleState`-Wechsel über `AppLogger.lifecycle`.
+- **Datenbank:** `AppDatabase` loggt Öffnen, Schließen sowie `onCreate`/`onUpgrade` (mit
+  Ausgangs- und Zielversion) über `AppLogger.database` — siehe `open()`, `close()` und
+  `migration` in `app_database.dart`.
+- **Routing:** `app_router.dart` hängt einen Listener an `appRouter.routerDelegate`, der bei
+  jedem Tab- oder Routenwechsel die neue URI über `AppLogger.routing` loggt. Ein
+  `NavigatorObserver` reicht hier nicht: `StatefulShellRoute.indexedStack` gibt jedem Tab einen
+  eigenen, verschachtelten Navigator, den der Root-Navigator nicht sieht.
+- **Unbehandelte Fehler:** `installGlobalErrorLogging()` wird in `main.dart` vor `runApp`
+  aufgerufen, verkettet sich vor `FlutterError.onError` und `PlatformDispatcher.instance.onError`
+  und loggt über `AppLogger.app`, ohne das bisherige Verhalten (roter Fehlerbildschirm im Debug,
+  Weiterreichen an die Plattform) zu verändern.
+
+Neue Features nutzen `AppLogger` statt eigener Ad-hoc-Ausgaben — entweder einen der bestehenden
+Komponenten-Logger oder einen neuen `const AppLogger('...')` für einen neuen Bereich.
+Riverpod-Provider-Übergänge und einzelne Datenbank-Statements werden bewusst nicht geloggt, um
+das Debug-Log nicht mit Rauschen zu überfrachten; das lässt sich bei Bedarf gezielt nachrüsten.
 
 ## Navigation
 
