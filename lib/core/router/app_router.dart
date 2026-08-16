@@ -6,6 +6,7 @@ import '../../features/nutrition/presentation/nutrition_screen.dart';
 import '../../features/shell/presentation/app_shell.dart';
 import '../../features/stats/presentation/stats_screen.dart';
 import '../../features/training/presentation/training_screen.dart';
+import '../logging/app_logger.dart';
 
 /// Each tab is its own branch so it keeps an independent navigation stack.
 final appRouter = GoRouter(
@@ -22,7 +23,12 @@ final appRouter = GoRouter(
       ],
     ),
   ],
-);
+)..routerDelegate.addListener(_logRouteChange);
+
+void _logRouteChange() {
+  final uri = appRouter.routerDelegate.currentConfiguration.uri;
+  AppLogger.routing.info('Route changed to $uri');
+}
 
 StatefulShellBranch _branch(String path, Widget child) {
   return StatefulShellBranch(
