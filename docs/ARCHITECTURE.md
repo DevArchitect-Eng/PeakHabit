@@ -28,6 +28,7 @@ lib/
     training/                   Trainingspläne und Workouts
     stats/                      Auswertungen und Diagramme
     profile/                    Nutzerprofil, Kalorien- und Makroziele
+    settings/                   Einstellungen, Theme-Auswahl
 ```
 
 Innerhalb eines Features wird nach Bedarf in `presentation/`, `domain/` und `data/`
@@ -98,6 +99,12 @@ Vorhandene Tabellen:
 | Tabelle | Ab Version | Wo |
 | --- | --- | --- |
 | `user_profiles` | 2 | `lib/features/profile/data/user_profile_table.dart` |
+| `app_settings` | 3 | `lib/features/settings/data/app_settings_table.dart` |
+
+`app_settings` ist wie `user_profiles` eine Ein-Zeilen-Tabelle. Weitere Einstellungen kommen
+als weitere Spalten dazu, nicht als eigene Tabellen. Bewusst hier statt in
+`shared_preferences`: Der Theme-Modus wäre der einzige Wert dort, und ein zweiter
+Speicherort kostet mehr als die Spalte einspart.
 
 Der Grund: Ein vorab entworfenes Gesamtschema müsste beim Anbinden der einzelnen Features
 ohnehin wieder geändert werden, und ungenutzte Tabellen lassen sich nicht sinnvoll testen.
@@ -138,8 +145,16 @@ mit committen.
 
 ### Design: dark-first mit hellblauem Akzent
 
-Seed-Farbe `#38BDF8`. `themeMode` steht fest auf `ThemeMode.dark`; ein Light-Theme ist
-vorhanden und gepflegt, wird aktuell aber nicht angesteuert.
+Seed-Farbe `#38BDF8`. Dark ist der Standard: Solange nichts gespeichert ist, läuft die App
+dunkel. Im Einstellungen-Tab lässt sich zwischen Dark, Light und der Systemeinstellung
+wählen; die Auswahl liegt als `AppThemeMode` in der Datenbank.
+
+`app.dart` beobachtet dafür `themeModeProvider` und übersetzt den Wert nach `ThemeMode`.
+Warum ein eigenes Enum statt Flutters `ThemeMode`: Die Namen landen als Text in der
+Datenbank und sollen nicht an einem Framework-Typ hängen.
+
+`main.dart` liest den gespeicherten Wert vor dem ersten Frame, damit die App nicht sichtbar
+von einem Theme ins andere springt.
 
 ### Fehlerbehandlung und Logging
 
@@ -183,7 +198,7 @@ das Debug-Log nicht mit Rauschen zu überfrachten; das lässt sich bei Bedarf ge
 
 ## Navigation
 
-Vier Tabs in der Bottom-Navigation:
+Fünf Tabs in der Bottom-Navigation:
 
 | Tab | Route | Inhalt |
 | --- | --- | --- |
@@ -191,3 +206,7 @@ Vier Tabs in der Bottom-Navigation:
 | Ernährung | `/nutrition` | Mahlzeiten und Nährwerte tracken |
 | Training | `/training` | Trainingspläne erstellen, Workouts starten |
 | Statistik | `/stats` | Trainingsfortschritt, Gewichtsverlauf, Auswertungen |
+| Optionen | `/settings` | Darstellung, Zugang zum Profil |
+
+Unterseiten eines Tabs sind verschachtelte Routen seines Branches, damit die Bottom-Navigation
+stehen bleibt und der Tab seine Position behält — `/settings/profile` ist das erste Beispiel.

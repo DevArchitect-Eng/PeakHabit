@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:peakhabit/app.dart';
 import 'package:peakhabit/core/logging/app_logger.dart';
+
+import '../../support/pump_app.dart';
 
 void main() {
   late List<LogEntry> captured;
@@ -17,8 +17,7 @@ void main() {
   });
 
   testWidgets('logs the new route when switching tabs', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: PeakHabitApp()));
-    await tester.pumpAndSettle();
+    await pumpApp(tester);
 
     captured.clear();
 

@@ -6,6 +6,8 @@ import '../../features/profile/data/user_profile_table.dart';
 // The generated part file names the enums and converters used by the tables
 // below, so the library that owns it has to import them too.
 import '../../features/profile/domain/user_profile.dart';
+import '../../features/settings/data/app_settings_table.dart';
+import '../../features/settings/domain/app_theme_mode.dart';
 import '../logging/app_logger.dart';
 import 'database_connection.dart';
 import 'date_only_converter.dart';
@@ -17,7 +19,7 @@ part 'app_database.g.dart';
 /// Every table is added by the feature that needs it, together with the
 /// migration step that creates it — see `docs/ARCHITECTURE.md` for how to do
 /// that.
-@DriftDatabase(tables: [UserProfiles])
+@DriftDatabase(tables: [UserProfiles, AppSettings])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openDatabaseFile());
 
@@ -29,7 +31,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.atFile(File file) : super(openDatabaseAtFile(file));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -43,6 +45,9 @@ class AppDatabase extends _$AppDatabase {
       // `if (from < n) { ... }` block here.
       if (from < 2) {
         await m.createTable(userProfiles);
+      }
+      if (from < 3) {
+        await m.createTable(appSettings);
       }
       AppLogger.database.info('Migration to $to complete');
     },

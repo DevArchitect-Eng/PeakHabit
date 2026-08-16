@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/nutrition/presentation/nutrition_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/shell/presentation/app_shell.dart';
 import '../../features/stats/presentation/stats_screen.dart';
 import '../../features/training/presentation/training_screen.dart';
@@ -20,6 +22,18 @@ final appRouter = GoRouter(
         _branch('/nutrition', const NutritionScreen()),
         _branch('/training', const TrainingScreen()),
         _branch('/stats', const StatsScreen()),
+        _branch(
+          '/settings',
+          const SettingsScreen(),
+          // Stays inside the settings branch, so the bottom navigation keeps
+          // its place and the tab remembers where it was.
+          routes: [
+            GoRoute(
+              path: 'profile',
+              builder: (context, state) => const ProfileScreen(),
+            ),
+          ],
+        ),
       ],
     ),
   ],
@@ -30,8 +44,14 @@ void _logRouteChange() {
   AppLogger.routing.info('Route changed to $uri');
 }
 
-StatefulShellBranch _branch(String path, Widget child) {
+StatefulShellBranch _branch(
+  String path,
+  Widget child, {
+  List<RouteBase> routes = const [],
+}) {
   return StatefulShellBranch(
-    routes: [GoRoute(path: path, builder: (context, state) => child)],
+    routes: [
+      GoRoute(path: path, builder: (context, state) => child, routes: routes),
+    ],
   );
 }
