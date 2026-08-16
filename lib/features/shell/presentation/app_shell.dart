@@ -37,10 +37,12 @@ class AppShell extends StatelessWidget {
             selectedIcon: Icon(Icons.insights),
             label: 'Statistik',
           ),
+          // "Einstellungen" is what the screen itself is called, but as the
+          // fifth label it wraps and breaks the bar on a phone-sized screen.
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),
             selectedIcon: Icon(Icons.settings),
-            label: 'Einstellungen',
+            label: 'Optionen',
           ),
         ],
       ),

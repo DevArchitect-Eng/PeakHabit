@@ -10,9 +10,7 @@ void main() {
       Theme.of(tester.element(find.byType(SettingsScreen))).brightness;
 
   Future<void> openSettings(WidgetTester tester) async {
-    await tester.tap(
-      find.widgetWithText(NavigationDestination, 'Einstellungen'),
-    );
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Optionen'));
     await tester.pumpAndSettle();
   }
 

@@ -17,7 +17,7 @@ void main() {
       ('Ernährung', 'Ernährung'),
       ('Training', 'Trainingspläne'),
       ('Statistik', 'Statistik'),
-      ('Einstellungen', 'Darstellung'),
+      ('Optionen', 'Darstellung'),
     ]) {
       await tester.tap(find.widgetWithText(NavigationDestination, label));
       await tester.pumpAndSettle();

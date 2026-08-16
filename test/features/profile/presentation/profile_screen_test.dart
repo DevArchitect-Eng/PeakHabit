@@ -10,9 +10,7 @@ import '../../../support/pump_app.dart';
 
 void main() {
   Future<void> openProfile(WidgetTester tester) async {
-    await tester.tap(
-      find.widgetWithText(NavigationDestination, 'Einstellungen'),
-    );
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Optionen'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Profil bearbeiten'));
     await tester.pumpAndSettle();
