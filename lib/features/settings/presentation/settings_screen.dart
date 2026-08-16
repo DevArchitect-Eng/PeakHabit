@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../data/settings_providers.dart';
 import '../domain/app_theme_mode.dart';
@@ -22,6 +23,7 @@ class SettingsScreen extends StatelessWidget {
             title: 'Darstellung',
             children: [_ThemeModeSetting()],
           ),
+          SettingsSection(title: 'Persönliches', children: [_ProfileTile()]),
         ],
       ),
     );
@@ -57,6 +59,22 @@ class SettingsSection extends StatelessWidget {
         ),
         ...children,
       ],
+    );
+  }
+}
+
+/// Way into the profile, so the onboarding values can be corrected later.
+class _ProfileTile extends StatelessWidget {
+  const _ProfileTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.person_outline),
+      title: const Text('Profil bearbeiten'),
+      subtitle: const Text('Größe, Geschlecht, Ziel und Kalorienziel'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.go('/settings/profile'),
     );
   }
 }

@@ -56,13 +56,13 @@ void main() {
   testWidgets('the app starts in the theme that was chosen before', (
     tester,
   ) async {
-    final settings = await pumpApp(tester);
+    final stores = await pumpApp(tester);
     await openSettings(tester);
     await tester.tap(find.text('Hell'));
     await tester.pumpAndSettle();
 
     // Same stored values, fresh app — what a restart looks like from here.
-    await pumpApp(tester, settings: settings);
+    await pumpApp(tester, on: stores);
     await openSettings(tester);
 
     expect(renderedBrightness(tester), Brightness.light);
