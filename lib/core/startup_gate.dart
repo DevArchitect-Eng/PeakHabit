@@ -58,6 +58,7 @@ class _StartupGateState extends State<StartupGate> {
   }
 
   Future<void> _attempt() async {
+    if (!mounted) return;
     setState(() => _phase = _Phase.loading);
 
     final container = widget.containerBuilder();
@@ -76,12 +77,20 @@ class _StartupGateState extends State<StartupGate> {
       return;
     }
     setState(() {
+      // Nothing should be here yet, but an attempt that overtook another one
+      // must not leave the loser's database connection open forever.
+      _container?.dispose();
       _container = container;
       _phase = _Phase.ready;
     });
   }
 
   Future<void> _reset() async {
+    // Off the error screen first: deleting the file is asynchronous, and the
+    // buttons would otherwise stay live long enough to start a second attempt
+    // alongside this one.
+    setState(() => _phase = _Phase.loading);
+
     try {
       await widget.deleteDatabase();
     } catch (error, stackTrace) {

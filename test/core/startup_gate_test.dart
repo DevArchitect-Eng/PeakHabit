@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peakhabit/core/database/app_database.dart';
@@ -138,5 +140,56 @@ void main() {
     expect(deleteCalled, isTrue);
     expect(find.byType(StartupErrorScreen), findsNothing);
     expect(find.text('Startseite'), findsOneWidget);
+  });
+
+  testWidgets('takes the recovery screen down while the reset runs', (
+    tester,
+  ) async {
+    final database = _FakeDatabase();
+    // Holds the deletion open so the gap between confirming and starting over
+    // can be inspected.
+    final deleting = Completer<void>();
+
+    await tester.pumpWidget(
+      StartupGate(
+        containerBuilder: () => buildContainer(database),
+        deleteDatabase: () => deleting.future,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('App-Daten zurücksetzen'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Zurücksetzen'));
+    await tester.pump();
+
+    // Were the buttons still up here, a second tap would race a second startup
+    // attempt against this one and leak the loser's database connection.
+    expect(find.byType(StartupErrorScreen), findsNothing);
+
+    database.succeed = true;
+    deleting.complete();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Startseite'), findsOneWidget);
+  });
+
+  testWidgets('stays on the recovery screen when the reset itself fails', (
+    tester,
+  ) async {
+    final database = _FakeDatabase();
+
+    await tester.pumpWidget(
+      StartupGate(
+        containerBuilder: () => buildContainer(database),
+        deleteDatabase: () async => throw Exception('the file is not writable'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('App-Daten zurücksetzen'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Zurücksetzen'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(StartupErrorScreen), findsOneWidget);
   });
 }
