@@ -73,8 +73,8 @@ Die Datei heißt `peakhabit.sqlite` und liegt im App-Support-Verzeichnis
 Dateien gedacht, die der Nutzer selbst sieht, und taucht in der Files-App auf, sobald File
 Sharing aktiviert wird. Geöffnet wird die Datei über `warmUp()` (`lib/core/startup.dart`) vor
 dem ersten Frame, damit Migrationen an einer definierten Stelle laufen und nicht bei der
-ersten Query, die zufällig zuerst kommt. Schlägt das Öffnen fehl, greift der Recovery-Screen
-aus § Fehlerbehandlung und Logging statt eines leeren Bildschirms. Fremdschlüssel sind per
+ersten Query, die zufällig zuerst kommt. Schlägt das Öffnen fehl — oder hängt es —, greift der
+Recovery-Screen aus § Fehlerbehandlung und Logging statt eines leeren Bildschirms. Fremdschlüssel sind per
 `PRAGMA foreign_keys = ON` eingeschaltet — SQLite ignoriert sie sonst.
 
 #### Backups
@@ -204,7 +204,17 @@ Bereits angebunden:
   Monate an Tracking-Historie löschen; ein reiner „nur melden"-Screen wäre dagegen eine
   Sackgasse für Nutzer ohne Dateisystemzugriff. Kein Degraded-Mode: Die Datenbank ist praktisch
   die gesamte Datenschicht, ein eingeschränkter Betrieb ohne sie könnte kaum etwas sinnvoll
-  anzeigen. Jeder Versuch bekommt einen frischen `ProviderContainer` — ein erneuter Versuch
+  anzeigen. Ein `warmUp()`, das gar nicht erst zurückkehrt (gesperrte Datenbankdatei, nie
+  erfüllter Provider), landet nach `startupTimeout` = **15 Sekunden** auf demselben Screen,
+  nur mit eigenem Text („Die Datenbank antwortet nicht.") und einer Warnung statt eines
+  Fehlers im Log — sonst wäre der leere Bildschirm über einen anderen Weg zurück (#28). Die
+  Wartezeit **bricht nichts ab**: `Future.timeout` kündigt nicht, eine bloß langsame Migration
+  über viele Datensätze läuft zu Ende, und ihr Container wird erst danach freigegeben statt
+  die Verbindung mitten in der Migration zu schließen. Genau deshalb darf die Grenze großzügig
+  sein. Ein verspätet doch noch erfolgreicher Start wird geloggt, aber nicht mehr angezeigt:
+  Der Nutzer steht dann längst auf dem Recovery-Screen, womöglich im Bestätigungsdialog, und
+  „Erneut versuchen" ist danach ohnehin schnell. Jeder Versuch bekommt einen frischen
+  `ProviderContainer` — ein erneuter Versuch
   über dieselbe bereits fehlgeschlagene Datenbankverbindung ist nicht garantiert erfolgreich.
 
 Neue Features nutzen `AppLogger` statt eigener Ad-hoc-Ausgaben — entweder einen der bestehenden
