@@ -89,13 +89,19 @@ class _RecoveryBody extends StatelessWidget {
           'Alle gespeicherten Daten werden unwiderruflich gelöscht und die '
           'App startet mit einer leeren Datenbank neu.',
         ),
+        // Both actions are text buttons: the app-wide FilledButton style is a
+        // full-width one for forms, which would blow up the dialog's action
+        // row and push the buttons onto separate lines.
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Abbrechen'),
           ),
-          FilledButton(
+          TextButton(
             onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Zurücksetzen'),
           ),
         ],
