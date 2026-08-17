@@ -56,6 +56,58 @@ Die drei Prüfungen `dart format .`, `flutter analyze` und `flutter test` nach j
 inhaltlichen Änderung ausführen. Die CI
 (`.github/workflows/ci.yml`) prüft dasselbe bei PRs und Pushes auf `main`.
 
+## Tests
+
+Die Suite läuft in **wenigen Sekunden** durch. Dauert `flutter test` spürbar länger, ist es
+kein langsames Projekt, sondern ein hängender Test — nicht warten, sondern nachsehen.
+
+### Keine echte Datenbank in `testWidgets`
+
+**Das ist die mit Abstand häufigste Ursache für einen hängenden Test.** Die Fake-Async-Zone
+von `testWidgets` und drifts asynchrone Queries vertragen sich nicht: Der Test läuft nicht
+in einen Fehler, sondern hängt, bis nach zehn Minuten der Framework-Timeout zuschlägt.
+
+In einem Widget-Test deshalb **nie** ein echtes `AppDatabase` verwenden — auch kein
+`AppDatabase.inMemory()`. Stattdessen die Repositories überschreiben:
+
+```dart
+ProviderScope(
+  overrides: [
+    settingsRepositoryProvider.overrideWithValue(InMemorySettingsRepository()),
+    userProfileRepositoryProvider.overrideWithValue(InMemoryUserProfileRepository()),
+  ],
+  ...
+)
+```
+
+Die Fakes liegen unter `test/support/`, `pump_app.dart` verdrahtet sie fertig. Muss ein Test
+das Verhalten der Datenbank selbst prüfen, gehört er in einen normalen `test()` außerhalb
+von `testWidgets` — so wie die Repository- und Migrationstests.
+
+Braucht ein Widget-Test trotzdem ein `AppDatabase` als Typ (z.B. um ein fehlschlagendes
+`open()` zu erzwingen), dann als Fake, der **kein** `super.open()` aufruft und nie eine
+Query absetzt — siehe `_FakeDatabase` in `test/core/startup_gate_test.dart`.
+
+Zwei weitere Hänger-Ursachen, beide schon aufgetreten:
+
+- Ein `CircularProgressIndicator` (oder jede andere unbestimmte Animation) wird nie
+  „settled" — `pumpAndSettle()` läuft dagegen in den Timeout.
+- Ein `await` auf ein Riverpod-`.future`, dessen Provider niemand abonniert hat, wird nie
+  erfüllt (siehe `warmUp()` in `lib/core/startup.dart`).
+
+### Ausgabe nicht durch `tail` schicken
+
+`flutter test | tail -50` puffert bis zum Prozessende — bei einem hängenden Test sieht man
+deshalb gar nichts und hält den Lauf fälschlich für langsam. Lieber in eine Datei umleiten
+und die dann ansehen, oder einzelne Dateien gezielt laufen lassen:
+
+```bash
+flutter test test/core/startup_gate_test.dart --reporter expanded
+```
+
+Bei einem hängenden Lauf hilft `--timeout 30s`, damit der Test abbricht und den Stacktrace
+zeigt, statt zehn Minuten zu blockieren.
+
 ## Commits
 
 Gilt für **jeden** Commit — Ticket-Arbeit, Setup-Änderungen, Doku, alles.
