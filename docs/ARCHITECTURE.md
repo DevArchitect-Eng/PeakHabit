@@ -71,10 +71,11 @@ der verschiebt sich zwischen Zeitzonen um Stunden und landet dann auf dem Nachba
 Die Datei heißt `peakhabit.sqlite` und liegt im App-Support-Verzeichnis
 (`getApplicationSupportDirectory()`), nicht im Dokumentenverzeichnis: Letzteres ist für
 Dateien gedacht, die der Nutzer selbst sieht, und taucht in der Files-App auf, sobald File
-Sharing aktiviert wird. Geöffnet wird die Datei in `main.dart` vor dem ersten Frame, damit
-Migrationen an einer definierten Stelle laufen und nicht bei der ersten Query, die zufällig
-zuerst kommt. Fremdschlüssel sind per `PRAGMA foreign_keys = ON` eingeschaltet — SQLite
-ignoriert sie sonst.
+Sharing aktiviert wird. Geöffnet wird die Datei über `warmUp()` (`lib/core/startup.dart`) vor
+dem ersten Frame, damit Migrationen an einer definierten Stelle laufen und nicht bei der
+ersten Query, die zufällig zuerst kommt. Schlägt das Öffnen fehl, greift der Recovery-Screen
+aus § Fehlerbehandlung und Logging statt eines leeren Bildschirms. Fremdschlüssel sind per
+`PRAGMA foreign_keys = ON` eingeschaltet — SQLite ignoriert sie sonst.
 
 #### Backups
 
@@ -190,6 +191,21 @@ Bereits angebunden:
   aufgerufen, verkettet sich vor `FlutterError.onError` und `PlatformDispatcher.instance.onError`
   und loggt über `AppLogger.app`, ohne das bisherige Verhalten (roter Fehlerbildschirm im Debug,
   Weiterreichen an die Plattform) zu verändern.
+- **Datenbank-Öffnen beim Start:** `main.dart` startet nicht mehr direkt `PeakHabitApp`,
+  sondern `StartupGate` (`lib/core/startup_gate.dart`). Das ruft `warmUp()` auf — nicht nur
+  `database.open()`, sondern den gesamten Startpfad inklusive Theme-Provider, siehe #19 — und
+  zeigt bei Erfolg die App, bei einem Fehler den blockierenden `StartupErrorScreen`
+  (`lib/core/startup_error_screen.dart`) statt eines leeren Bildschirms. Der Screen bietet
+  zwei Aktionen: „Erneut versuchen" für transiente Ursachen (z.B. kurzzeitig volle Platte) und
+  „App-Daten zurücksetzen", das die Datenbankdatei über `deleteDatabaseFile()`
+  (`database_connection.dart`) löscht und mit einer frischen Datenbank neu startet — nur nach
+  expliziter Bestätigung in einem Dialog, nie automatisch. Begründung: Die lokale Datenbank ist
+  die einzige Kopie der Nutzerdaten, ein automatisches Verwerfen könnte stillschweigend
+  Monate an Tracking-Historie löschen; ein reiner „nur melden"-Screen wäre dagegen eine
+  Sackgasse für Nutzer ohne Dateisystemzugriff. Kein Degraded-Mode: Die Datenbank ist praktisch
+  die gesamte Datenschicht, ein eingeschränkter Betrieb ohne sie könnte kaum etwas sinnvoll
+  anzeigen. Jeder Versuch bekommt einen frischen `ProviderContainer` — ein erneuter Versuch
+  über dieselbe bereits fehlgeschlagene Datenbankverbindung ist nicht garantiert erfolgreich.
 
 Neue Features nutzen `AppLogger` statt eigener Ad-hoc-Ausgaben — entweder einen der bestehenden
 Komponenten-Logger oder einen neuen `const AppLogger('...')` für einen neuen Bereich.
