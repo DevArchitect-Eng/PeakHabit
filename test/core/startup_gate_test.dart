@@ -32,6 +32,10 @@ class _FakeDatabase extends AppDatabase {
   /// [succeed].
   Completer<void>? blockOpen;
 
+  /// Whether the connection was closed — set by [close], which the container
+  /// runs when it is disposed.
+  bool closed = false;
+
   @override
   Future<void> open() async {
     await blockOpen?.future;
@@ -39,7 +43,9 @@ class _FakeDatabase extends AppDatabase {
   }
 
   @override
-  Future<void> close() async {}
+  Future<void> close() async {
+    closed = true;
+  }
 }
 
 void main() {
@@ -57,7 +63,14 @@ void main() {
 
     return ProviderContainer(
       overrides: [
-        databaseProvider.overrideWithValue(database),
+        // With `overrideWith` rather than `overrideWithValue`, so the close on
+        // dispose of the real provider is in place: whether a container still
+        // holds the database open is exactly what some of the tests below are
+        // about.
+        databaseProvider.overrideWith((ref) {
+          ref.onDispose(database.close);
+          return database;
+        }),
         settingsRepositoryProvider.overrideWithValue(settings),
         userProfileRepositoryProvider.overrideWithValue(profile),
       ],
@@ -232,6 +245,36 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(StartupErrorScreen), findsNothing);
+    expect(find.text('Startseite'), findsOneWidget);
+  });
+
+  testWidgets('the reset closes an overrunning start before deleting', (
+    tester,
+  ) async {
+    final database = _FakeDatabase()..blockOpen = Completer<void>();
+    bool? closedByThen;
+
+    await tester.pumpWidget(
+      StartupGate(
+        containerBuilder: () => buildContainer(database),
+        deleteDatabase: () async {
+          // Deleting the file while the hung start still holds it open would
+          // leave that connection on an unlinked file, next to journal files
+          // the fresh database then picks up.
+          closedByThen = database.closed;
+          database
+            ..succeed = true
+            ..blockOpen = null;
+        },
+      ),
+    );
+    await tester.pump(startupTimeout);
+    await tester.tap(find.text('App-Daten zurücksetzen'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Zurücksetzen'));
+    await tester.pumpAndSettle();
+
+    expect(closedByThen, isTrue);
     expect(find.text('Startseite'), findsOneWidget);
   });
 

@@ -73,9 +73,9 @@ Die Datei heißt `peakhabit.sqlite` und liegt im App-Support-Verzeichnis
 Dateien gedacht, die der Nutzer selbst sieht, und taucht in der Files-App auf, sobald File
 Sharing aktiviert wird. Geöffnet wird die Datei über `warmUp()` (`lib/core/startup.dart`) vor
 dem ersten Frame, damit Migrationen an einer definierten Stelle laufen und nicht bei der
-ersten Query, die zufällig zuerst kommt. Schlägt das Öffnen fehl — oder hängt es —, greift der
-Recovery-Screen aus § Fehlerbehandlung und Logging statt eines leeren Bildschirms. Fremdschlüssel sind per
-`PRAGMA foreign_keys = ON` eingeschaltet — SQLite ignoriert sie sonst.
+ersten Query, die zufällig zuerst kommt. Schlägt das Öffnen fehl — oder hängt es —, greift
+der Recovery-Screen aus § Fehlerbehandlung und Logging statt eines leeren Bildschirms.
+Fremdschlüssel sind per `PRAGMA foreign_keys = ON` eingeschaltet — SQLite ignoriert sie sonst.
 
 #### Backups
 
@@ -213,8 +213,12 @@ Bereits angebunden:
   die Verbindung mitten in der Migration zu schließen. Genau deshalb darf die Grenze großzügig
   sein. Ein verspätet doch noch erfolgreicher Start wird geloggt, aber nicht mehr angezeigt:
   Der Nutzer steht dann längst auf dem Recovery-Screen, womöglich im Bestätigungsdialog, und
-  „Erneut versuchen" ist danach ohnehin schnell. Jeder Versuch bekommt einen frischen
-  `ProviderContainer` — ein erneuter Versuch
+  „Erneut versuchen" ist danach ohnehin schnell. Einzige Ausnahme ist „App-Daten
+  zurücksetzen": Bevor die Datei gelöscht wird, schließt der Gate einen noch laufenden Start
+  doch — sonst schriebe der weiter in eine bereits entfernte Datei, während der nächste
+  Versuch am selben Pfad eine neue anlegt, und die Journal-Dateien daneben hängen am Pfad,
+  nicht an der Datei. Zu schützen gibt es dort nichts mehr, der Nutzer verwirft die Daten ja
+  gerade. Jeder Versuch bekommt einen frischen `ProviderContainer` — ein erneuter Versuch
   über dieselbe bereits fehlgeschlagene Datenbankverbindung ist nicht garantiert erfolgreich.
 
 Neue Features nutzen `AppLogger` statt eigener Ad-hoc-Ausgaben — entweder einen der bestehenden

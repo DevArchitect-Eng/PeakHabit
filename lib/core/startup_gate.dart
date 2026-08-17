@@ -61,6 +61,10 @@ class _StartupGateState extends State<StartupGate> {
   /// What the recovery screen tells the user in [_Phase.error].
   String _errorMessage = StartupErrorScreen.openFailedMessage;
 
+  /// Containers of starts that overran [startupTimeout] and are still running.
+  /// More than one can pile up: every retry that hangs again adds its own.
+  final _overrunning = <ProviderContainer>[];
+
   @override
   void initState() {
     super.initState();
@@ -89,7 +93,9 @@ class _StartupGateState extends State<StartupGate> {
       // Not disposed here, unlike the failure below: `timeout` cancels
       // nothing, so the open is still in flight, and disposing would close the
       // connection out from under a migration that may be halfway through.
-      // Letting go of the container is left to _disposeWhenSettled.
+      // Letting go of the container is left to _disposeWhenSettled — or to
+      // _reset, which has to get rid of it before the file goes.
+      _overrunning.add(container);
       unawaited(_disposeWhenSettled(container, warmingUp));
       if (!mounted) return;
       setState(() {
@@ -143,7 +149,9 @@ class _StartupGateState extends State<StartupGate> {
         stackTrace,
       );
     }
-    container.dispose();
+    // Gone from the list means a reset already closed it; disposing a second
+    // time is not this method's job.
+    if (_overrunning.remove(container)) container.dispose();
   }
 
   Future<void> _reset() async {
@@ -151,6 +159,17 @@ class _StartupGateState extends State<StartupGate> {
     // buttons would otherwise stay live long enough to start a second attempt
     // alongside this one.
     setState(() => _phase = _Phase.loading);
+
+    // A start that overran the timeout still holds the file open. Deleting it
+    // underneath a live connection would leave that connection writing to an
+    // unlinked file while the next attempt creates a new one at the same path
+    // — and the journal files next to it are named after the path, not the
+    // file. Here it is safe to cut the start short: the user has just chosen
+    // to discard the data it was migrating.
+    for (final container in _overrunning) {
+      container.dispose();
+    }
+    _overrunning.clear();
 
     try {
       await widget.deleteDatabase();
