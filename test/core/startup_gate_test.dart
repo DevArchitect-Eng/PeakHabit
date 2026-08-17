@@ -27,8 +27,14 @@ class _FakeDatabase extends AppDatabase {
   /// situation the recovery screen exists for.
   bool succeed = false;
 
+  /// Set to hold [open] open for as long as the test wants — a start that
+  /// hangs instead of failing. Completing it lets the open run on into
+  /// [succeed].
+  Completer<void>? blockOpen;
+
   @override
   Future<void> open() async {
+    await blockOpen?.future;
     if (!succeed) throw Exception('database is broken');
   }
 
@@ -69,6 +75,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(StartupErrorScreen), findsOneWidget);
+    expect(find.text(StartupErrorScreen.openFailedMessage), findsOneWidget);
     expect(find.text('Erneut versuchen'), findsOneWidget);
     expect(find.text('App-Daten zurücksetzen'), findsOneWidget);
   });
@@ -170,6 +177,61 @@ void main() {
     deleting.complete();
     await tester.pumpAndSettle();
 
+    expect(find.text('Startseite'), findsOneWidget);
+  });
+
+  testWidgets('shows the recovery screen when the start hangs', (tester) async {
+    final entries = <LogEntry>[];
+    AppLogger.output = entries.add;
+    final database = _FakeDatabase()..blockOpen = Completer<void>();
+
+    await tester.pumpWidget(
+      StartupGate(containerBuilder: () => buildContainer(database)),
+    );
+    await tester.pump();
+
+    // Still starting: the wait exists for slow devices, not to hurry anyone.
+    expect(find.byType(StartupErrorScreen), findsNothing);
+
+    await tester.pump(startupTimeout);
+
+    expect(find.byType(StartupErrorScreen), findsOneWidget);
+    // A start that has not come back is not the same as one that failed, and
+    // the user reads a different sentence than the log does.
+    expect(find.text(StartupErrorScreen.noResponseMessage), findsOneWidget);
+    expect(find.text(StartupErrorScreen.openFailedMessage), findsNothing);
+    expect(entries.map((entry) => entry.level), [LogLevel.warning]);
+
+    // Let the blocked open finish so nothing stays pending past the test.
+    database
+      ..succeed = true
+      ..blockOpen!.complete();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('retrying works once the overrunning start is through', (
+    tester,
+  ) async {
+    final database = _FakeDatabase()..blockOpen = Completer<void>();
+
+    await tester.pumpWidget(
+      StartupGate(containerBuilder: () => buildContainer(database)),
+    );
+    await tester.pump(startupTimeout);
+    expect(find.byType(StartupErrorScreen), findsOneWidget);
+
+    // The slow start was never cancelled and now arrives — too late for this
+    // attempt, but it leaves a database the next one opens straight away.
+    database
+      ..succeed = true
+      ..blockOpen!.complete();
+    await tester.pumpAndSettle();
+    expect(find.byType(StartupErrorScreen), findsOneWidget);
+
+    await tester.tap(find.text('Erneut versuchen'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(StartupErrorScreen), findsNothing);
     expect(find.text('Startseite'), findsOneWidget);
   });
 
