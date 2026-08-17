@@ -31,3 +31,16 @@ QueryExecutor openInMemoryDatabase() => NativeDatabase.memory();
 /// data on a fresh connection; the app itself goes through [openDatabaseFile],
 /// which picks the location on its own.
 QueryExecutor openDatabaseAtFile(File file) => NativeDatabase(file);
+
+/// Deletes the on-disk database file, if one exists.
+///
+/// Used by the startup recovery screen's "reset app data" action: when the
+/// file itself is what won't open (corrupt, failed migration), discarding it
+/// and letting the next open recreate a fresh schema is the only way forward.
+Future<void> deleteDatabaseFile() async {
+  final directory = await getApplicationSupportDirectory();
+  final file = File(p.join(directory.path, _databaseFileName));
+  if (await file.exists()) {
+    await file.delete();
+  }
+}

@@ -9,6 +9,9 @@ import 'package:peakhabit/features/settings/domain/app_theme_mode.dart';
 /// fake-async zone `testWidgets` runs in and drift's asynchronous queries do
 /// not get along. What the database does with the settings is covered by the
 /// repository tests, which run outside that zone.
+///
+/// See `CLAUDE.md` § Tests — the rule cost two tickets before it was written
+/// down somewhere one reads before writing a test, rather than after.
 class InMemorySettingsRepository implements SettingsRepository {
   InMemorySettingsRepository([this._themeMode = AppThemeMode.dark]);
 
