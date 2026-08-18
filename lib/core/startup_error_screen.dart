@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'theme/app_theme.dart';
 
 /// Blocking screen shown when the app could not be brought up — in practice
-/// almost always because the database could not be opened.
+/// almost always because of the database.
 ///
 /// Two recovery paths, per the product decision on #19: "Erneut versuchen"
 /// covers transient causes (e.g. a briefly full disk), "App-Daten
@@ -15,10 +15,22 @@ class StartupErrorScreen extends StatelessWidget {
     super.key,
     required this.onRetry,
     required this.onReset,
+    required this.message,
   });
+
+  /// The start failed outright: opening the database threw.
+  static const openFailedMessage = 'Die Datenbank ließ sich nicht öffnen.';
+
+  /// The start neither failed nor finished (see #28). Worded as "no answer"
+  /// rather than "broken" on purpose: the open may well still be running, it
+  /// just took longer than anyone should stare at an empty screen for.
+  static const noResponseMessage = 'Die Datenbank antwortet nicht.';
 
   final VoidCallback onRetry;
   final VoidCallback onReset;
+
+  /// Which of the two situations above brought the user here.
+  final String message;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +38,7 @@ class StartupErrorScreen extends StatelessWidget {
     // which at this point has not been built.
     return MaterialApp(
       theme: AppTheme.dark,
-      home: _RecoveryBody(onRetry: onRetry, onReset: onReset),
+      home: _RecoveryBody(onRetry: onRetry, onReset: onReset, message: message),
     );
   }
 }
@@ -35,10 +47,15 @@ class StartupErrorScreen extends StatelessWidget {
 /// confirmation dialog needs a [Navigator] and `MaterialLocalizations` above
 /// the context it is opened from.
 class _RecoveryBody extends StatelessWidget {
-  const _RecoveryBody({required this.onRetry, required this.onReset});
+  const _RecoveryBody({
+    required this.onRetry,
+    required this.onReset,
+    required this.message,
+  });
 
   final VoidCallback onRetry;
   final VoidCallback onReset;
+  final String message;
 
   @override
   Widget build(BuildContext context) {
@@ -58,10 +75,7 @@ class _RecoveryBody extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Die Datenbank ließ sich nicht öffnen.',
-                  textAlign: TextAlign.center,
-                ),
+                Text(message, textAlign: TextAlign.center),
                 const SizedBox(height: 24),
                 FilledButton(
                   onPressed: onRetry,
