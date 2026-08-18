@@ -37,6 +37,7 @@ class UserProfileRepository {
         .insertOnConflictUpdate(
           UserProfilesCompanion.insert(
             id: const Value(singleProfileId),
+            username: Value(profile.username),
             heightCm: Value(profile.heightCm),
             sex: Value(profile.sex),
             birthDate: Value(profile.birthDate),
@@ -55,6 +56,7 @@ class UserProfileRepository {
     if (row == null) return UserProfile.empty;
 
     return UserProfile(
+      username: row.username,
       heightCm: row.heightCm,
       sex: row.sex,
       birthDate: row.birthDate,

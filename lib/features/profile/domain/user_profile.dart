@@ -32,6 +32,7 @@ enum ActivityLevel {
 /// fresh profile is already usable.
 class UserProfile {
   const UserProfile._({
+    this.username = '',
     this.heightCm,
     this.sex,
     this.birthDate,
@@ -50,6 +51,7 @@ class UserProfile {
   /// it. Rejecting it right at the entry point puts the error where the value
   /// comes from, which is where the UI can react to it.
   factory UserProfile({
+    String username = '',
     int? heightCm,
     BiologicalSex? sex,
     DateTime? birthDate,
@@ -70,6 +72,7 @@ class UserProfile {
     }
 
     return UserProfile._(
+      username: username,
       heightCm: heightCm,
       sex: sex,
       birthDate: birthDate,
@@ -83,6 +86,13 @@ class UserProfile {
   /// A profile with nothing filled in — what the app starts on before the user
   /// has entered anything.
   static const empty = UserProfile._();
+
+  /// Shown on the home screen and in its greeting.
+  ///
+  /// Non-nullable, unlike the fields below: an empty string is what "not set
+  /// yet" looks like here, since the greeting has to fall back to something
+  /// even before the user has entered one.
+  final String username;
 
   /// Body height in centimetres.
   final int? heightCm;
@@ -123,6 +133,7 @@ class UserProfile {
   /// Passing `null` clears a value, leaving the argument out keeps it — a plain
   /// `null` default could not tell those two apart.
   UserProfile copyWith({
+    String? username,
     Object? heightCm = _keep,
     Object? sex = _keep,
     Object? birthDate = _keep,
@@ -132,6 +143,7 @@ class UserProfile {
     MacroDistribution? macros,
   }) {
     return UserProfile(
+      username: username ?? this.username,
       heightCm: identical(heightCm, _keep) ? this.heightCm : heightCm as int?,
       sex: identical(sex, _keep) ? this.sex : sex as BiologicalSex?,
       birthDate: identical(birthDate, _keep)
@@ -151,6 +163,7 @@ class UserProfile {
   @override
   bool operator ==(Object other) =>
       other is UserProfile &&
+      other.username == username &&
       other.heightCm == heightCm &&
       other.sex == sex &&
       other.birthDate == birthDate &&
@@ -161,6 +174,7 @@ class UserProfile {
 
   @override
   int get hashCode => Object.hash(
+    username,
     heightCm,
     sex,
     birthDate,
@@ -172,8 +186,8 @@ class UserProfile {
 
   @override
   String toString() =>
-      'UserProfile(heightCm: $heightCm, sex: $sex, birthDate: $birthDate, '
-      'activityLevel: $activityLevel, goal: $goal, '
+      'UserProfile(username: $username, heightCm: $heightCm, sex: $sex, '
+      'birthDate: $birthDate, activityLevel: $activityLevel, goal: $goal, '
       'calorieTarget: $calorieTarget, macros: $macros)';
 }
 

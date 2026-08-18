@@ -129,6 +129,12 @@ auf und wirft bei einem Namen, den das Enum nicht mehr kennt. Das ist der zweite
 „neue Tabelle": **Eine Migration braucht auch, wer nur die möglichen Werte einer Spalte
 einschränkt.**
 
+Schema-Version 6 ergänzt `user_profiles` um die Spalte `username` (#34) — nicht nullable,
+mit `''` als Default, damit `addColumn` auch für eine bestehende Zeile funktioniert. Das ist
+der dritte Fall: **Eine bestehende Tabelle bekommt eine neue Spalte per `m.addColumn(...)`,
+zusätzlich zur `schemaVersion`-Erhöhung und dem `if (from < n)`-Block**, ohne dass dafür eine
+neue Tabelle nötig wäre.
+
 `body_weight_entries` liegt in einem eigenen Feature statt unter `home/`: Startseite (#5) und
 Statistik (#6) lesen dieselbe Reihe, und ein Feature, das aus einem anderen liest, wäre die
 erste Ausnahme von der Feature-Trennung. Der Kalendertag ist der Primärschlüssel — pro Tag

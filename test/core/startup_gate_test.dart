@@ -108,7 +108,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(StartupErrorScreen), findsNothing);
-    expect(find.text('Startseite'), findsOneWidget);
+    expect(find.text('Hallo!'), findsOneWidget);
   });
 
   testWidgets('cancelling the reset dialog leaves the recovery screen up', (
@@ -159,7 +159,7 @@ void main() {
 
     expect(deleteCalled, isTrue);
     expect(find.byType(StartupErrorScreen), findsNothing);
-    expect(find.text('Startseite'), findsOneWidget);
+    expect(find.text('Hallo!'), findsOneWidget);
   });
 
   testWidgets('takes the recovery screen down while the reset runs', (
@@ -190,7 +190,7 @@ void main() {
     deleting.complete();
     await tester.pumpAndSettle();
 
-    expect(find.text('Startseite'), findsOneWidget);
+    expect(find.text('Hallo!'), findsOneWidget);
   });
 
   testWidgets('shows the recovery screen when the start hangs', (tester) async {
@@ -245,7 +245,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(StartupErrorScreen), findsNothing);
-    expect(find.text('Startseite'), findsOneWidget);
+    expect(find.text('Hallo!'), findsOneWidget);
   });
 
   testWidgets('the reset closes an overrunning start before deleting', (
@@ -275,7 +275,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(closedByThen, isTrue);
-    expect(find.text('Startseite'), findsOneWidget);
+    expect(find.text('Hallo!'), findsOneWidget);
   });
 
   testWidgets('stays on the recovery screen when the reset itself fails', (

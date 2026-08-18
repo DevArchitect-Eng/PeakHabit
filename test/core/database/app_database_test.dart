@@ -31,14 +31,14 @@ void main() {
     final messages = captured.map((entry) => entry.message).toList();
     expect(messages, [
       'Opening database',
-      'Creating schema at version 5',
+      'Creating schema at version 6',
       'Database opened',
       'Closing database',
       'Database closed',
     ]);
   });
 
-  test('creates a fresh database at schema version 5', () async {
+  test('creates a fresh database at schema version 6', () async {
     final database = AppDatabase.inMemory();
     addTearDown(database.close);
 
@@ -47,7 +47,7 @@ void main() {
     // Pinned to the literal version on purpose: raising `schemaVersion` should
     // force a look at this test, and with it at the matching migration step.
     final row = await database.customSelect('PRAGMA user_version').getSingle();
-    expect(row.read<int>('user_version'), 5);
+    expect(row.read<int>('user_version'), 6);
   });
 
   test('enforces foreign keys', () async {
@@ -88,6 +88,15 @@ void main() {
       await legacy.open();
       for (final table in droppedTables) {
         await legacy.customStatement('DROP TABLE $table');
+      }
+      // `user_profiles` gained `username` in version 6 — a table that
+      // survives the rewind still has it fresh from `legacy.open()` above,
+      // which would make the addColumn migration see a column that is
+      // already there.
+      if (version < 6 && !droppedTables.contains('user_profiles')) {
+        await legacy.customStatement(
+          'ALTER TABLE user_profiles DROP COLUMN username',
+        );
       }
       await legacy.customStatement('PRAGMA user_version = $version');
       await legacy.close();
@@ -139,6 +148,11 @@ void main() {
         'carb_percent, fat_percent, updated_at) '
         "VALUES (1, 'diverse', 'maintain', 30, 40, 30, 0)",
       );
+      // Version 4 predates the `username` column added in version 6 — see
+      // `rewindTo` above for why this has to be stripped back off.
+      await legacy.customStatement(
+        'ALTER TABLE user_profiles DROP COLUMN username',
+      );
       await legacy.customStatement('PRAGMA user_version = 4');
       await legacy.close();
 
@@ -148,6 +162,33 @@ void main() {
 
       final profile = await UserProfileRepository(migrated).read();
       expect(profile.sex, isNull);
+      // The rest of the row survives the migration untouched.
+      expect(profile.goal, WeightGoal.maintain);
+    });
+
+    test('adds the username column to an installation on version 5', () async {
+      final legacy = AppDatabase.atFile(file);
+      await legacy.open();
+      await legacy.customStatement(
+        'INSERT INTO user_profiles (id, goal, protein_percent, '
+        'carb_percent, fat_percent, updated_at) '
+        "VALUES (1, 'maintain', 30, 40, 30, 0)",
+      );
+      // Simulates version 5, which had the table but not yet the column —
+      // `DROP COLUMN` stands in for a schema that never had it, since the
+      // fresh database above starts on the current one.
+      await legacy.customStatement(
+        'ALTER TABLE user_profiles DROP COLUMN username',
+      );
+      await legacy.customStatement('PRAGMA user_version = 5');
+      await legacy.close();
+
+      final migrated = AppDatabase.atFile(file);
+      addTearDown(migrated.close);
+      await migrated.open();
+
+      final profile = await UserProfileRepository(migrated).read();
+      expect(profile.username, '');
       // The rest of the row survives the migration untouched.
       expect(profile.goal, WeightGoal.maintain);
     });

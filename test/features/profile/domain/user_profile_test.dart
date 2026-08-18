@@ -30,6 +30,7 @@ void main() {
 
       expect(profile.goal, WeightGoal.maintain);
       expect(profile.macros, MacroDistribution.standard);
+      expect(profile.username, '');
       expect(profile.heightCm, isNull);
       expect(profile.sex, isNull);
       expect(profile.birthDate, isNull);
@@ -87,6 +88,7 @@ void main() {
   group('copyWith', () {
     test('keeps values that are not passed', () {
       final profile = UserProfile(
+        username: 'mila',
         heightCm: 182,
         sex: BiologicalSex.male,
         birthDate: DateTime(1990, 5, 17),
@@ -98,11 +100,20 @@ void main() {
       final changed = profile.copyWith(goal: WeightGoal.gain);
 
       expect(changed.goal, WeightGoal.gain);
+      expect(changed.username, 'mila');
       expect(changed.heightCm, 182);
       expect(changed.sex, BiologicalSex.male);
       expect(changed.birthDate, DateTime(1990, 5, 17));
       expect(changed.activityLevel, ActivityLevel.moderatelyActive);
       expect(changed.calorieTarget, 2200);
+    });
+
+    test('replaces the username when one is passed', () {
+      final profile = UserProfile(username: 'mila');
+
+      final changed = profile.copyWith(username: 'ben');
+
+      expect(changed.username, 'ben');
     });
 
     test('clears a value that is passed as null', () {
@@ -117,11 +128,13 @@ void main() {
 
   test('two profiles with the same values are equal', () {
     final left = UserProfile(
+      username: 'mila',
       heightCm: 182,
       birthDate: DateTime(1990, 5, 17),
       calorieTarget: 2200,
     );
     final right = UserProfile(
+      username: 'mila',
       heightCm: 182,
       birthDate: DateTime(1990, 5, 17),
       calorieTarget: 2200,
@@ -129,5 +142,9 @@ void main() {
 
     expect(left, right);
     expect(left.hashCode, right.hashCode);
+  });
+
+  test('profiles with a different username are not equal', () {
+    expect(UserProfile(username: 'mila'), isNot(UserProfile(username: 'ben')));
   });
 }

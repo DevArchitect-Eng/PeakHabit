@@ -22,6 +22,7 @@ void main() {
   tearDown(() => database.close());
 
   final filledProfile = UserProfile(
+    username: 'mila',
     heightCm: 182,
     sex: BiologicalSex.male,
     birthDate: DateTime(1990, 5, 17),
@@ -44,6 +45,14 @@ void main() {
       await repository.save(filledProfile);
 
       expect(await repository.read(), filledProfile);
+    });
+
+    test('gives back a changed username', () async {
+      await repository.save(filledProfile);
+
+      await repository.save(filledProfile.copyWith(username: 'ben'));
+
+      expect((await repository.read()).username, 'ben');
     });
 
     test('keeps the birth date on the same calendar day', () async {

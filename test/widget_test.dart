@@ -7,7 +7,7 @@ void main() {
   testWidgets('starts on the home tab', (tester) async {
     await pumpApp(tester);
 
-    expect(find.text('Startseite'), findsOneWidget);
+    expect(find.text('Hallo!'), findsOneWidget);
   });
 
   testWidgets('switches to each tab', (tester) async {
