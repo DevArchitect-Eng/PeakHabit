@@ -253,7 +253,6 @@ extension on BiologicalSex {
   String get label => switch (this) {
     BiologicalSex.female => 'weiblich',
     BiologicalSex.male => 'männlich',
-    BiologicalSex.diverse => 'divers',
   };
 }
 

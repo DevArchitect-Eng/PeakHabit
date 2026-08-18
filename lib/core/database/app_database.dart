@@ -32,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.atFile(File file) : super(openDatabaseAtFile(file));
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -52,6 +52,17 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 4) {
         await m.createTable(bodyWeightEntries);
+      }
+      if (from < 5) {
+        // `BiologicalSex` lost its `diverse` option along with the calorie
+        // calculation (#4), which has a constant for women and one for men and
+        // none for a third value. A profile still carrying the name could not
+        // be read afterwards: the column keeps the enum by name, and drift
+        // throws on a name the enum no longer has. Clearing it puts such a
+        // profile back on "no answer", which is a value the app handles.
+        await customStatement(
+          "UPDATE user_profiles SET sex = NULL WHERE sex = 'diverse'",
+        );
       }
       AppLogger.database.info('Migration to $to complete');
     },

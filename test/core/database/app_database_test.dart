@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:peakhabit/core/database/app_database.dart';
 import 'package:peakhabit/core/logging/app_logger.dart';
+import 'package:peakhabit/features/profile/data/user_profile_repository.dart';
+import 'package:peakhabit/features/profile/domain/user_profile.dart';
 
 void main() {
   setUp(() {
@@ -29,14 +31,14 @@ void main() {
     final messages = captured.map((entry) => entry.message).toList();
     expect(messages, [
       'Opening database',
-      'Creating schema at version 4',
+      'Creating schema at version 5',
       'Database opened',
       'Closing database',
       'Database closed',
     ]);
   });
 
-  test('creates a fresh database at schema version 4', () async {
+  test('creates a fresh database at schema version 5', () async {
     final database = AppDatabase.inMemory();
     addTearDown(database.close);
 
@@ -45,7 +47,7 @@ void main() {
     // Pinned to the literal version on purpose: raising `schemaVersion` should
     // force a look at this test, and with it at the matching migration step.
     final row = await database.customSelect('PRAGMA user_version').getSingle();
-    expect(row.read<int>('user_version'), 4);
+    expect(row.read<int>('user_version'), 5);
   });
 
   test('enforces foreign keys', () async {
@@ -125,6 +127,29 @@ void main() {
       await rewindTo(3, ['body_weight_entries']);
 
       expect(await tablesAfterOpening(), contains('body_weight_entries'));
+    });
+
+    test('clears a stored sex the enum no longer has', () async {
+      final legacy = AppDatabase.atFile(file);
+      await legacy.open();
+      // Written as raw SQL because `BiologicalSex.diverse` is gone — there is
+      // no longer a companion that could produce this row.
+      await legacy.customStatement(
+        'INSERT INTO user_profiles (id, sex, goal, protein_percent, '
+        'carb_percent, fat_percent, updated_at) '
+        "VALUES (1, 'diverse', 'maintain', 30, 40, 30, 0)",
+      );
+      await legacy.customStatement('PRAGMA user_version = 4');
+      await legacy.close();
+
+      final migrated = AppDatabase.atFile(file);
+      addTearDown(migrated.close);
+      await migrated.open();
+
+      final profile = await UserProfileRepository(migrated).read();
+      expect(profile.sex, isNull);
+      // The rest of the row survives the migration untouched.
+      expect(profile.goal, WeightGoal.maintain);
     });
   });
 }
