@@ -54,7 +54,11 @@ class _ProfileForm extends ConsumerStatefulWidget {
 }
 
 class _ProfileFormState extends ConsumerState<_ProfileForm> {
+  /// Held below what still fits comfortably in the home screen greeting.
+  static const _maxUsernameLength = 40;
+
   final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _usernameController;
   late final TextEditingController _heightController;
   late final TextEditingController _calorieTargetController;
 
@@ -66,6 +70,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   @override
   void initState() {
     super.initState();
+    _usernameController = TextEditingController(text: widget.profile.username);
     _heightController = TextEditingController(
       text: widget.profile.heightCm?.toString() ?? '',
     );
@@ -76,6 +81,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
 
   @override
   void dispose() {
+    _usernameController.dispose();
     _heightController.dispose();
     _calorieTargetController.dispose();
     super.dispose();
@@ -99,6 +105,13 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
+          TextFormField(
+            controller: _usernameController,
+            decoration: const InputDecoration(labelText: 'Benutzername'),
+            maxLength: _maxUsernameLength,
+            validator: _validateUsername,
+          ),
+          const SizedBox(height: 16),
           TextFormField(
             controller: _heightController,
             decoration: const InputDecoration(
@@ -181,6 +194,15 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     );
   }
 
+  /// Unlike the fields below, empty is not allowed here — the greeting on the
+  /// home screen needs an actual name to show.
+  String? _validateUsername(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Bitte einen Benutzernamen eingeben.';
+    }
+    return null;
+  }
+
   /// Empty means "not filled in yet" and stays allowed; anything else has to be
   /// a number the domain model would accept.
   String? _validatePositiveNumber(String? value, String subject) {
@@ -200,6 +222,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   /// model would throw on it. Saving never gets here with such a value, the
   /// validator stops it first.
   UserProfile _draftProfile() => UserProfile(
+    username: _usernameController.text.trim(),
     heightCm: _positiveOrNull(_heightController.text),
     sex: _sex,
     birthDate: _birthDate,

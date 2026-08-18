@@ -35,19 +35,35 @@ void main() {
   testWidgets('shows the values that are already stored', (tester) async {
     await pumpApp(
       tester,
-      on: storesWith(profile: UserProfile(heightCm: 182, calorieTarget: 2200)),
+      on: storesWith(
+        profile: UserProfile(
+          username: 'mila',
+          heightCm: 182,
+          calorieTarget: 2200,
+        ),
+      ),
     );
 
     await openProfile(tester);
 
+    expect(find.widgetWithText(TextFormField, 'mila'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, '182'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, '2200'), findsOneWidget);
   });
 
-  testWidgets('saves a changed height and calorie target', (tester) async {
-    final stores = await pumpApp(tester);
+  testWidgets('saves a changed username, height and calorie target', (
+    tester,
+  ) async {
+    final stores = await pumpApp(
+      tester,
+      on: storesWith(profile: UserProfile(username: 'mila')),
+    );
     await openProfile(tester);
 
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Benutzername'),
+      'ben',
+    );
     await tester.enterText(find.widgetWithText(TextFormField, 'Größe'), '175');
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Kalorienziel'),
@@ -55,13 +71,36 @@ void main() {
     );
     await tapSave(tester);
 
+    expect(stores.profile.profile.username, 'ben');
     expect(stores.profile.profile.heightCm, 175);
     expect(stores.profile.profile.calorieTarget, 2400);
     expect(find.text('Profil gespeichert'), findsOneWidget);
   });
 
+  testWidgets('refuses an empty username instead of storing it', (
+    tester,
+  ) async {
+    final stores = await pumpApp(
+      tester,
+      on: storesWith(profile: UserProfile(username: 'mila')),
+    );
+    await openProfile(tester);
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Benutzername'),
+      '',
+    );
+    await tapSave(tester);
+
+    expect(find.text('Bitte einen Benutzernamen eingeben.'), findsOneWidget);
+    expect(stores.profile.profile.username, 'mila');
+  });
+
   testWidgets('saves a changed goal', (tester) async {
-    final stores = await pumpApp(tester);
+    final stores = await pumpApp(
+      tester,
+      on: storesWith(profile: UserProfile(username: 'mila')),
+    );
     await openProfile(tester);
 
     await tester.tap(find.text('Gewicht halten'));
@@ -93,6 +132,7 @@ void main() {
     /// of the expected numbers.
     UserProfile calculableProfile({WeightGoal goal = WeightGoal.maintain}) =>
         UserProfile(
+          username: 'mila',
           heightCm: 180,
           sex: BiologicalSex.male,
           birthDate: DateTime(DateTime.now().year - 30, 1, 1),
@@ -232,6 +272,7 @@ void main() {
 
   testWidgets('leaves the macro split alone', (tester) async {
     final stored = UserProfile(
+      username: 'mila',
       calorieTarget: 2000,
       macros: MacroDistribution(
         proteinPercent: 40,
