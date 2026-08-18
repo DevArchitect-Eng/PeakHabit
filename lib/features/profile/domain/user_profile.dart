@@ -4,9 +4,13 @@ import 'macro_distribution.dart';
 enum WeightGoal { lose, maintain, gain }
 
 /// Needed by the calorie formulas, which use a different constant for women
-/// and men. `diverse` has no formula of its own — the feature that calculates
-/// the calorie target decides how to treat it.
-enum BiologicalSex { female, male, diverse }
+/// and men.
+///
+/// Only these two values, because a third one would have no constant of its
+/// own and the formula would have to invent one. Whoever does not want to
+/// choose leaves it empty; the calorie target is then entered by hand instead
+/// of calculated.
+enum BiologicalSex { female, male }
 
 /// How much the user moves on an average day, from a desk job without sport up
 /// to daily hard training or physical work.

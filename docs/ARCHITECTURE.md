@@ -122,6 +122,13 @@ Vorhandene Tabellen:
 | `app_settings` | 3 | `lib/features/settings/data/app_settings_table.dart` |
 | `body_weight_entries` | 4 | `lib/features/body_weight/data/body_weight_table.dart` |
 
+Schema-Version 5 bringt keine neue Tabelle, sondern räumt Daten auf: `BiologicalSex` hat
+seine Option `diverse` verloren (#4), und eine Migration setzt ein gespeichertes `diverse`
+auf `NULL`. Nötig, weil die Spalte den Enum-Namen hält — drift löst ihn beim Lesen wieder
+auf und wirft bei einem Namen, den das Enum nicht mehr kennt. Das ist der zweite Fall neben
+„neue Tabelle": **Eine Migration braucht auch, wer nur die möglichen Werte einer Spalte
+einschränkt.**
+
 `body_weight_entries` liegt in einem eigenen Feature statt unter `home/`: Startseite (#5) und
 Statistik (#6) lesen dieselbe Reihe, und ein Feature, das aus einem anderen liest, wäre die
 erste Ausnahme von der Feature-Trennung. Der Kalendertag ist der Primärschlüssel — pro Tag
@@ -175,6 +182,36 @@ Lints, echte Fehler darin fallen trotzdem beim Kompilieren auf.
 
 Nach jeder Schemaänderung `dart run build_runner build` laufen lassen und das Ergebnis
 mit committen.
+
+### Kalorienziel: berechnet, nicht erraten
+
+Das Kalorienziel lässt sich aus dem Profil berechnen, statt dass der Nutzer eine Zahl kennen
+muss. Die Rechnung steht in `lib/features/profile/domain/calorie_calculation.dart` und läuft
+in drei Schritten:
+
+1. **Grundumsatz nach Mifflin-St Jeor:** `10 × kg + 6,25 × cm − 5 × Jahre`, plus 5 bei
+   Männern, minus 161 bei Frauen. Gewählt statt Harris-Benedict, weil die Formel für alle,
+   die nicht sehr schlank sind, näher liegt — und das ist die Mehrheit derer, die tracken.
+2. **Gesamtumsatz:** Grundumsatz mal Aktivitätsfaktor, die übliche Leiter von 1,2 (sitzend)
+   bis 1,9 (täglich hart).
+3. **Zielanpassung:** −500 kcal beim Abnehmen (500 g pro Woche), ±0 beim Halten, +200 kcal
+   beim Zunehmen (200 g pro Woche). Umgerechnet über die Konvention von rund 7000 kcal pro
+   Kilogramm Körperfett. Die Raten sind **fest, nicht wählbar**: eine Rate, die sich
+   hochdrehen lässt, lädt zu einem Defizit ein, das niemand durchhält.
+
+Drei Punkte, die sich daraus ergeben:
+
+- **Das Gewicht kommt nicht aus dem Profil,** sondern aus dem jüngsten Eintrag in
+  `body_weight_entries` — es ändert sich laufend und liegt deshalb als eigene Reihe vor.
+  Ohne Eintrag ist keine Berechnung möglich; der Profil-Screen benennt das dann.
+- **Geschrieben wird nichts von allein.** Die Berechnung füllt auf Knopfdruck das Feld
+  „Kalorienziel", gespeichert wird erst beim Speichern des Profils. Ein von Hand gesetztes
+  Ziel wird damit nie ohne Zutun überschrieben — auch nicht, wenn sich das Gewicht deutlich
+  ändert (offene Frage aus #4, so entschieden).
+- **Die Rechnung wird angezeigt, nicht nur ihr Ergebnis.** Grundumsatz, Faktor und
+  Zielanpassung stehen als einzelne Zeilen im Profil. Eine Zahl, die aus dem Nichts kommt,
+  kann niemand prüfen, und die Zwischenschritte zeigen, welcher Profilwert zu korrigieren
+  ist, wenn das Ergebnis nicht passt.
 
 ### Design: dark-first mit hellblauem Akzent
 

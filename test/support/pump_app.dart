@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peakhabit/app.dart';
 import 'package:peakhabit/core/router/app_router.dart';
+import 'package:peakhabit/features/body_weight/data/body_weight_providers.dart';
+import 'package:peakhabit/features/body_weight/domain/body_weight_entry.dart';
 import 'package:peakhabit/features/profile/data/user_profile_providers.dart';
 import 'package:peakhabit/features/profile/domain/user_profile.dart';
 import 'package:peakhabit/features/settings/data/settings_providers.dart';
 import 'package:peakhabit/features/settings/domain/app_theme_mode.dart';
 
+import 'in_memory_body_weight_repository.dart';
 import 'in_memory_settings_repository.dart';
 import 'in_memory_user_profile_repository.dart';
 
@@ -16,17 +19,28 @@ import 'in_memory_user_profile_repository.dart';
 typedef AppStores = ({
   InMemorySettingsRepository settings,
   InMemoryUserProfileRepository profile,
+  InMemoryBodyWeightRepository bodyWeight,
 });
 
 /// Stores holding what a test wants to find there, closed again when the test
 /// ends. Left empty they hold the same defaults a fresh install would.
-AppStores storesWith({AppThemeMode? themeMode, UserProfile? profile}) {
+AppStores storesWith({
+  AppThemeMode? themeMode,
+  UserProfile? profile,
+  List<BodyWeightEntry> weightEntries = const [],
+  bool weightEntriesUnreadable = false,
+}) {
   final stores = (
     settings: InMemorySettingsRepository(themeMode ?? AppThemeMode.dark),
     profile: InMemoryUserProfileRepository(profile ?? UserProfile.empty),
+    bodyWeight: InMemoryBodyWeightRepository(
+      entries: weightEntries,
+      failing: weightEntriesUnreadable,
+    ),
   );
   addTearDown(stores.settings.dispose);
   addTearDown(stores.profile.dispose);
+  addTearDown(stores.bodyWeight.dispose);
   return stores;
 }
 
@@ -54,6 +68,7 @@ Future<AppStores> pumpApp(WidgetTester tester, {AppStores? on}) async {
       overrides: [
         settingsRepositoryProvider.overrideWithValue(stores.settings),
         userProfileRepositoryProvider.overrideWithValue(stores.profile),
+        bodyWeightRepositoryProvider.overrideWithValue(stores.bodyWeight),
       ],
       child: const PeakHabitApp(),
     ),
