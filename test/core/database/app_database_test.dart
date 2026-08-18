@@ -29,14 +29,14 @@ void main() {
     final messages = captured.map((entry) => entry.message).toList();
     expect(messages, [
       'Opening database',
-      'Creating schema at version 3',
+      'Creating schema at version 4',
       'Database opened',
       'Closing database',
       'Database closed',
     ]);
   });
 
-  test('creates a fresh database at schema version 3', () async {
+  test('creates a fresh database at schema version 4', () async {
     final database = AppDatabase.inMemory();
     addTearDown(database.close);
 
@@ -45,7 +45,7 @@ void main() {
     // Pinned to the literal version on purpose: raising `schemaVersion` should
     // force a look at this test, and with it at the matching migration step.
     final row = await database.customSelect('PRAGMA user_version').getSingle();
-    expect(row.read<int>('user_version'), 3);
+    expect(row.read<int>('user_version'), 4);
   });
 
   test('enforces foreign keys', () async {
@@ -64,7 +64,7 @@ void main() {
 
     expect(
       database.allTables.map((table) => table.actualTableName),
-      containsAll(['user_profiles', 'app_settings']),
+      containsAll(['user_profiles', 'app_settings', 'body_weight_entries']),
     );
   });
 
@@ -103,18 +103,28 @@ void main() {
     }
 
     test('brings an installation on version 1 up to date', () async {
-      await rewindTo(1, ['user_profiles', 'app_settings']);
+      await rewindTo(1, [
+        'user_profiles',
+        'app_settings',
+        'body_weight_entries',
+      ]);
 
       expect(
         await tablesAfterOpening(),
-        containsAll(['user_profiles', 'app_settings']),
+        containsAll(['user_profiles', 'app_settings', 'body_weight_entries']),
       );
     });
 
     test('adds the settings table to an installation on version 2', () async {
-      await rewindTo(2, ['app_settings']);
+      await rewindTo(2, ['app_settings', 'body_weight_entries']);
 
       expect(await tablesAfterOpening(), contains('app_settings'));
+    });
+
+    test('adds the weight table to an installation on version 3', () async {
+      await rewindTo(3, ['body_weight_entries']);
+
+      expect(await tablesAfterOpening(), contains('body_weight_entries'));
     });
   });
 }
