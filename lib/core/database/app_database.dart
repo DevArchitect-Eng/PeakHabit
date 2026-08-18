@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 
+import '../../features/body_weight/data/body_weight_table.dart';
 import '../../features/profile/data/user_profile_table.dart';
 // The generated part file names the enums and converters used by the tables
 // below, so the library that owns it has to import them too.
@@ -19,7 +20,7 @@ part 'app_database.g.dart';
 /// Every table is added by the feature that needs it, together with the
 /// migration step that creates it — see `docs/ARCHITECTURE.md` for how to do
 /// that.
-@DriftDatabase(tables: [UserProfiles, AppSettings])
+@DriftDatabase(tables: [UserProfiles, AppSettings, BodyWeightEntries])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openDatabaseFile());
 
@@ -31,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.atFile(File file) : super(openDatabaseAtFile(file));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -48,6 +49,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 3) {
         await m.createTable(appSettings);
+      }
+      if (from < 4) {
+        await m.createTable(bodyWeightEntries);
       }
       AppLogger.database.info('Migration to $to complete');
     },

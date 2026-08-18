@@ -24,6 +24,7 @@ lib/
   features/
     shell/                      Bottom-Navigation-Gerüst
     home/                       Startseite (u.a. Körpergewicht-Widget)
+    body_weight/                Gewichtseinträge, von Startseite und Statistik genutzt
     nutrition/                  Ernährungstracking
     training/                   Trainingspläne und Workouts
     stats/                      Auswertungen und Diagramme
@@ -68,6 +69,24 @@ Reine Kalenderdaten (Geburtstag, Tag eines Eintrags) laufen über `DateOnlyConve
 liegen als `yyyy-MM-dd` in einer Textspalte. Eine `dateTime()`-Spalte hält einen Zeitpunkt;
 der verschiebt sich zwischen Zeitzonen um Stunden und landet dann auf dem Nachbartag.
 
+**Sommer-/Winterzeit verschiebt keinen gespeicherten Tag.** Der Text trägt keine Zeitzone, und
+`fromSql` gibt lokale Mitternacht zurück. In Zonen, die die Uhr um Mitternacht stellen (Kairo,
+Santiago, Havanna, Beirut), existiert diese Mitternacht am Umstellungstag nicht — Dart
+normalisiert einen solchen Wert dann **vorwärts** auf 01:00 desselben Tages, nie zurück auf den
+Vortag. Der Kalendertag bleibt also erhalten. Abgesichert ist das in
+`test/core/database/date_only_converter_test.dart` sowie in den Gewichts-Tests; auf der CI
+läuft alles unter UTC, wo diese Tage gewöhnliche Tage sind, die Prüfungen greifen also erst
+auf einer Maschine in einer betroffenen Zone.
+
+Zwei Dinge folgen daraus für alles, was mit diesen Daten rechnet:
+
+- Über Tage **nicht** mit `add(Duration(days: 1))` iterieren. Ein Tag ist um eine Umstellung
+  herum 23 oder 25 Stunden lang; 24 Stunden auf lokale Mitternacht addiert landen dann wieder
+  im selben Tag oder überspringen einen. Stattdessen `DateTime(jahr, monat, tag + 1)` — der
+  Konstruktor normalisiert einen überlaufenden Tageswert korrekt.
+- Gespeicherte Daten nur untereinander vergleichen, nie mit einem unnormalisierten
+  `DateTime` (siehe Klassenkommentar von `DateOnlyConverter`).
+
 Die Datei heißt `peakhabit.sqlite` und liegt im App-Support-Verzeichnis
 (`getApplicationSupportDirectory()`), nicht im Dokumentenverzeichnis: Letzteres ist für
 Dateien gedacht, die der Nutzer selbst sieht, und taucht in der Files-App auf, sobald File
@@ -101,6 +120,18 @@ Vorhandene Tabellen:
 | --- | --- | --- |
 | `user_profiles` | 2 | `lib/features/profile/data/user_profile_table.dart` |
 | `app_settings` | 3 | `lib/features/settings/data/app_settings_table.dart` |
+| `body_weight_entries` | 4 | `lib/features/body_weight/data/body_weight_table.dart` |
+
+`body_weight_entries` liegt in einem eigenen Feature statt unter `home/`: Startseite (#5) und
+Statistik (#6) lesen dieselbe Reihe, und ein Feature, das aus einem anderen liest, wäre die
+erste Ausnahme von der Feature-Trennung. Der Kalendertag ist der Primärschlüssel — pro Tag
+gibt es höchstens einen Eintrag, und so setzt SQLite das durch, statt es dem Schreibenden zu
+überlassen; ein zweites Wiegen am selben Tag korrigiert den Wert per Upsert. Morgens und
+abends unterscheiden sich um mehr als die meiste echte Veränderung, beide Werte zu behalten
+täuschte also eine Genauigkeit vor, die die Zahl nicht hat. Gespeichert wird in Kilogramm:
+Eine Anzeigeeinheit (kg oder lbs) ist eine spätere Einstellung und eine Frage der Darstellung
+— beim Schreiben umzurechnen hinge die gespeicherte Reihe davon ab, wann welcher Wert
+eingetragen wurde.
 
 `app_settings` ist wie `user_profiles` eine Ein-Zeilen-Tabelle. Weitere Einstellungen kommen
 als weitere Spalten dazu, nicht als eigene Tabellen. Bewusst hier statt in
@@ -115,13 +146,14 @@ Das Datenmodell wird so entworfen, dass eine spätere Cloud-Synchronisation nach
 
 #### Eine neue Tabelle ergänzen
 
-1. Tabellenklasse im Feature anlegen, z.B. `lib/features/home/data/body_weight_table.dart`.
+1. Tabellenklasse im Feature anlegen, z.B.
+   `lib/features/body_weight/data/body_weight_table.dart`.
 2. In `app_database.dart` bei `@DriftDatabase(tables: [...])` eintragen.
 3. `schemaVersion` um eins erhöhen.
 4. In `onUpgrade` einen Block für die neue Version ergänzen:
 
    ```dart
-   if (from < 2) {
+   if (from < 4) {
      await m.createTable(bodyWeightEntries);
    }
    ```

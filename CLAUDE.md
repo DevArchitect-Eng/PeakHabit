@@ -20,7 +20,9 @@ Fünf Tabs in der Bottom-Navigation:
 Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens für die ersten vier Tabs. Der
 Einstellungen-Tab ist ausgebaut: Theme-Auswahl (Dark/Light/System, gespeichert) und ein
 Formular fürs Nutzerprofil unter `/settings/profile`. Die Drift-Datenbank hält dafür die
-Tabellen `user_profiles` und `app_settings`. Ansonsten noch keine Features.
+Tabellen `user_profiles` und `app_settings`. Dazu kommt `body_weight_entries` samt Repository
+und Providern unter `lib/features/body_weight/` — bisher ohne UI, die Screens dazu stehen
+noch aus. Ansonsten noch keine Features.
 
 ## Technisches
 
