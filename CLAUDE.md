@@ -17,10 +17,12 @@ Fünf Tabs in der Bottom-Navigation:
 | Statistik | `/stats` | Trainingsfortschritt, Gewichtsverlauf |
 | Optionen | `/settings` | Darstellung, Zugang zum Profil |
 
-Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens für die ersten vier Tabs. Der
-Einstellungen-Tab ist ausgebaut: Theme-Auswahl (Dark/Light/System, gespeichert) und ein
-Formular fürs Nutzerprofil unter `/settings/profile`, das das Kalorienziel auf Wunsch aus
-Gewicht, Größe, Alter, Geschlecht, Aktivität und Ziel berechnet. Die Drift-Datenbank hält
+Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens für Ernährung, Training und
+Statistik. Der Start-Tab zeigt eine Begrüßung mit dem im Profil hinterlegten Benutzernamen.
+Der Einstellungen-Tab ist ausgebaut: Theme-Auswahl (Dark/Light/System, gespeichert) und ein
+Formular fürs Nutzerprofil unter `/settings/profile` mit Pflichtfeld Benutzername, das
+außerdem das Kalorienziel auf Wunsch aus Gewicht, Größe, Alter, Geschlecht, Aktivität und Ziel
+berechnet. Die Drift-Datenbank hält
 dafür die Tabellen `user_profiles` und `app_settings`. Dazu kommt `body_weight_entries` samt
 Repository und Providern unter `lib/features/body_weight/` — bisher ohne UI, die Screens dazu
 stehen noch aus, weshalb die Berechnung mangels Gewichtseintrag praktisch noch nicht
