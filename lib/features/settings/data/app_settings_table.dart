@@ -25,6 +25,11 @@ class AppSettings extends Table {
 
   TextColumn get themeMode => textEnum<AppThemeMode>()();
 
+  /// Whether the first-start onboarding has been completed. Gates whether the
+  /// app shows it again, so it never runs a second time.
+  BoolColumn get onboardingCompleted =>
+      boolean().withDefault(const Constant(false))();
+
   /// Last change, kept so a later cloud sync has something to order by.
   DateTimeColumn get updatedAt => dateTime()();
 

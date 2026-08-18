@@ -81,6 +81,50 @@ void main() {
     );
   });
 
+  group('readOnboardingCompleted', () {
+    test('reports false before anything was saved', () async {
+      expect(await repository.readOnboardingCompleted(), isFalse);
+    });
+
+    test('gives back true once saved', () async {
+      await repository.saveOnboardingCompleted();
+
+      expect(await repository.readOnboardingCompleted(), isTrue);
+    });
+  });
+
+  test('saveOnboardingCompleted does not change the theme mode', () async {
+    await repository.saveThemeMode(AppThemeMode.light);
+
+    await repository.saveOnboardingCompleted();
+
+    expect(await repository.readThemeMode(), AppThemeMode.light);
+  });
+
+  test('saveThemeMode does not reset the onboarding flag', () async {
+    await repository.saveOnboardingCompleted();
+
+    await repository.saveThemeMode(AppThemeMode.light);
+
+    expect(await repository.readOnboardingCompleted(), isTrue);
+  });
+
+  group('watchOnboardingCompleted', () {
+    test('emits the default and then every change', () async {
+      final seen = <bool>[];
+      final subscription = repository.watchOnboardingCompleted().listen(
+        seen.add,
+      );
+      addTearDown(subscription.cancel);
+
+      await pumpEventQueue();
+      await repository.saveOnboardingCompleted();
+      await pumpEventQueue();
+
+      expect(seen, [false, true]);
+    });
+  });
+
   test('the choice survives a restart of the app', () async {
     final directory = await Directory.systemTemp.createTemp('peakhabit_test');
     addTearDown(() => directory.delete(recursive: true));

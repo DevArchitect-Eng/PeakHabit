@@ -6,6 +6,8 @@ import 'package:peakhabit/core/database/app_database.dart';
 import 'package:peakhabit/core/logging/app_logger.dart';
 import 'package:peakhabit/features/profile/data/user_profile_repository.dart';
 import 'package:peakhabit/features/profile/domain/user_profile.dart';
+import 'package:peakhabit/features/settings/data/settings_repository.dart';
+import 'package:peakhabit/features/settings/domain/app_theme_mode.dart';
 
 void main() {
   setUp(() {
@@ -31,14 +33,14 @@ void main() {
     final messages = captured.map((entry) => entry.message).toList();
     expect(messages, [
       'Opening database',
-      'Creating schema at version 6',
+      'Creating schema at version 7',
       'Database opened',
       'Closing database',
       'Database closed',
     ]);
   });
 
-  test('creates a fresh database at schema version 6', () async {
+  test('creates a fresh database at schema version 7', () async {
     final database = AppDatabase.inMemory();
     addTearDown(database.close);
 
@@ -47,7 +49,7 @@ void main() {
     // Pinned to the literal version on purpose: raising `schemaVersion` should
     // force a look at this test, and with it at the matching migration step.
     final row = await database.customSelect('PRAGMA user_version').getSingle();
-    expect(row.read<int>('user_version'), 6);
+    expect(row.read<int>('user_version'), 7);
   });
 
   test('enforces foreign keys', () async {
@@ -96,6 +98,13 @@ void main() {
       if (version < 6 && !droppedTables.contains('user_profiles')) {
         await legacy.customStatement(
           'ALTER TABLE user_profiles DROP COLUMN username',
+        );
+      }
+      // Same reasoning for `app_settings.onboarding_completed`, added in
+      // version 7.
+      if (version < 7 && !droppedTables.contains('app_settings')) {
+        await legacy.customStatement(
+          'ALTER TABLE app_settings DROP COLUMN onboarding_completed',
         );
       }
       await legacy.customStatement('PRAGMA user_version = $version');
@@ -148,10 +157,14 @@ void main() {
         'carb_percent, fat_percent, updated_at) '
         "VALUES (1, 'diverse', 'maintain', 30, 40, 30, 0)",
       );
-      // Version 4 predates the `username` column added in version 6 — see
-      // `rewindTo` above for why this has to be stripped back off.
+      // Version 4 predates the `username` column added in version 6, and the
+      // `onboarding_completed` one added in version 7 — see `rewindTo` above
+      // for why these have to be stripped back off.
       await legacy.customStatement(
         'ALTER TABLE user_profiles DROP COLUMN username',
+      );
+      await legacy.customStatement(
+        'ALTER TABLE app_settings DROP COLUMN onboarding_completed',
       );
       await legacy.customStatement('PRAGMA user_version = 4');
       await legacy.close();
@@ -176,9 +189,13 @@ void main() {
       );
       // Simulates version 5, which had the table but not yet the column —
       // `DROP COLUMN` stands in for a schema that never had it, since the
-      // fresh database above starts on the current one.
+      // fresh database above starts on the current one. Same reasoning for
+      // `onboarding_completed`, added later still, in version 7.
       await legacy.customStatement(
         'ALTER TABLE user_profiles DROP COLUMN username',
+      );
+      await legacy.customStatement(
+        'ALTER TABLE app_settings DROP COLUMN onboarding_completed',
       );
       await legacy.customStatement('PRAGMA user_version = 5');
       await legacy.close();
@@ -192,5 +209,32 @@ void main() {
       // The rest of the row survives the migration untouched.
       expect(profile.goal, WeightGoal.maintain);
     });
+
+    test(
+      'adds the onboarding-completed column to an installation on version 6',
+      () async {
+        final legacy = AppDatabase.atFile(file);
+        await legacy.open();
+        await legacy.customStatement(
+          "INSERT INTO app_settings (id, theme_mode, updated_at) "
+          "VALUES (1, 'dark', 0)",
+        );
+        // Simulates version 6, which had the table but not yet the column.
+        await legacy.customStatement(
+          'ALTER TABLE app_settings DROP COLUMN onboarding_completed',
+        );
+        await legacy.customStatement('PRAGMA user_version = 6');
+        await legacy.close();
+
+        final migrated = AppDatabase.atFile(file);
+        addTearDown(migrated.close);
+        await migrated.open();
+
+        final repository = SettingsRepository(migrated);
+        expect(await repository.readOnboardingCompleted(), isFalse);
+        // The rest of the row survives the migration untouched.
+        expect(await repository.readThemeMode(), AppThemeMode.dark);
+      },
+    );
   });
 }

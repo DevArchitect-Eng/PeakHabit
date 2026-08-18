@@ -26,12 +26,16 @@ typedef AppStores = ({
 /// ends. Left empty they hold the same defaults a fresh install would.
 AppStores storesWith({
   AppThemeMode? themeMode,
+  bool onboardingCompleted = true,
   UserProfile? profile,
   List<BodyWeightEntry> weightEntries = const [],
   bool weightEntriesUnreadable = false,
 }) {
   final stores = (
-    settings: InMemorySettingsRepository(themeMode ?? AppThemeMode.dark),
+    settings: InMemorySettingsRepository(
+      themeMode ?? AppThemeMode.dark,
+      onboardingCompleted,
+    ),
     profile: InMemoryUserProfileRepository(profile ?? UserProfile.empty),
     bodyWeight: InMemoryBodyWeightRepository(
       entries: weightEntries,

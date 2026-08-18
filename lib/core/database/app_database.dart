@@ -32,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.atFile(File file) : super(openDatabaseAtFile(file));
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -69,6 +69,11 @@ class AppDatabase extends _$AppDatabase {
       // duplicate-column error.
       if (from >= 2 && from < 6) {
         await m.addColumn(userProfiles, userProfiles.username);
+      }
+      // Not just `from < 7`: an installation on 0 or 1 creates `appSettings`
+      // fresh above, already with the column.
+      if (from >= 3 && from < 7) {
+        await m.addColumn(appSettings, appSettings.onboardingCompleted);
       }
       AppLogger.database.info('Migration to $to complete');
     },

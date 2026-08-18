@@ -778,6 +778,20 @@ class $AppSettingsTable extends AppSettings
         type: DriftSqlType.string,
         requiredDuringInsert: true,
       ).withConverter<AppThemeMode>($AppSettingsTable.$converterthemeMode);
+  static const VerificationMeta _onboardingCompletedMeta =
+      const VerificationMeta('onboardingCompleted');
+  @override
+  late final GeneratedColumn<bool> onboardingCompleted = GeneratedColumn<bool>(
+    'onboarding_completed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("onboarding_completed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -790,7 +804,12 @@ class $AppSettingsTable extends AppSettings
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, themeMode, updatedAt];
+  List<GeneratedColumn> get $columns => [
+    id,
+    themeMode,
+    onboardingCompleted,
+    updatedAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -805,6 +824,15 @@ class $AppSettingsTable extends AppSettings
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('onboarding_completed')) {
+      context.handle(
+        _onboardingCompletedMeta,
+        onboardingCompleted.isAcceptableOrUnknown(
+          data['onboarding_completed']!,
+          _onboardingCompletedMeta,
+        ),
+      );
     }
     if (data.containsKey('updated_at')) {
       context.handle(
@@ -833,6 +861,10 @@ class $AppSettingsTable extends AppSettings
           data['${effectivePrefix}theme_mode'],
         )!,
       ),
+      onboardingCompleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}onboarding_completed'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -853,11 +885,16 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   final int id;
   final AppThemeMode themeMode;
 
+  /// Whether the first-start onboarding has been completed. Gates whether the
+  /// app shows it again, so it never runs a second time.
+  final bool onboardingCompleted;
+
   /// Last change, kept so a later cloud sync has something to order by.
   final DateTime updatedAt;
   const AppSettingsRow({
     required this.id,
     required this.themeMode,
+    required this.onboardingCompleted,
     required this.updatedAt,
   });
   @override
@@ -869,6 +906,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
         $AppSettingsTable.$converterthemeMode.toSql(themeMode),
       );
     }
+    map['onboarding_completed'] = Variable<bool>(onboardingCompleted);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -877,6 +915,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     return AppSettingsCompanion(
       id: Value(id),
       themeMode: Value(themeMode),
+      onboardingCompleted: Value(onboardingCompleted),
       updatedAt: Value(updatedAt),
     );
   }
@@ -891,6 +930,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       themeMode: $AppSettingsTable.$converterthemeMode.fromJson(
         serializer.fromJson<String>(json['themeMode']),
       ),
+      onboardingCompleted: serializer.fromJson<bool>(
+        json['onboardingCompleted'],
+      ),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -902,6 +944,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'themeMode': serializer.toJson<String>(
         $AppSettingsTable.$converterthemeMode.toJson(themeMode),
       ),
+      'onboardingCompleted': serializer.toJson<bool>(onboardingCompleted),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -909,16 +952,21 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   AppSettingsRow copyWith({
     int? id,
     AppThemeMode? themeMode,
+    bool? onboardingCompleted,
     DateTime? updatedAt,
   }) => AppSettingsRow(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
+    onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   AppSettingsRow copyWithCompanion(AppSettingsCompanion data) {
     return AppSettingsRow(
       id: data.id.present ? data.id.value : this.id,
       themeMode: data.themeMode.present ? data.themeMode.value : this.themeMode,
+      onboardingCompleted: data.onboardingCompleted.present
+          ? data.onboardingCompleted.value
+          : this.onboardingCompleted,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -928,45 +976,54 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     return (StringBuffer('AppSettingsRow(')
           ..write('id: $id, ')
           ..write('themeMode: $themeMode, ')
+          ..write('onboardingCompleted: $onboardingCompleted, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, themeMode, updatedAt);
+  int get hashCode =>
+      Object.hash(id, themeMode, onboardingCompleted, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is AppSettingsRow &&
           other.id == this.id &&
           other.themeMode == this.themeMode &&
+          other.onboardingCompleted == this.onboardingCompleted &&
           other.updatedAt == this.updatedAt);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<int> id;
   final Value<AppThemeMode> themeMode;
+  final Value<bool> onboardingCompleted;
   final Value<DateTime> updatedAt;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
+    this.onboardingCompleted = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
     required AppThemeMode themeMode,
+    this.onboardingCompleted = const Value.absent(),
     required DateTime updatedAt,
   }) : themeMode = Value(themeMode),
        updatedAt = Value(updatedAt);
   static Insertable<AppSettingsRow> custom({
     Expression<int>? id,
     Expression<String>? themeMode,
+    Expression<bool>? onboardingCompleted,
     Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (themeMode != null) 'theme_mode': themeMode,
+      if (onboardingCompleted != null)
+        'onboarding_completed': onboardingCompleted,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
@@ -974,11 +1031,13 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
   AppSettingsCompanion copyWith({
     Value<int>? id,
     Value<AppThemeMode>? themeMode,
+    Value<bool>? onboardingCompleted,
     Value<DateTime>? updatedAt,
   }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
       themeMode: themeMode ?? this.themeMode,
+      onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -994,6 +1053,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
         $AppSettingsTable.$converterthemeMode.toSql(themeMode.value),
       );
     }
+    if (onboardingCompleted.present) {
+      map['onboarding_completed'] = Variable<bool>(onboardingCompleted.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -1005,6 +1067,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     return (StringBuffer('AppSettingsCompanion(')
           ..write('id: $id, ')
           ..write('themeMode: $themeMode, ')
+          ..write('onboardingCompleted: $onboardingCompleted, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -1651,12 +1714,14 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
     AppSettingsCompanion Function({
       Value<int> id,
       required AppThemeMode themeMode,
+      Value<bool> onboardingCompleted,
       required DateTime updatedAt,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
       Value<int> id,
       Value<AppThemeMode> themeMode,
+      Value<bool> onboardingCompleted,
       Value<DateTime> updatedAt,
     });
 
@@ -1678,6 +1743,11 @@ class $$AppSettingsTableFilterComposer
   get themeMode => $composableBuilder(
     column: $table.themeMode,
     builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<bool> get onboardingCompleted => $composableBuilder(
+    column: $table.onboardingCompleted,
+    builder: (column) => ColumnFilters(column),
   );
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
@@ -1705,6 +1775,11 @@ class $$AppSettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get onboardingCompleted => $composableBuilder(
+    column: $table.onboardingCompleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -1725,6 +1800,11 @@ class $$AppSettingsTableAnnotationComposer
 
   GeneratedColumnWithTypeConverter<AppThemeMode, String> get themeMode =>
       $composableBuilder(column: $table.themeMode, builder: (column) => column);
+
+  GeneratedColumn<bool> get onboardingCompleted => $composableBuilder(
+    column: $table.onboardingCompleted,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
@@ -1763,20 +1843,24 @@ class $$AppSettingsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<AppThemeMode> themeMode = const Value.absent(),
+                Value<bool> onboardingCompleted = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => AppSettingsCompanion(
                 id: id,
                 themeMode: themeMode,
+                onboardingCompleted: onboardingCompleted,
                 updatedAt: updatedAt,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required AppThemeMode themeMode,
+                Value<bool> onboardingCompleted = const Value.absent(),
                 required DateTime updatedAt,
               }) => AppSettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
+                onboardingCompleted: onboardingCompleted,
                 updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0
