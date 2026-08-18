@@ -167,6 +167,62 @@ void main() {
     });
   });
 
+  group('daylight saving time', () {
+    // Each of these zones moves the clock on the day named, some of them at
+    // midnight itself. The series has to come back one entry per day either
+    // way: the stored form is a plain `yyyy-MM-dd` text, and the entry pins
+    // its date to the calendar day, so no shift of the clock may merge two
+    // days into one or reorder them. As above: on the UTC of the CI these are
+    // ordinary days, the assertions bite in the zones named.
+    const transitions = <String, (int, int, int)>{
+      'Europe/Berlin, spring forward': (2026, 3, 29),
+      'Europe/Berlin, fall back': (2026, 10, 25),
+      'Africa/Cairo, spring forward at midnight': (2026, 4, 24),
+      'Africa/Cairo, fall back at midnight': (2026, 10, 30),
+      'America/Santiago, fall back at midnight': (2026, 4, 5),
+      'America/Santiago, spring forward at midnight': (2026, 9, 7),
+    };
+
+    transitions.forEach((zone, transition) {
+      final (year, month, day) = transition;
+
+      test('a range across a transition keeps every day — $zone', () async {
+        // The day before, the transition day itself, and the day after.
+        final days = [
+          DateTime(year, month, day - 1),
+          DateTime(year, month, day),
+          DateTime(year, month, day + 1),
+        ];
+        for (var i = 0; i < days.length; i++) {
+          await repository.save(
+            BodyWeightEntry(date: days[i], weightKg: 80 + i.toDouble()),
+          );
+        }
+
+        final entries = await repository.readRange(days.first, days.last);
+
+        // Three separate days, in order, none of them collapsed onto another.
+        expect(entries, hasLength(3));
+        expect(entries.map((entry) => entry.date), days);
+        expect(entries.map((entry) => entry.weightKg), [80.0, 81.0, 82.0]);
+      });
+
+      test('the transition day is deletable on its own — $zone', () async {
+        final eve = DateTime(year, month, day - 1);
+        final transitionDay = DateTime(year, month, day);
+        await repository.save(BodyWeightEntry(date: eve, weightKg: 82.0));
+        await repository.save(
+          BodyWeightEntry(date: transitionDay, weightKg: 81.4),
+        );
+
+        await repository.delete(transitionDay);
+
+        final left = await repository.readRange(eve, transitionDay);
+        expect(left, [BodyWeightEntry(date: eve, weightKg: 82.0)]);
+      });
+    });
+  });
+
   group('delete', () {
     test('removes the entry of that day', () async {
       await repository.save(entryOn(17, 81.4));

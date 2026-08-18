@@ -69,6 +69,24 @@ Reine Kalenderdaten (Geburtstag, Tag eines Eintrags) laufen über `DateOnlyConve
 liegen als `yyyy-MM-dd` in einer Textspalte. Eine `dateTime()`-Spalte hält einen Zeitpunkt;
 der verschiebt sich zwischen Zeitzonen um Stunden und landet dann auf dem Nachbartag.
 
+**Sommer-/Winterzeit verschiebt keinen gespeicherten Tag.** Der Text trägt keine Zeitzone, und
+`fromSql` gibt lokale Mitternacht zurück. In Zonen, die die Uhr um Mitternacht stellen (Kairo,
+Santiago, Havanna, Beirut), existiert diese Mitternacht am Umstellungstag nicht — Dart
+normalisiert einen solchen Wert dann **vorwärts** auf 01:00 desselben Tages, nie zurück auf den
+Vortag. Der Kalendertag bleibt also erhalten. Abgesichert ist das in
+`test/core/database/date_only_converter_test.dart` sowie in den Gewichts-Tests; auf der CI
+läuft alles unter UTC, wo diese Tage gewöhnliche Tage sind, die Prüfungen greifen also erst
+auf einer Maschine in einer betroffenen Zone.
+
+Zwei Dinge folgen daraus für alles, was mit diesen Daten rechnet:
+
+- Über Tage **nicht** mit `add(Duration(days: 1))` iterieren. Ein Tag ist um eine Umstellung
+  herum 23 oder 25 Stunden lang; 24 Stunden auf lokale Mitternacht addiert landen dann wieder
+  im selben Tag oder überspringen einen. Stattdessen `DateTime(jahr, monat, tag + 1)` — der
+  Konstruktor normalisiert einen überlaufenden Tageswert korrekt.
+- Gespeicherte Daten nur untereinander vergleichen, nie mit einem unnormalisierten
+  `DateTime` (siehe Klassenkommentar von `DateOnlyConverter`).
+
 Die Datei heißt `peakhabit.sqlite` und liegt im App-Support-Verzeichnis
 (`getApplicationSupportDirectory()`), nicht im Dokumentenverzeichnis: Letzteres ist für
 Dateien gedacht, die der Nutzer selbst sieht, und taucht in der Files-App auf, sobald File
