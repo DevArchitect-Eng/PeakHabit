@@ -85,7 +85,8 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   Widget build(BuildContext context) {
     // The weight is not part of the profile; it comes from the weight entries,
     // where the most recent one is the one to calculate with.
-    final latestWeight = ref.watch(latestBodyWeightProvider).value;
+    final weighings = ref.watch(latestBodyWeightProvider);
+    final latestWeight = weighings.value;
     final draft = _draftProfile();
     final calculation = CalorieCalculation.forProfile(
       draft,
@@ -165,6 +166,9 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           _CalorieCalculationCard(
             calculation: calculation,
             weight: latestWeight,
+            // A failed read looks like an empty series from here on — without
+            // this the card would ask for an entry the user already made.
+            weightUnreadable: weighings.hasError,
             missing: _missingForCalculation(draft, latestWeight),
             onApply: calculation == null
                 ? null
@@ -313,6 +317,7 @@ class _CalorieCalculationCard extends StatelessWidget {
   const _CalorieCalculationCard({
     required this.calculation,
     required this.weight,
+    required this.weightUnreadable,
     required this.missing,
     required this.onApply,
   });
@@ -322,6 +327,10 @@ class _CalorieCalculationCard extends StatelessWidget {
 
   /// The entry the weight comes from, shown so its date is visible too.
   final BodyWeightEntry? weight;
+
+  /// Whether the weight entries could not be read at all — a different case
+  /// from not having any, and one the user cannot fix by weighing themselves.
+  final bool weightUnreadable;
 
   final List<String> missing;
   final VoidCallback? onApply;
@@ -339,7 +348,12 @@ class _CalorieCalculationCard extends StatelessWidget {
           children: [
             Text('Kalorienziel berechnen', style: theme.textTheme.titleMedium),
             const SizedBox(height: 12),
-            if (calculation == null)
+            if (weightUnreadable)
+              Text(
+                'Das letzte Gewicht konnte nicht gelesen werden.',
+                style: theme.textTheme.bodyMedium,
+              )
+            else if (calculation == null)
               Text(
                 '${missing.length == 1 ? 'Dafür fehlt' : 'Dafür fehlen'} noch: '
                 '${missing.join(', ')}.',

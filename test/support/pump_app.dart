@@ -28,11 +28,15 @@ AppStores storesWith({
   AppThemeMode? themeMode,
   UserProfile? profile,
   List<BodyWeightEntry> weightEntries = const [],
+  bool weightEntriesUnreadable = false,
 }) {
   final stores = (
     settings: InMemorySettingsRepository(themeMode ?? AppThemeMode.dark),
     profile: InMemoryUserProfileRepository(profile ?? UserProfile.empty),
-    bodyWeight: InMemoryBodyWeightRepository(weightEntries),
+    bodyWeight: InMemoryBodyWeightRepository(
+      entries: weightEntries,
+      failing: weightEntriesUnreadable,
+    ),
   );
   addTearDown(stores.settings.dispose);
   addTearDown(stores.profile.dispose);

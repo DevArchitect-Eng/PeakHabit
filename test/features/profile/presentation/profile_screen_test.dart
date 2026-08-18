@@ -133,6 +133,27 @@ void main() {
       );
     });
 
+    testWidgets('says so when the entries cannot be read at all', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          profile: calculableProfile(),
+          weightEntriesUnreadable: true,
+        ),
+      );
+      await openProfile(tester);
+      await scrollToCalculation(tester);
+
+      // Not "make an entry" — the user has no way to fix a failed read by
+      // stepping on the scale.
+      expect(
+        find.text('Das letzte Gewicht konnte nicht gelesen werden.'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('shows every step of the calculation', (tester) async {
       await pumpApp(
         tester,

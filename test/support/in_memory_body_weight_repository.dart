@@ -9,11 +9,18 @@ import 'package:peakhabit/features/body_weight/domain/body_weight_entry.dart';
 /// real database, and what the database does with the entries is covered by
 /// the repository tests.
 class InMemoryBodyWeightRepository implements BodyWeightRepository {
-  InMemoryBodyWeightRepository([Iterable<BodyWeightEntry> entries = const []]) {
+  InMemoryBodyWeightRepository({
+    Iterable<BodyWeightEntry> entries = const [],
+    this.failing = false,
+  }) {
     for (final entry in entries) {
       _entries[entry.date] = entry;
     }
   }
+
+  /// Lets every read fail, for the case a screen has to tell "could not be
+  /// read" apart from "nothing recorded yet".
+  final bool failing;
 
   final _entries = <DateTime, BodyWeightEntry>{};
   final _changes = StreamController<List<BodyWeightEntry>>.broadcast();
@@ -26,8 +33,10 @@ class InMemoryBodyWeightRepository implements BodyWeightRepository {
   }
 
   @override
-  Future<BodyWeightEntry?> readLatest() async =>
-      entries.isEmpty ? null : entries.last;
+  Future<BodyWeightEntry?> readLatest() async {
+    _failIfAsked();
+    return entries.isEmpty ? null : entries.last;
+  }
 
   @override
   Stream<BodyWeightEntry?> watchLatest() =>
@@ -56,8 +65,13 @@ class InMemoryBodyWeightRepository implements BodyWeightRepository {
   Future<void> dispose() => _changes.close();
 
   Stream<List<BodyWeightEntry>> _watch() async* {
+    _failIfAsked();
     yield entries;
     yield* _changes.stream;
+  }
+
+  void _failIfAsked() {
+    if (failing) throw StateError('the weight entries cannot be read');
   }
 
   List<BodyWeightEntry> _inRange(DateTime from, DateTime to) {
