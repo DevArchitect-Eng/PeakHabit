@@ -32,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.atFile(File file) : super(openDatabaseAtFile(file));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -63,6 +63,12 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           "UPDATE user_profiles SET sex = NULL WHERE sex = 'diverse'",
         );
+      }
+      // Not just `from < 6`: an installation on 0 or 1 creates `userProfiles`
+      // fresh above, already with the column — adding it a second time is a
+      // duplicate-column error.
+      if (from >= 2 && from < 6) {
+        await m.addColumn(userProfiles, userProfiles.username);
       }
       AppLogger.database.info('Migration to $to complete');
     },

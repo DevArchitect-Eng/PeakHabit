@@ -31,6 +31,18 @@ class $UserProfilesTable extends UserProfiles
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _usernameMeta = const VerificationMeta(
+    'username',
+  );
+  @override
+  late final GeneratedColumn<String> username = GeneratedColumn<String>(
+    'username',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   late final GeneratedColumnWithTypeConverter<BiologicalSex?, String> sex =
       GeneratedColumn<String>(
@@ -126,6 +138,7 @@ class $UserProfilesTable extends UserProfiles
   List<GeneratedColumn> get $columns => [
     id,
     heightCm,
+    username,
     sex,
     birthDate,
     activityLevel,
@@ -155,6 +168,12 @@ class $UserProfilesTable extends UserProfiles
       context.handle(
         _heightCmMeta,
         heightCm.isAcceptableOrUnknown(data['height_cm']!, _heightCmMeta),
+      );
+    }
+    if (data.containsKey('username')) {
+      context.handle(
+        _usernameMeta,
+        username.isAcceptableOrUnknown(data['username']!, _usernameMeta),
       );
     }
     if (data.containsKey('calorie_target')) {
@@ -221,6 +240,10 @@ class $UserProfilesTable extends UserProfiles
         DriftSqlType.int,
         data['${effectivePrefix}height_cm'],
       ),
+      username: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}username'],
+      )!,
       sex: $UserProfilesTable.$convertersexn.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -298,6 +321,11 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
 
   /// Body height in centimetres.
   final int? heightCm;
+
+  /// Empty until the user sets one — a sentinel like the other fields' `null`,
+  /// just spelled without one because the column and the domain field are
+  /// deliberately non-nullable.
+  final String username;
   final BiologicalSex? sex;
   final DateTime? birthDate;
   final ActivityLevel? activityLevel;
@@ -314,6 +342,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
   const UserProfileRow({
     required this.id,
     this.heightCm,
+    required this.username,
     this.sex,
     this.birthDate,
     this.activityLevel,
@@ -331,6 +360,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
     if (!nullToAbsent || heightCm != null) {
       map['height_cm'] = Variable<int>(heightCm);
     }
+    map['username'] = Variable<String>(username);
     if (!nullToAbsent || sex != null) {
       map['sex'] = Variable<String>(
         $UserProfilesTable.$convertersexn.toSql(sex),
@@ -367,6 +397,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
       heightCm: heightCm == null && nullToAbsent
           ? const Value.absent()
           : Value(heightCm),
+      username: Value(username),
       sex: sex == null && nullToAbsent ? const Value.absent() : Value(sex),
       birthDate: birthDate == null && nullToAbsent
           ? const Value.absent()
@@ -393,6 +424,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
     return UserProfileRow(
       id: serializer.fromJson<int>(json['id']),
       heightCm: serializer.fromJson<int?>(json['heightCm']),
+      username: serializer.fromJson<String>(json['username']),
       sex: $UserProfilesTable.$convertersexn.fromJson(
         serializer.fromJson<String?>(json['sex']),
       ),
@@ -416,6 +448,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'heightCm': serializer.toJson<int?>(heightCm),
+      'username': serializer.toJson<String>(username),
       'sex': serializer.toJson<String?>(
         $UserProfilesTable.$convertersexn.toJson(sex),
       ),
@@ -437,6 +470,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
   UserProfileRow copyWith({
     int? id,
     Value<int?> heightCm = const Value.absent(),
+    String? username,
     Value<BiologicalSex?> sex = const Value.absent(),
     Value<DateTime?> birthDate = const Value.absent(),
     Value<ActivityLevel?> activityLevel = const Value.absent(),
@@ -449,6 +483,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
   }) => UserProfileRow(
     id: id ?? this.id,
     heightCm: heightCm.present ? heightCm.value : this.heightCm,
+    username: username ?? this.username,
     sex: sex.present ? sex.value : this.sex,
     birthDate: birthDate.present ? birthDate.value : this.birthDate,
     activityLevel: activityLevel.present
@@ -467,6 +502,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
     return UserProfileRow(
       id: data.id.present ? data.id.value : this.id,
       heightCm: data.heightCm.present ? data.heightCm.value : this.heightCm,
+      username: data.username.present ? data.username.value : this.username,
       sex: data.sex.present ? data.sex.value : this.sex,
       birthDate: data.birthDate.present ? data.birthDate.value : this.birthDate,
       activityLevel: data.activityLevel.present
@@ -494,6 +530,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
     return (StringBuffer('UserProfileRow(')
           ..write('id: $id, ')
           ..write('heightCm: $heightCm, ')
+          ..write('username: $username, ')
           ..write('sex: $sex, ')
           ..write('birthDate: $birthDate, ')
           ..write('activityLevel: $activityLevel, ')
@@ -511,6 +548,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
   int get hashCode => Object.hash(
     id,
     heightCm,
+    username,
     sex,
     birthDate,
     activityLevel,
@@ -527,6 +565,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
       (other is UserProfileRow &&
           other.id == this.id &&
           other.heightCm == this.heightCm &&
+          other.username == this.username &&
           other.sex == this.sex &&
           other.birthDate == this.birthDate &&
           other.activityLevel == this.activityLevel &&
@@ -541,6 +580,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
 class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
   final Value<int> id;
   final Value<int?> heightCm;
+  final Value<String> username;
   final Value<BiologicalSex?> sex;
   final Value<DateTime?> birthDate;
   final Value<ActivityLevel?> activityLevel;
@@ -553,6 +593,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
   const UserProfilesCompanion({
     this.id = const Value.absent(),
     this.heightCm = const Value.absent(),
+    this.username = const Value.absent(),
     this.sex = const Value.absent(),
     this.birthDate = const Value.absent(),
     this.activityLevel = const Value.absent(),
@@ -566,6 +607,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
   UserProfilesCompanion.insert({
     this.id = const Value.absent(),
     this.heightCm = const Value.absent(),
+    this.username = const Value.absent(),
     this.sex = const Value.absent(),
     this.birthDate = const Value.absent(),
     this.activityLevel = const Value.absent(),
@@ -583,6 +625,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
   static Insertable<UserProfileRow> custom({
     Expression<int>? id,
     Expression<int>? heightCm,
+    Expression<String>? username,
     Expression<String>? sex,
     Expression<String>? birthDate,
     Expression<String>? activityLevel,
@@ -596,6 +639,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (heightCm != null) 'height_cm': heightCm,
+      if (username != null) 'username': username,
       if (sex != null) 'sex': sex,
       if (birthDate != null) 'birth_date': birthDate,
       if (activityLevel != null) 'activity_level': activityLevel,
@@ -611,6 +655,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
   UserProfilesCompanion copyWith({
     Value<int>? id,
     Value<int?>? heightCm,
+    Value<String>? username,
     Value<BiologicalSex?>? sex,
     Value<DateTime?>? birthDate,
     Value<ActivityLevel?>? activityLevel,
@@ -624,6 +669,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
     return UserProfilesCompanion(
       id: id ?? this.id,
       heightCm: heightCm ?? this.heightCm,
+      username: username ?? this.username,
       sex: sex ?? this.sex,
       birthDate: birthDate ?? this.birthDate,
       activityLevel: activityLevel ?? this.activityLevel,
@@ -644,6 +690,9 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
     }
     if (heightCm.present) {
       map['height_cm'] = Variable<int>(heightCm.value);
+    }
+    if (username.present) {
+      map['username'] = Variable<String>(username.value);
     }
     if (sex.present) {
       map['sex'] = Variable<String>(
@@ -688,6 +737,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
     return (StringBuffer('UserProfilesCompanion(')
           ..write('id: $id, ')
           ..write('heightCm: $heightCm, ')
+          ..write('username: $username, ')
           ..write('sex: $sex, ')
           ..write('birthDate: $birthDate, ')
           ..write('activityLevel: $activityLevel, ')
@@ -1259,6 +1309,7 @@ typedef $$UserProfilesTableCreateCompanionBuilder =
     UserProfilesCompanion Function({
       Value<int> id,
       Value<int?> heightCm,
+      Value<String> username,
       Value<BiologicalSex?> sex,
       Value<DateTime?> birthDate,
       Value<ActivityLevel?> activityLevel,
@@ -1273,6 +1324,7 @@ typedef $$UserProfilesTableUpdateCompanionBuilder =
     UserProfilesCompanion Function({
       Value<int> id,
       Value<int?> heightCm,
+      Value<String> username,
       Value<BiologicalSex?> sex,
       Value<DateTime?> birthDate,
       Value<ActivityLevel?> activityLevel,
@@ -1300,6 +1352,11 @@ class $$UserProfilesTableFilterComposer
 
   ColumnFilters<int> get heightCm => $composableBuilder(
     column: $table.heightCm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get username => $composableBuilder(
+    column: $table.username,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1372,6 +1429,11 @@ class $$UserProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get username => $composableBuilder(
+    column: $table.username,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get sex => $composableBuilder(
     column: $table.sex,
     builder: (column) => ColumnOrderings(column),
@@ -1432,6 +1494,9 @@ class $$UserProfilesTableAnnotationComposer
 
   GeneratedColumn<int> get heightCm =>
       $composableBuilder(column: $table.heightCm, builder: (column) => column);
+
+  GeneratedColumn<String> get username =>
+      $composableBuilder(column: $table.username, builder: (column) => column);
 
   GeneratedColumnWithTypeConverter<BiologicalSex?, String> get sex =>
       $composableBuilder(column: $table.sex, builder: (column) => column);
@@ -1505,6 +1570,7 @@ class $$UserProfilesTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<int?> heightCm = const Value.absent(),
+                Value<String> username = const Value.absent(),
                 Value<BiologicalSex?> sex = const Value.absent(),
                 Value<DateTime?> birthDate = const Value.absent(),
                 Value<ActivityLevel?> activityLevel = const Value.absent(),
@@ -1517,6 +1583,7 @@ class $$UserProfilesTableTableManager
               }) => UserProfilesCompanion(
                 id: id,
                 heightCm: heightCm,
+                username: username,
                 sex: sex,
                 birthDate: birthDate,
                 activityLevel: activityLevel,
@@ -1531,6 +1598,7 @@ class $$UserProfilesTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<int?> heightCm = const Value.absent(),
+                Value<String> username = const Value.absent(),
                 Value<BiologicalSex?> sex = const Value.absent(),
                 Value<DateTime?> birthDate = const Value.absent(),
                 Value<ActivityLevel?> activityLevel = const Value.absent(),
@@ -1543,6 +1611,7 @@ class $$UserProfilesTableTableManager
               }) => UserProfilesCompanion.insert(
                 id: id,
                 heightCm: heightCm,
+                username: username,
                 sex: sex,
                 birthDate: birthDate,
                 activityLevel: activityLevel,

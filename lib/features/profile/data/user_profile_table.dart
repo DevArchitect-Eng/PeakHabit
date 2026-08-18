@@ -26,6 +26,11 @@ class UserProfiles extends Table {
   /// Body height in centimetres.
   IntColumn get heightCm => integer().nullable()();
 
+  /// Empty until the user sets one — a sentinel like the other fields' `null`,
+  /// just spelled without one because the column and the domain field are
+  /// deliberately non-nullable.
+  TextColumn get username => text().withDefault(const Constant(''))();
+
   TextColumn get sex => textEnum<BiologicalSex>().nullable()();
 
   TextColumn get birthDate =>
