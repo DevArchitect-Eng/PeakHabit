@@ -96,22 +96,6 @@ void main() {
     expect(stores.profile.profile.username, 'mila');
   });
 
-  testWidgets('saves a changed goal', (tester) async {
-    final stores = await pumpApp(
-      tester,
-      on: storesWith(profile: UserProfile(username: 'mila')),
-    );
-    await openProfile(tester);
-
-    await tester.tap(find.text('Gewicht halten'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Abnehmen').last);
-    await tester.pumpAndSettle();
-    await tapSave(tester);
-
-    expect(stores.profile.profile.goal, WeightGoal.lose);
-  });
-
   testWidgets('refuses a height of zero instead of storing it', (tester) async {
     final stores = await pumpApp(tester);
     await openProfile(tester);
@@ -215,17 +199,15 @@ void main() {
       expect(find.text('2259 kcal'), findsOneWidget);
     });
 
-    testWidgets('follows the goal picked in the form', (tester) async {
+    testWidgets('follows the goal stored on the goals screen', (tester) async {
       await pumpApp(
         tester,
-        on: storesWith(profile: calculableProfile(), weightEntries: [weighing]),
+        on: storesWith(
+          profile: calculableProfile(goal: WeightGoal.gain),
+          weightEntries: [weighing],
+        ),
       );
       await openProfile(tester);
-
-      await tester.tap(find.text('Gewicht halten'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Zunehmen').last);
-      await tester.pumpAndSettle();
       await scrollToCalculation(tester);
 
       expect(find.text('2959 kcal'), findsOneWidget);

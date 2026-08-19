@@ -15,8 +15,9 @@ const _logger = AppLogger('profile');
 /// Edits the one user profile.
 ///
 /// Reached from the settings tab, so the values entered during onboarding can
-/// be corrected later. The macro split is deliberately not editable here: it
-/// belongs with the calorie target it divides up.
+/// be corrected later. What the user is working towards — the weight goal and
+/// the activity level — sits on the goals screen instead: this one answers who
+/// somebody is, and those two answer where they are going.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -62,8 +63,6 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
 
   late BiologicalSex? _sex = widget.profile.sex;
   late DateTime? _birthDate = widget.profile.birthDate;
-  late ActivityLevel? _activityLevel = widget.profile.activityLevel;
-  late WeightGoal _goal = widget.profile.goal;
 
   @override
   void initState() {
@@ -139,28 +138,6 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
             onChanged: (value) => setState(() => _birthDate = value),
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<ActivityLevel?>(
-            initialValue: _activityLevel,
-            decoration: const InputDecoration(labelText: 'Aktivitätslevel'),
-            items: [
-              const DropdownMenuItem(child: Text('Keine Angabe')),
-              for (final level in ActivityLevel.values)
-                DropdownMenuItem(value: level, child: Text(level.label)),
-            ],
-            onChanged: (value) => setState(() => _activityLevel = value),
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<WeightGoal>(
-            initialValue: _goal,
-            decoration: const InputDecoration(labelText: 'Ziel'),
-            items: [
-              for (final goal in WeightGoal.values)
-                DropdownMenuItem(value: goal, child: Text(goal.label)),
-            ],
-            // The goal always has a value, so a null selection cannot happen.
-            onChanged: (value) => setState(() => _goal = value ?? _goal),
-          ),
-          const SizedBox(height: 16),
           TextFormField(
             controller: _calorieTargetController,
             decoration: const InputDecoration(
@@ -214,20 +191,20 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   /// The profile as the form currently stands — what a save would write, and
   /// what the calculation reads.
   ///
+  /// Built from the stored profile, so everything this screen does not edit —
+  /// the goal, the activity level, the macro split — is carried over as it
+  /// stands instead of being rebuilt field by field.
+  ///
   /// A value the form would reject counts as not filled in: while a `0` stands
   /// in the height field there is nothing to calculate from, and the domain
   /// model would throw on it. Saving never gets here with such a value, the
   /// validator stops it first.
-  UserProfile _draftProfile() => UserProfile(
+  UserProfile _draftProfile() => widget.profile.copyWith(
     username: _usernameController.text.trim(),
     heightCm: _positiveOrNull(_heightController.text),
     sex: _sex,
     birthDate: _birthDate,
-    activityLevel: _activityLevel,
-    goal: _goal,
     calorieTarget: _positiveOrNull(_calorieTargetController.text),
-    // Carried over untouched — this screen does not edit the split.
-    macros: widget.profile.macros,
   );
 
   int? _positiveOrNull(String text) {
@@ -245,7 +222,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     if (draft.heightCm == null) 'die Größe',
     if (draft.sex == null) 'das Geschlecht',
     if (draft.birthDate == null) 'das Geburtsdatum',
-    if (draft.activityLevel == null) 'das Aktivitätslevel',
+    if (draft.activityLevel == null) 'das Aktivitätslevel (unter „Ziele")',
   ];
 
   /// Puts the calculated target into the field — and no further.

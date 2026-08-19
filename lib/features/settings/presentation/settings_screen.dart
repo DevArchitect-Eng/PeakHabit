@@ -26,7 +26,10 @@ class SettingsScreen extends StatelessWidget {
             title: 'Darstellung',
             children: [_ThemeModeSetting()],
           ),
-          _SettingsSection(title: 'Persönliches', children: [_ProfileTile()]),
+          _SettingsSection(
+            title: 'Persönliches',
+            children: [_ProfileTile(), _GoalsTile()],
+          ),
         ],
       ),
     );
@@ -71,9 +74,26 @@ class _ProfileTile extends StatelessWidget {
     return ListTile(
       leading: const Icon(Icons.person_outline),
       title: const Text('Profil bearbeiten'),
-      subtitle: const Text('Größe, Geschlecht, Ziel und Kalorienziel'),
+      subtitle: const Text('Größe, Geschlecht und Kalorienziel'),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => context.go('/settings/profile'),
+    );
+  }
+}
+
+/// Way into the goals, which are edited apart from the profile they used to
+/// sit in.
+class _GoalsTile extends StatelessWidget {
+  const _GoalsTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.flag_outlined),
+      title: const Text('Ziele'),
+      subtitle: const Text('Gewichtsziel und Aktivitätslevel'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.go('/settings/goals'),
     );
   }
 }

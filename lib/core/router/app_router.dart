@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/nutrition/presentation/nutrition_screen.dart';
+import '../../features/profile/presentation/goals_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/shell/presentation/app_shell.dart';
@@ -31,6 +32,10 @@ final appRouter = GoRouter(
             GoRoute(
               path: 'profile',
               builder: (context, state) => const ProfileScreen(),
+            ),
+            GoRoute(
+              path: 'goals',
+              builder: (context, state) => const GoalsScreen(),
             ),
           ],
         ),
