@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peakhabit/features/onboarding/presentation/onboarding_screen.dart';
 import 'package:peakhabit/features/profile/domain/user_profile.dart';
+import 'package:peakhabit/features/profile/presentation/goal_warning.dart';
+import 'package:peakhabit/features/profile/presentation/profile_formatting.dart';
 
 import '../../../support/pump_app.dart';
 
@@ -32,6 +34,12 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Closes the warning dialog a hard rate or a low target puts up.
+  Future<void> acknowledge(WidgetTester tester) async {
+    await tester.tap(find.text('Verstanden'));
+    await tester.pumpAndSettle();
+  }
+
   Future<void> fillUpToCalorieStep(
     WidgetTester tester, {
     required String username,
@@ -50,6 +58,57 @@ void main() {
     await enterText(tester, 'Aktuelles Gewicht', weightKg);
     await tapWeiter(tester);
   }
+
+  group('the goal step', () {
+    /// Walks to the goal step, which is the third of the flow.
+    Future<void> openGoalStep(WidgetTester tester) async {
+      await tapWeiter(tester); // welcome
+      await enterText(tester, 'Benutzername', 'ben');
+      await tapWeiter(tester);
+    }
+
+    testWidgets('offers all eight rates, not the three old directions', (
+      tester,
+    ) async {
+      await pumpApp(tester, on: storesWith(onboardingCompleted: false));
+
+      await openGoalStep(tester);
+
+      for (final goal in WeightGoal.values) {
+        expect(find.text(goal.label), findsOneWidget, reason: 'for $goal');
+      }
+      // The picker spells the rate out — the bare directions are gone.
+      expect(find.text('Abnehmen'), findsNothing);
+      expect(find.text('Zunehmen'), findsNothing);
+    });
+
+    testWidgets('warns at a hard rate and lets the flow go on', (tester) async {
+      final stores = storesWith(onboardingCompleted: false);
+      await pumpApp(tester, on: stores);
+      await openGoalStep(tester);
+
+      await tester.tap(find.text(WeightGoal.lose1000.label));
+      await tester.pumpAndSettle();
+
+      expect(find.text(GoalWarning.deficitTooHigh.message), findsOneWidget);
+
+      await acknowledge(tester);
+      await tapWeiter(tester);
+
+      // The rate survives the dialog, and the step is behind us.
+      expect(find.text('Größe'), findsOneWidget);
+    });
+
+    testWidgets('stays quiet at a rate that is not a hard one', (tester) async {
+      await pumpApp(tester, on: storesWith(onboardingCompleted: false));
+      await openGoalStep(tester);
+
+      await tester.tap(find.text(WeightGoal.lose500.label));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Verstanden'), findsNothing);
+    });
+  });
 
   testWidgets('appears on the first start', (tester) async {
     await pumpApp(tester, on: storesWith(onboardingCompleted: false));
@@ -182,6 +241,50 @@ void main() {
       expect(await stores.settings.readOnboardingCompleted(), isFalse);
       expect(stores.bodyWeight.entries, isEmpty);
       expect(find.byType(OnboardingScreen), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'warns on the way out when the calculated target lands under the basal '
+    'rate, and completes anyway',
+    (tester) async {
+      final stores = storesWith(onboardingCompleted: false);
+      await pumpApp(tester, on: stores);
+
+      // 180 cm and 80 kg at 30 make a basal rate of 1780 kcal. Sedentary that
+      // is 2136, and half a kilo a week off leaves 1636 — under what the body
+      // burns lying still, at a rate that earns no word of its own.
+      await fillUpToCalorieStep(
+        tester,
+        username: 'ben',
+        goal: 'Abnehmen, 0,5 kg pro Woche',
+        heightCm: '180',
+        weightKg: '80',
+      );
+      await tester.tap(find.text('Nein, für mich berechnen'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('männlich'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Auswählen'));
+      await tester.tap(find.text('Auswählen'));
+      await tester.pumpAndSettle();
+      // The picker opens on thirty years back, which is the age above.
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Sitzend, kaum Bewegung'));
+      await tester.tap(find.text('Sitzend, kaum Bewegung'));
+      await tester.pumpAndSettle();
+      await tapFertig(tester);
+
+      expect(find.text(GoalWarning.belowBasalRate.message), findsOneWidget);
+      // Nothing is written while the dialog is up — this is the last moment
+      // the user can still go back and change something.
+      expect(await stores.settings.readOnboardingCompleted(), isFalse);
+
+      await acknowledge(tester);
+
+      expect(stores.profile.profile.calorieTarget, 1636);
+      expect(await stores.settings.readOnboardingCompleted(), isTrue);
     },
   );
 

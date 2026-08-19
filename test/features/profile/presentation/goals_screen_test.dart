@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peakhabit/features/body_weight/domain/body_weight_entry.dart';
 import 'package:peakhabit/features/profile/domain/user_profile.dart';
+import 'package:peakhabit/features/profile/presentation/goal_warning.dart';
 import 'package:peakhabit/features/profile/presentation/goals_screen.dart';
 import 'package:peakhabit/features/profile/presentation/setting_row.dart';
 
@@ -28,6 +29,12 @@ void main() {
     await tester.tap(find.text(option).last);
     await tester.pumpAndSettle();
     await confirmEditor(tester);
+  }
+
+  /// Closes the warning dialog a hard rate or a low target puts up.
+  Future<void> acknowledge(WidgetTester tester) async {
+    await tester.tap(find.text('Verstanden'));
+    await tester.pumpAndSettle();
   }
 
   final first = BodyWeightEntry(date: DateTime(2026, 8, 12), weightKg: 82);
@@ -254,6 +261,113 @@ void main() {
       expect(stores.profile.profile.calorieTarget, 2000);
       expect(find.textContaining('Kalorienziel auf'), findsNothing);
     });
+  });
+
+  group('the warning', () {
+    testWidgets('comes up on the steepest deficit', (tester) async {
+      final stores = await pumpApp(tester);
+      await openGoals(tester);
+
+      await pick(tester, row: 'Ziel', option: 'Abnehmen, 1 kg pro Woche');
+
+      expect(find.text(GoalWarning.deficitTooHigh.message), findsOneWidget);
+      // Informing, not blocking: the rate is stored either way.
+      expect(stores.profile.profile.goal, WeightGoal.lose1000);
+      await acknowledge(tester);
+      expect(find.text(GoalWarning.deficitTooHigh.message), findsNothing);
+    });
+
+    testWidgets('comes up on the steepest surplus', (tester) async {
+      await pumpApp(tester);
+      await openGoals(tester);
+
+      await pick(tester, row: 'Ziel', option: 'Zunehmen, 0,8 kg pro Woche');
+
+      expect(find.text(GoalWarning.surplusTooHigh.message), findsOneWidget);
+      await acknowledge(tester);
+    });
+
+    testWidgets('stays away at a rate that is not a hard one', (tester) async {
+      await pumpApp(tester);
+      await openGoals(tester);
+
+      await pick(tester, row: 'Ziel', option: 'Abnehmen, 0,5 kg pro Woche');
+
+      expect(find.text('Verstanden'), findsNothing);
+    });
+
+    testWidgets('comes up once the target lands under the basal rate', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          profile: calculableProfile().copyWith(
+            activityLevel: ActivityLevel.sedentary,
+          ),
+          weightEntries: [weighing],
+        ),
+      );
+      await openGoals(tester);
+
+      // 1780 × 1.2 = 2136, minus 500 is 1636 — under the 1780 basal rate, at
+      // a rate that earns no word of its own.
+      await pick(tester, row: 'Ziel', option: 'Abnehmen, 0,5 kg pro Woche');
+
+      expect(find.text(GoalWarning.belowBasalRate.message), findsOneWidget);
+      expect(find.text(GoalWarning.deficitTooHigh.message), findsNothing);
+      await acknowledge(tester);
+    });
+
+    testWidgets('carries both points in one dialog when both apply', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          profile: calculableProfile().copyWith(
+            activityLevel: ActivityLevel.sedentary,
+          ),
+          weightEntries: [weighing],
+        ),
+      );
+      await openGoals(tester);
+
+      // 2136 − 1000 = 1136, well under the basal rate, at the steepest rate.
+      await pick(tester, row: 'Ziel', option: 'Abnehmen, 1 kg pro Woche');
+
+      expect(find.text(GoalWarning.deficitTooHigh.message), findsOneWidget);
+      expect(find.text(GoalWarning.belowBasalRate.message), findsOneWidget);
+      // One dialog for the two of them, not one each.
+      expect(find.byType(AlertDialog), findsOneWidget);
+      await acknowledge(tester);
+    });
+
+    testWidgets(
+      'follows a changed activity level under the basal rate, without '
+      'repeating the rate the user already picked',
+      (tester) async {
+        await pumpApp(
+          tester,
+          on: storesWith(
+            profile: calculableProfile(goal: WeightGoal.lose1000),
+            weightEntries: [weighing],
+          ),
+        );
+        await openGoals(tester);
+
+        await pick(
+          tester,
+          row: 'Aktivitätslevel',
+          option: 'Sitzend, kaum Bewegung',
+        );
+
+        expect(find.text(GoalWarning.belowBasalRate.message), findsOneWidget);
+        // The rate did not change here, so it does not get to speak again.
+        expect(find.text(GoalWarning.deficitTooHigh.message), findsNothing);
+        await acknowledge(tester);
+      },
+    );
   });
 
   testWidgets('leaves the rest of the profile alone', (tester) async {
