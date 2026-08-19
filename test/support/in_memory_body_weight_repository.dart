@@ -43,6 +43,16 @@ class InMemoryBodyWeightRepository implements BodyWeightRepository {
       _watch().map((entries) => entries.isEmpty ? null : entries.last);
 
   @override
+  Future<BodyWeightEntry?> readFirst() async {
+    _failIfAsked();
+    return entries.isEmpty ? null : entries.first;
+  }
+
+  @override
+  Stream<BodyWeightEntry?> watchFirst() =>
+      _watch().map((entries) => entries.isEmpty ? null : entries.first);
+
+  @override
   Future<List<BodyWeightEntry>> readRange(DateTime from, DateTime to) async =>
       _inRange(from, to);
 

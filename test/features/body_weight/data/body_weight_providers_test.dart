@@ -50,4 +50,20 @@ void main() {
 
     expect(container.read(latestBodyWeightProvider).value, entry);
   });
+
+  test('the first provider follows what the repository saves', () async {
+    final subscription = container.listen(
+      firstBodyWeightProvider,
+      (_, _) {},
+      fireImmediately: true,
+    );
+    addTearDown(subscription.close);
+
+    expect(await container.read(firstBodyWeightProvider.future), isNull);
+
+    await container.read(bodyWeightRepositoryProvider).save(entry);
+    await pumpEventQueue();
+
+    expect(container.read(firstBodyWeightProvider).value, entry);
+  });
 }

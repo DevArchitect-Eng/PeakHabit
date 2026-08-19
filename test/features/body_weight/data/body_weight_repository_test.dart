@@ -26,6 +26,7 @@ void main() {
   group('save and read', () {
     test('reports no entry before anything was saved', () async {
       expect(await repository.readLatest(), isNull);
+      expect(await repository.readFirst(), isNull);
       expect(
         await repository.readRange(DateTime(2026), DateTime(2027)),
         isEmpty,
@@ -51,6 +52,21 @@ void main() {
       await repository.save(entryOn(12, 82.0));
       await repository.save(entryOn(15, 81.8));
 
+      expect(await repository.readLatest(), entryOn(18, 81.4));
+    });
+
+    test('reports the oldest entry as the first one', () async {
+      await repository.save(entryOn(18, 81.4));
+      await repository.save(entryOn(12, 82.0));
+      await repository.save(entryOn(15, 81.8));
+
+      expect(await repository.readFirst(), entryOn(12, 82.0));
+    });
+
+    test('the only entry is both the first and the latest one', () async {
+      await repository.save(entryOn(18, 81.4));
+
+      expect(await repository.readFirst(), entryOn(18, 81.4));
       expect(await repository.readLatest(), entryOn(18, 81.4));
     });
   });
@@ -263,6 +279,21 @@ void main() {
       await pumpEventQueue();
 
       expect(seen, [null, entryOn(18, 81.4), null]);
+    });
+
+    test('emits the first entry and then every change', () async {
+      final seen = <BodyWeightEntry?>[];
+      final subscription = repository.watchFirst().listen(seen.add);
+      addTearDown(subscription.cancel);
+
+      await pumpEventQueue();
+      await repository.save(entryOn(18, 81.4));
+      await pumpEventQueue();
+      // An earlier weighing entered afterwards moves the starting point back.
+      await repository.save(entryOn(12, 82.0));
+      await pumpEventQueue();
+
+      expect(seen, [null, entryOn(18, 81.4), entryOn(12, 82.0)]);
     });
 
     test('a range follows what is saved into it', () async {
