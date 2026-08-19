@@ -3,10 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/app_logger.dart';
-import '../../body_weight/data/body_weight_providers.dart';
-import '../../body_weight/domain/body_weight_entry.dart';
 import '../data/user_profile_providers.dart';
-import '../domain/calorie_calculation.dart';
 import '../domain/user_profile.dart';
 import 'profile_formatting.dart';
 
@@ -15,9 +12,10 @@ const _logger = AppLogger('profile');
 /// Edits the one user profile.
 ///
 /// Reached from the settings tab, so the values entered during onboarding can
-/// be corrected later. What the user is working towards — the weight goal and
-/// the activity level — sits on the goals screen instead: this one answers who
-/// somebody is, and those two answer where they are going.
+/// be corrected later. Only the body data is edited here — what the user is
+/// working towards sits on the goals screen, and the calorie target with its
+/// macro split below that: this screen answers who somebody is, those two
+/// answer where they are going.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -59,7 +57,6 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _usernameController;
   late final TextEditingController _heightController;
-  late final TextEditingController _calorieTargetController;
 
   late BiologicalSex? _sex = widget.profile.sex;
   late DateTime? _birthDate = widget.profile.birthDate;
@@ -71,32 +68,17 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     _heightController = TextEditingController(
       text: widget.profile.heightCm?.toString() ?? '',
     );
-    _calorieTargetController = TextEditingController(
-      text: widget.profile.calorieTarget?.toString() ?? '',
-    );
   }
 
   @override
   void dispose() {
     _usernameController.dispose();
     _heightController.dispose();
-    _calorieTargetController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // The weight is not part of the profile; it comes from the weight entries,
-    // where the most recent one is the one to calculate with.
-    final weighings = ref.watch(latestBodyWeightProvider);
-    final latestWeight = weighings.value;
-    final draft = _draftProfile();
-    final calculation = CalorieCalculation.forProfile(
-      draft,
-      weightKg: latestWeight?.weightKg,
-      today: DateTime.now(),
-    );
-
     return Form(
       key: _formKey,
       child: ListView(
@@ -117,9 +99,6 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             validator: (value) => _validatePositiveNumber(value, 'Die Größe'),
-            // The calculation below reads the height, so it has to be rebuilt
-            // while it is being typed — the dropdowns do that on their own.
-            onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<BiologicalSex?>(
@@ -136,30 +115,6 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           _BirthDateField(
             value: _birthDate,
             onChanged: (value) => setState(() => _birthDate = value),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _calorieTargetController,
-            decoration: const InputDecoration(
-              labelText: 'Kalorienziel',
-              suffixText: 'kcal',
-            ),
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            validator: (value) =>
-                _validatePositiveNumber(value, 'Das Kalorienziel'),
-          ),
-          const SizedBox(height: 16),
-          _CalorieCalculationCard(
-            calculation: calculation,
-            weight: latestWeight,
-            // A failed read looks like an empty series from here on — without
-            // this the card would ask for an entry the user already made.
-            weightUnreadable: weighings.hasError,
-            missing: _missingForCalculation(draft, latestWeight),
-            onApply: calculation == null
-                ? null
-                : () => _applyCalculated(calculation),
           ),
           const SizedBox(height: 32),
           FilledButton(onPressed: _save, child: const Text('Speichern')),
@@ -188,52 +143,25 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     return null;
   }
 
-  /// The profile as the form currently stands — what a save would write, and
-  /// what the calculation reads.
+  /// The profile as the form currently stands — what a save would write.
   ///
   /// Built from the stored profile, so everything this screen does not edit —
   /// the goal, the activity level, the macro split — is carried over as it
   /// stands instead of being rebuilt field by field.
   ///
-  /// A value the form would reject counts as not filled in: while a `0` stands
-  /// in the height field there is nothing to calculate from, and the domain
-  /// model would throw on it. Saving never gets here with such a value, the
-  /// validator stops it first.
+  /// A value the form would reject counts as not filled in: the domain model
+  /// would throw on a `0` in the height field. Saving never gets here with
+  /// such a value, the validator stops it first.
   UserProfile _draftProfile() => widget.profile.copyWith(
     username: _usernameController.text.trim(),
     heightCm: _positiveOrNull(_heightController.text),
     sex: _sex,
     birthDate: _birthDate,
-    calorieTarget: _positiveOrNull(_calorieTargetController.text),
   );
 
   int? _positiveOrNull(String text) {
     final number = int.tryParse(text);
     return number != null && number > 0 ? number : null;
-  }
-
-  /// What the calculation is still waiting for, named the way the fields above
-  /// are.
-  List<String> _missingForCalculation(
-    UserProfile draft,
-    BodyWeightEntry? weight,
-  ) => [
-    if (weight == null) 'ein Gewichtseintrag',
-    if (draft.heightCm == null) 'die Größe',
-    if (draft.sex == null) 'das Geschlecht',
-    if (draft.birthDate == null) 'das Geburtsdatum',
-    if (draft.activityLevel == null) 'das Aktivitätslevel (unter „Ziele")',
-  ];
-
-  /// Puts the calculated target into the field — and no further.
-  ///
-  /// Nothing is stored until the user saves, so a target entered by hand is
-  /// only ever replaced by an explicit tap on this button.
-  void _applyCalculated(CalorieCalculation calculation) {
-    setState(() {
-      _calorieTargetController.text = calculation.calorieTarget.toString();
-    });
-    _show('Kalorienziel übernommen — noch nicht gespeichert');
   }
 
   Future<void> _save() async {
@@ -301,152 +229,5 @@ class _BirthDateField extends StatelessWidget {
       lastDate: now,
     );
     if (picked != null) onChanged(picked);
-  }
-}
-
-/// Shows how the calorie target is calculated, and hands the result over to
-/// the field above on request.
-///
-/// The steps are laid out rather than just the result: a target that appears
-/// out of nowhere is one nobody can check, and the numbers behind it are what
-/// tells the user which profile value to correct when it looks wrong.
-class _CalorieCalculationCard extends StatelessWidget {
-  const _CalorieCalculationCard({
-    required this.calculation,
-    required this.weight,
-    required this.weightUnreadable,
-    required this.missing,
-    required this.onApply,
-  });
-
-  /// The calculation, or `null` while [missing] still holds something.
-  final CalorieCalculation? calculation;
-
-  /// The entry the weight comes from, shown so its date is visible too.
-  final BodyWeightEntry? weight;
-
-  /// Whether the weight entries could not be read at all — a different case
-  /// from not having any, and one the user cannot fix by weighing themselves.
-  final bool weightUnreadable;
-
-  final List<String> missing;
-  final VoidCallback? onApply;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final calculation = this.calculation;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Kalorienziel berechnen', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 12),
-            if (weightUnreadable)
-              Text(
-                'Das letzte Gewicht konnte nicht gelesen werden.',
-                style: theme.textTheme.bodyMedium,
-              )
-            else if (calculation == null)
-              Text(
-                '${missing.length == 1 ? 'Dafür fehlt' : 'Dafür fehlen'} noch: '
-                '${missing.join(', ')}.',
-                style: theme.textTheme.bodyMedium,
-              )
-            else
-              ..._steps(context, calculation),
-          ],
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _steps(BuildContext context, CalorieCalculation calculation) {
-    final weight = this.weight;
-
-    return [
-      if (weight != null)
-        _Step(
-          label: 'Gewicht vom ${formatDate(weight.date)}',
-          value: '${formatDecimal(weight.weightKg, 1)} kg',
-        ),
-      _Step(
-        label: 'Grundumsatz (Mifflin-St Jeor)',
-        value: _kcal(calculation.basalMetabolicRate.round()),
-      ),
-      _Step(
-        label:
-            'Aktivität (× ${formatDecimal(calculation.activityLevel.calorieFactor, 3)})',
-        value: _kcal(calculation.totalEnergyExpenditure.round()),
-      ),
-      _Step(
-        label:
-            '${calculation.goal.label} '
-            '(${_gramsPerWeek(calculation.goal.weeklyWeightChangeGrams)})',
-        value: _signedKcal(calculation.goalAdjustment),
-      ),
-      const Divider(height: 24),
-      _Step(
-        label: 'Kalorienziel',
-        value: _kcal(calculation.calorieTarget),
-        emphasised: true,
-      ),
-      const SizedBox(height: 12),
-      // Tonal rather than filled: it fills in the field above, the save
-      // button below is the one that stores anything. Full width like every
-      // filled button in the app — the theme sizes them that way.
-      FilledButton.tonal(onPressed: onApply, child: const Text('Übernehmen')),
-    ];
-  }
-
-  String _kcal(int value) => '$value kcal';
-
-  String _signedKcal(int value) => switch (value) {
-    0 => '±0 kcal',
-    < 0 => '−${value.abs()} kcal',
-    _ => '+$value kcal',
-  };
-
-  String _gramsPerWeek(int grams) => switch (grams) {
-    0 => 'Gewicht bleibt',
-    < 0 => '−${grams.abs()} g pro Woche',
-    _ => '+$grams g pro Woche',
-  };
-}
-
-/// One line of the calculation: what it is on the left, what it costs on the
-/// right.
-class _Step extends StatelessWidget {
-  const _Step({
-    required this.label,
-    required this.value,
-    this.emphasised = false,
-  });
-
-  final String label;
-  final String value;
-  final bool emphasised;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final style = emphasised
-        ? theme.textTheme.titleMedium
-        : theme.textTheme.bodyMedium;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(child: Text(label, style: style)),
-          const SizedBox(width: 12),
-          Text(value, style: style),
-        ],
-      ),
-    );
   }
 }

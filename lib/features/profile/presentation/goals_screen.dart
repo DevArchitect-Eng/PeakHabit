@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../body_weight/data/body_weight_providers.dart';
@@ -89,6 +90,8 @@ class _GoalsFormState extends ConsumerState<_GoalsForm> {
         ),
         const SizedBox(height: 32),
         FilledButton(onPressed: _save, child: const Text('Speichern')),
+        const SizedBox(height: 16),
+        const _NutritionTargetsTile(),
       ],
     );
   }
@@ -177,6 +180,23 @@ class _WeightRow extends StatelessWidget {
       value: entry == null
           ? 'Kein Eintrag'
           : '${formatDecimal(entry.weightKg, 1)} kg',
+    );
+  }
+}
+
+/// Way into the nutrition targets, which divide up what the goal above adds
+/// up to.
+class _NutritionTargetsTile extends StatelessWidget {
+  const _NutritionTargetsTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.restaurant_outlined),
+      title: const Text('Ernährungsziele'),
+      subtitle: const Text('Kalorienziel und Makroverteilung'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.go('/settings/goals/nutrition'),
     );
   }
 }

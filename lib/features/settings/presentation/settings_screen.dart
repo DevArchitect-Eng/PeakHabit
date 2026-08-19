@@ -74,7 +74,7 @@ class _ProfileTile extends StatelessWidget {
     return ListTile(
       leading: const Icon(Icons.person_outline),
       title: const Text('Profil bearbeiten'),
-      subtitle: const Text('Größe, Geschlecht und Kalorienziel'),
+      subtitle: const Text('Benutzername, Größe, Geschlecht und Geburtsdatum'),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => context.go('/settings/profile'),
     );
@@ -91,7 +91,7 @@ class _GoalsTile extends StatelessWidget {
     return ListTile(
       leading: const Icon(Icons.flag_outlined),
       title: const Text('Ziele'),
-      subtitle: const Text('Gewichtsziel und Aktivitätslevel'),
+      subtitle: const Text('Gewichtsziel, Aktivität und Ernährungsziele'),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => context.go('/settings/goals'),
     );
