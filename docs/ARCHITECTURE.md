@@ -213,15 +213,35 @@ Drei Punkte, die sich daraus ergeben:
 
 - **Das Gewicht kommt nicht aus dem Profil,** sondern aus dem jüngsten Eintrag in
   `body_weight_entries` — es ändert sich laufend und liegt deshalb als eigene Reihe vor.
-  Ohne Eintrag ist keine Berechnung möglich; der Profil-Screen benennt das dann.
+  Ohne Eintrag ist keine Berechnung möglich; der Ernährungsziele-Screen benennt das dann.
 - **Geschrieben wird nichts von allein.** Die Berechnung füllt auf Knopfdruck das Feld
-  „Kalorienziel", gespeichert wird erst beim Speichern des Profils. Ein von Hand gesetztes
-  Ziel wird damit nie ohne Zutun überschrieben — auch nicht, wenn sich das Gewicht deutlich
-  ändert (offene Frage aus #4, so entschieden).
+  „Kalorienziel", gespeichert wird erst beim Speichern. Ein von Hand gesetztes Ziel wird
+  damit nie ohne Zutun überschrieben — auch nicht, wenn sich das Gewicht deutlich ändert
+  (offene Frage aus #4, so entschieden).
 - **Die Rechnung wird angezeigt, nicht nur ihr Ergebnis.** Grundumsatz, Faktor und
-  Zielanpassung stehen als einzelne Zeilen im Profil. Eine Zahl, die aus dem Nichts kommt,
-  kann niemand prüfen, und die Zwischenschritte zeigen, welcher Profilwert zu korrigieren
-  ist, wenn das Ergebnis nicht passt.
+  Zielanpassung stehen als einzelne Zeilen unter dem Kalorienziel. Eine Zahl, die aus dem
+  Nichts kommt, kann niemand prüfen, und die Zwischenschritte zeigen, welcher Wert zu
+  korrigieren ist, wenn das Ergebnis nicht passt.
+
+Die Eingaben, aus denen sich das ergibt, liegen bewusst auf drei Seiten statt in einem
+Formular (#33):
+
+| Seite | Route | Inhalt |
+| --- | --- | --- |
+| Profil | `/settings/profile` | Benutzername, Größe, Geschlecht, Geburtsdatum |
+| Ziele | `/settings/goals` | Start- und aktuelles Gewicht, Ziel, Aktivitätslevel |
+| Ernährungsziele | `/settings/goals/nutrition` | Kalorienziel samt Rechenweg, Makroverteilung |
+
+Der Schnitt folgt der Frage, die eine Seite beantwortet: Das Profil sagt, wer jemand ist, die
+Ziele sagen, wohin es gehen soll, und die Ernährungsziele teilen auf, was daraus folgt.
+Deshalb liegt die Makroverteilung nicht im Profil, sondern neben dem Kalorienziel, das sie
+aufteilt — und deshalb steht das Aktivitätslevel bei den Zielen, obwohl es eine Körperangabe
+ist: es geht nur in die Zielrechnung ein.
+
+Start- und aktuelles Gewicht auf der Ziele-Seite sind **schreibgeschützt**. Gewogen wird auf
+der Startseite; eine zweite Stelle zum Eintragen wäre eine zweite Stelle, an der es
+danebengehen kann. Beide Werte werden abgefragt (`readFirst`/`readLatest`) statt gespeichert,
+damit ein korrigierter oder gelöschter erster Eintrag den Startpunkt mitzieht.
 
 ### Design: dark-first mit hellblauem Akzent
 
@@ -318,4 +338,7 @@ Fünf Tabs in der Bottom-Navigation:
 | Optionen | `/settings` | Darstellung, Zugang zum Profil |
 
 Unterseiten eines Tabs sind verschachtelte Routen seines Branches, damit die Bottom-Navigation
-stehen bleibt und der Tab seine Position behält — `/settings/profile` ist das erste Beispiel.
+stehen bleibt und der Tab seine Position behält. Der Optionen-Tab hat davon bisher drei:
+`/settings/profile`, `/settings/goals` und darunter `/settings/goals/nutrition` — die
+Verschachtelung bildet ab, dass die Ernährungsziele von der Ziele-Seite aus erreicht werden
+und der Zurück-Weg über sie führt.
