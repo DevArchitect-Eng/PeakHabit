@@ -21,6 +21,9 @@ lib/
     logging/                    AppLogger, Lifecycle- und Fehler-Hooks
     router/app_router.dart      go_router-Konfiguration
     theme/app_theme.dart        Farbschema, Light/Dark
+    startup.dart                warmUp: liest Theme und Onboarding-Flag vor dem ersten Frame
+    startup_gate.dart           entscheidet zwischen Fehlerbildschirm und App
+    startup_error_screen.dart   Anzeige, wenn die Datenbank nicht öffnet
   features/
     onboarding/                 Erststart-Ablauf, läuft vor der Bottom-Navigation
     shell/                      Bottom-Navigation-Gerüst

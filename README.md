@@ -31,7 +31,7 @@ seinem eigenen Ordner unter `lib/features/`.
 lib/
   main.dart      Einstiegspunkt
   app.dart       MaterialApp, Theme- und Router-Bindung
-  core/          Geteiltes: database/, logging/, router/, theme/
+  core/          Geteiltes: database/, logging/, router/, theme/, Startup-Pfad
   features/      je Feature ein Ordner, z.B. onboarding/, profile/, settings/
 test/            spiegelt lib/, dazu support/ mit den Fakes für Widget-Tests
 docs/            Architektur-Dokumentation
