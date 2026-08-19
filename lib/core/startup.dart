@@ -14,5 +14,14 @@ Future<void> warmUp(ProviderContainer container) async {
   // the value is awaited: without a listener the future below never completes
   // and the app hangs on an empty screen instead of starting.
   container.listen(themeModeProvider, (_, _) {}, fireImmediately: true);
+  container.listen(
+    onboardingCompletedProvider,
+    (_, _) {},
+    fireImmediately: true,
+  );
   await container.read(themeModeProvider.future);
+  // Read before the first frame for the same reason as the theme above: it
+  // decides between two different apps to show, and doing that after a frame
+  // has already shown one of them would flash the other.
+  await container.read(onboardingCompletedProvider.future);
 }

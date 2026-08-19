@@ -24,9 +24,15 @@ Formular fürs Nutzerprofil unter `/settings/profile` mit Pflichtfeld Benutzerna
 außerdem das Kalorienziel auf Wunsch aus Gewicht, Größe, Alter, Geschlecht, Aktivität und Ziel
 berechnet. Die Drift-Datenbank hält
 dafür die Tabellen `user_profiles` und `app_settings`. Dazu kommt `body_weight_entries` samt
-Repository und Providern unter `lib/features/body_weight/` — bisher ohne UI, die Screens dazu
-stehen noch aus, weshalb die Berechnung mangels Gewichtseintrag praktisch noch nicht
-durchläuft. Ansonsten noch keine Features.
+Repository und Providern unter `lib/features/body_weight/` — eigene Screens dafür stehen noch
+aus, gefüllt wird die Tabelle bisher nur vom Onboarding.
+
+Beim allerersten Start läuft ein Onboarding unter `lib/features/onboarding/`: Begrüßung,
+Benutzername, Ziel, Größe, Gewicht und Kalorienziel (eingeben oder berechnen lassen). Es ist
+**vollständig verpflichtend** — weder einzelne Schritte noch der Ablauf als Ganzes lassen sich
+überspringen, weil die App auf diesen Werten aufbaut. Abgeschlossen wird es in der Spalte
+`app_settings.onboarding_completed` vermerkt; `PeakHabitApp` zeigt anhand dieses Flags
+entweder das Onboarding oder die geroutete App. Ansonsten noch keine Features.
 
 ## Technisches
 

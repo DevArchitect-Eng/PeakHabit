@@ -13,3 +13,8 @@ final settingsRepositoryProvider = Provider<SettingsRepository>(
 final themeModeProvider = StreamProvider<AppThemeMode>(
   (ref) => ref.watch(settingsRepositoryProvider).watchThemeMode(),
 );
+
+/// Whether the first-start onboarding has been completed.
+final onboardingCompletedProvider = StreamProvider<bool>(
+  (ref) => ref.watch(settingsRepositoryProvider).watchOnboardingCompleted(),
+);
