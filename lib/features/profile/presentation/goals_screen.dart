@@ -80,7 +80,7 @@ class _GoalsList extends ConsumerWidget {
         const Divider(height: 1),
         SettingRow(
           label: 'Aktivitätslevel',
-          value: profile.activityLevel?.label ?? 'Keine Angabe',
+          value: profile.activityLevel?.shortLabel ?? 'Keine Angabe',
           onTap: () => _editActivityLevel(context, ref),
         ),
         const Divider(height: 1),
@@ -104,7 +104,7 @@ class _GoalsList extends ConsumerWidget {
     if (entry == null) return 'Kein Eintrag';
 
     final weight = '${formatDecimal(entry.weightKg, 1)} kg';
-    return withDate ? '$weight am ${formatDate(entry.date)}' : weight;
+    return withDate ? '$weight am ${formatShortDate(entry.date)}' : weight;
   }
 
   Future<void> _editGoal(BuildContext context, WidgetRef ref) async {

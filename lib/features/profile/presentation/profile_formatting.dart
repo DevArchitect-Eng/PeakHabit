@@ -13,6 +13,16 @@ String formatDate(DateTime date) =>
     '${date.month.toString().padLeft(2, '0')}.'
     '${date.year}';
 
+/// A date with a two-digit year: `18.08.26`.
+///
+/// For a place where the date rides along with something else — the weighing
+/// a starting weight comes from — and the long form would push the line into
+/// a second one.
+String formatShortDate(DateTime date) =>
+    '${date.day.toString().padLeft(2, '0')}.'
+    '${date.month.toString().padLeft(2, '0')}.'
+    '${(date.year % 100).toString().padLeft(2, '0')}';
+
 /// A decimal number with a comma, the way it is written in German.
 ///
 /// Trailing zeros of a shorter number are dropped: 1,375 but 1,2 rather than
@@ -35,12 +45,23 @@ extension BiologicalSexLabel on BiologicalSex {
 }
 
 extension ActivityLevelLabel on ActivityLevel {
+  /// The explaining form, for a picker with room for it.
   String get label => switch (this) {
     ActivityLevel.sedentary => 'Sitzend, kaum Bewegung',
     ActivityLevel.lightlyActive => 'Leicht aktiv, 1–2× Sport pro Woche',
     ActivityLevel.moderatelyActive => 'Mäßig aktiv, 3–4× Sport pro Woche',
     ActivityLevel.veryActive => 'Sehr aktiv, 5–6× Sport pro Woche',
     ActivityLevel.extraActive => 'Extrem aktiv, täglich hart oder körperlich',
+  };
+
+  /// The form a settings row shows, where the explaining one would push the
+  /// label of the row into a broken word.
+  String get shortLabel => switch (this) {
+    ActivityLevel.sedentary => 'Sitzend',
+    ActivityLevel.lightlyActive => 'Leicht aktiv',
+    ActivityLevel.moderatelyActive => 'Mäßig aktiv',
+    ActivityLevel.veryActive => 'Sehr aktiv',
+    ActivityLevel.extraActive => 'Extrem aktiv',
   };
 }
 

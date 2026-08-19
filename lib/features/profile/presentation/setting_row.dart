@@ -35,33 +35,60 @@ class SettingRow extends StatelessWidget {
     final detail = this.detail;
     final editable = onTap != null;
 
+    // Laid out by hand rather than with ListTile's title and trailing: the
+    // trailing gets whatever width it asks for there, and a long value then
+    // squeezes the label until it breaks mid-word. Here the value takes its
+    // natural width up to a share of the line, and the label gets the rest.
     return ListTile(
       onTap: onTap,
-      title: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(child: Text(label)),
-          if (detail != null) ...[
-            const SizedBox(width: 8),
-            Text(
-              detail,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+      title: LayoutBuilder(
+        builder: (context, constraints) => Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Flexible(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Flexible(child: Text(label)),
+                  if (detail != null) ...[
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        detail,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: constraints.maxWidth * _valueShare,
+              ),
+              child: Text(
+                value,
+                textAlign: TextAlign.end,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: editable
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],
-        ],
-      ),
-      trailing: Text(
-        value,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: editable
-              ? theme.colorScheme.primary
-              : theme.colorScheme.onSurfaceVariant,
         ),
       ),
     );
   }
 }
+
+/// How much of a row a value may take before it has to wrap — enough for a
+/// weighing with its date, little enough that a label keeps its own line.
+const double _valueShare = 0.55;

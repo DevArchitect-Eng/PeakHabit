@@ -66,7 +66,7 @@ void main() {
 
       await openGoals(tester);
 
-      expect(valueOfRow(tester, 'Startgewicht'), '82 kg am 12.08.2026');
+      expect(valueOfRow(tester, 'Startgewicht'), '82 kg am 12.08.26');
       expect(valueOfRow(tester, 'Aktuelles Gewicht'), '81,4 kg');
     });
 
@@ -120,10 +120,8 @@ void main() {
     await openGoals(tester);
 
     expect(valueOfRow(tester, 'Ziel'), 'Abnehmen');
-    expect(
-      valueOfRow(tester, 'Aktivitätslevel'),
-      'Sehr aktiv, 5–6× Sport pro Woche',
-    );
+    // The row shows the short form; the picker spells it out.
+    expect(valueOfRow(tester, 'Aktivitätslevel'), 'Sehr aktiv');
   });
 
   testWidgets('a confirmed goal is stored right away', (tester) async {
