@@ -105,8 +105,9 @@ danach auf „Done" setzen.
 
 ### 12. Nebenbefunde
 
-Funde außerhalb des Scopes wurden bereits in Schritt 3 vorgelegt. Was der Nutzer freigegeben
-hat, wird jetzt als eigenes Issue angelegt — Format nach
+Funde außerhalb des Scopes sind zu diesem Zeitpunkt bereits vorgelegt — in Schritt 3 oder,
+wenn sie erst beim Umsetzen auffielen, sofort danach. Was der Nutzer freigegeben hat, wird
+jetzt als eigenes Issue angelegt — Format nach
 `../ticket-workflow-shared/references/ticket-format.md`, dabei Label **`claude-found`**
 setzen, weil diese Tickets aus der eigenen Arbeit stammen, nicht vom Nutzer. Im Body auf das
 Ursprungsticket verweisen.
