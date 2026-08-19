@@ -54,9 +54,6 @@ class _ProfileForm extends ConsumerStatefulWidget {
 }
 
 class _ProfileFormState extends ConsumerState<_ProfileForm> {
-  /// Held below what still fits comfortably in the home screen greeting.
-  static const _maxUsernameLength = 40;
-
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _usernameController;
   late final TextEditingController _heightController;
@@ -108,7 +105,6 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           TextFormField(
             controller: _usernameController,
             decoration: const InputDecoration(labelText: 'Benutzername'),
-            maxLength: _maxUsernameLength,
             validator: _validateUsername,
           ),
           const SizedBox(height: 16),
