@@ -129,7 +129,10 @@ class _NutritionTargetsFormState extends ConsumerState<_NutritionTargetsForm> {
             // this the card would ask for an entry the user already made.
             weightUnreadable: weighings.hasError,
             missing: _missingForCalculation(widget.profile, latestWeight),
-            onApply: calculation == null
+            // Only offered when the result is one the profile would accept:
+            // body data that is off by enough puts the target at or below
+            // zero, and taking that over would be a dead end.
+            onApply: calculation == null || calculation.calorieTarget <= 0
                 ? null
                 : () => _applyCalculated(calculation),
           ),
@@ -178,23 +181,40 @@ class _NutritionTargetsFormState extends ConsumerState<_NutritionTargetsForm> {
     return number != null && number > 0 ? number : null;
   }
 
-  int _percentOrZero(TextEditingController controller) =>
-      int.tryParse(controller.text) ?? 0;
+  int? _percentOrNull(TextEditingController controller) =>
+      int.tryParse(controller.text);
 
+  /// The running total, counting a field that holds nothing as nothing.
+  ///
+  /// Only ever shown, never stored — [_draftMacros] is stricter about an empty
+  /// field than this is.
   int _percentSum() =>
-      _percentOrZero(_carbController) +
-      _percentOrZero(_proteinController) +
-      _percentOrZero(_fatController);
+      (_percentOrNull(_carbController) ?? 0) +
+      (_percentOrNull(_proteinController) ?? 0) +
+      (_percentOrNull(_fatController) ?? 0);
 
-  /// The split as the fields currently stand, or `null` while they do not add
-  /// up to 100 — which is exactly when [MacroDistribution] would throw.
+  /// The split as the fields currently stand, or `null` while they do not
+  /// describe one.
+  ///
+  /// An empty field makes it `null` rather than counting as a zero share:
+  /// otherwise 70 / 30 / nothing would look like a valid split in the card
+  /// while saving refuses it, and the screen would claim something it cannot
+  /// store. A sum other than 100 is `null` as well — exactly the case
+  /// [MacroDistribution] would throw on.
   MacroDistribution? _draftMacros() {
-    if (_percentSum() != 100) return null;
+    final carbPercent = _percentOrNull(_carbController);
+    final proteinPercent = _percentOrNull(_proteinController);
+    final fatPercent = _percentOrNull(_fatController);
+
+    if (carbPercent == null || proteinPercent == null || fatPercent == null) {
+      return null;
+    }
+    if (carbPercent + proteinPercent + fatPercent != 100) return null;
 
     return MacroDistribution(
-      carbPercent: _percentOrZero(_carbController),
-      proteinPercent: _percentOrZero(_proteinController),
-      fatPercent: _percentOrZero(_fatController),
+      carbPercent: carbPercent,
+      proteinPercent: proteinPercent,
+      fatPercent: fatPercent,
     );
   }
 
@@ -225,16 +245,28 @@ class _NutritionTargetsFormState extends ConsumerState<_NutritionTargetsForm> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Checked against the controller rather than trusting the validator
+    // alone. `validate()` only ever asks the fields that are currently built,
+    // and these sit in a ListView, which drops what is far enough out of
+    // sight — a dropped field unregisters from the Form and is passed over.
+    // The list keeps every field of this screen alive today, so the validator
+    // does run; the check is here so a longer screen cannot turn a `0` into a
+    // silent "no target at all" later on.
+    final calorieText = _calorieTargetController.text.trim();
+    final calorieTarget = _positiveOrNull(calorieText);
+    if (calorieText.isNotEmpty && calorieTarget == null) {
+      _show('Das Kalorienziel muss größer als 0 sein.');
+      return;
+    }
+
     final macros = _draftMacros();
     if (macros == null) {
-      // The card already spells the sum out; saying it again in a snackbar
-      // would only repeat what is on the screen.
-      _show('Die Makroverteilung muss 100 % ergeben.');
+      _show('Die Makroverteilung braucht drei Anteile, zusammen 100 %.');
       return;
     }
 
     final updated = widget.profile.copyWith(
-      calorieTarget: _positiveOrNull(_calorieTargetController.text),
+      calorieTarget: calorieTarget,
       macros: macros,
     );
 

@@ -118,7 +118,7 @@ void main() {
 
       expect(find.text('Summe: 110 % — muss 100 % ergeben.'), findsOneWidget);
       expect(
-        find.text('Die Makroverteilung muss 100 % ergeben.'),
+        find.text('Die Makroverteilung braucht drei Anteile, zusammen 100 %.'),
         findsOneWidget,
       );
       expect(stores.profile.profile, UserProfile.empty);
@@ -141,6 +141,25 @@ void main() {
 
       expect(find.text('Bitte einen Wert.'), findsOneWidget);
       expect(stores.profile.profile, UserProfile.empty);
+    });
+
+    testWidgets('does not pass an empty share off as a zero one', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        on: storesWith(profile: UserProfile(calorieTarget: 2000)),
+      );
+      await openNutritionTargets(tester);
+
+      await enter(tester, 'Kohlenhydrate', '70');
+      await enter(tester, 'Eiweiß', '30');
+      await enter(tester, 'Fett', '');
+
+      // The three shares would add up to 100 with the empty one counted as
+      // zero — but that is a split the screen refuses to save, so it must not
+      // show the grams that go with it either.
+      expect(find.textContaining('Ergibt bei'), findsNothing);
     });
 
     testWidgets('shows what the shares come to in grams', (tester) async {
@@ -313,6 +332,36 @@ void main() {
       await tapSave(tester);
 
       expect(stores.profile.profile.calorieTarget, 2759);
+    });
+
+    testWidgets('does not offer a target the profile would refuse', (
+      tester,
+    ) async {
+      // 10 × 30 + 6.25 × 100 − 5 × 90 − 161 = 314 kcal basal, × 1.2 = 377,
+      // minus the 500 of the goal — a target below zero.
+      await pumpApp(
+        tester,
+        on: storesWith(
+          profile: UserProfile(
+            username: 'mila',
+            heightCm: 100,
+            sex: BiologicalSex.female,
+            birthDate: DateTime(DateTime.now().year - 90, 1, 1),
+            activityLevel: ActivityLevel.sedentary,
+            goal: WeightGoal.lose,
+          ),
+          weightEntries: [
+            BodyWeightEntry(date: DateTime(2026, 8, 18), weightKg: 30),
+          ],
+        ),
+      );
+      await openNutritionTargets(tester);
+      await scrollToCalculation(tester);
+
+      final button = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Übernehmen'),
+      );
+      expect(button.enabled, isFalse);
     });
 
     testWidgets('leaves a target entered by hand alone', (tester) async {
