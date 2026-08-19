@@ -6,9 +6,11 @@ import '../../../core/logging/app_logger.dart';
 import '../../body_weight/data/body_weight_providers.dart';
 import '../../body_weight/domain/body_weight_entry.dart';
 import '../data/user_profile_providers.dart';
+import '../domain/calorie_calculation.dart';
 import '../domain/user_profile.dart';
 import 'profile_formatting.dart';
-import 'value_row.dart';
+import 'setting_row.dart';
+import 'value_editor.dart';
 
 const _logger = AppLogger('profile');
 
@@ -19,6 +21,9 @@ const _logger = AppLogger('profile');
 /// off the profile screen because the profile answers "who is this" while this
 /// one answers "where is this going" — and the starting and current weight
 /// only mean something next to a goal.
+///
+/// Both weights only report: weighing happens on the home screen, and a second
+/// place to enter it would be a second place to get it wrong.
 class GoalsScreen extends ConsumerWidget {
   const GoalsScreen({super.key});
 
@@ -28,10 +33,8 @@ class GoalsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ziele')),
-      // The form seeds its fields from the profile it is given, so it is only
-      // built once the profile is actually there.
       body: switch (profile) {
-        AsyncData(:final value) => _GoalsForm(profile: value),
+        AsyncData(:final value) => _GoalsList(profile: value),
         AsyncError() => const Center(
           child: Padding(
             padding: EdgeInsets.all(24),
@@ -47,141 +50,141 @@ class GoalsScreen extends ConsumerWidget {
   }
 }
 
-class _GoalsForm extends ConsumerStatefulWidget {
-  const _GoalsForm({required this.profile});
+class _GoalsList extends ConsumerWidget {
+  const _GoalsList({required this.profile});
 
   final UserProfile profile;
 
   @override
-  ConsumerState<_GoalsForm> createState() => _GoalsFormState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final first = ref.watch(firstBodyWeightProvider);
+    final latest = ref.watch(latestBodyWeightProvider);
 
-class _GoalsFormState extends ConsumerState<_GoalsForm> {
-  late WeightGoal _goal = widget.profile.goal;
-  late ActivityLevel? _activityLevel = widget.profile.activityLevel;
-
-  @override
-  Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       children: [
-        const _WeightSummaryCard(),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<WeightGoal>(
-          initialValue: _goal,
-          decoration: const InputDecoration(labelText: 'Ziel'),
-          items: [
-            for (final goal in WeightGoal.values)
-              DropdownMenuItem(value: goal, child: Text(goal.label)),
-          ],
-          // The goal always has a value, so a null selection cannot happen.
-          onChanged: (value) => setState(() => _goal = value ?? _goal),
+        SettingRow(
+          label: 'Startgewicht',
+          value: _weightValue(first, withDate: true),
         ),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<ActivityLevel?>(
-          initialValue: _activityLevel,
-          decoration: const InputDecoration(labelText: 'Aktivitätslevel'),
-          items: [
-            const DropdownMenuItem(child: Text('Keine Angabe')),
-            for (final level in ActivityLevel.values)
-              DropdownMenuItem(value: level, child: Text(level.label)),
-          ],
-          onChanged: (value) => setState(() => _activityLevel = value),
+        const Divider(height: 1),
+        SettingRow(
+          label: 'Aktuelles Gewicht',
+          value: _weightValue(latest, withDate: false),
         ),
-        const SizedBox(height: 32),
-        FilledButton(onPressed: _save, child: const Text('Speichern')),
+        const Divider(height: 1),
+        SettingRow(
+          label: 'Ziel',
+          value: profile.goal.label,
+          onTap: () => _editGoal(context, ref),
+        ),
+        const Divider(height: 1),
+        SettingRow(
+          label: 'Aktivitätslevel',
+          value: profile.activityLevel?.label ?? 'Keine Angabe',
+          onTap: () => _editActivityLevel(context, ref),
+        ),
+        const Divider(height: 1),
         const SizedBox(height: 16),
         const _NutritionTargetsTile(),
       ],
     );
   }
 
-  Future<void> _save() async {
-    // Only the two fields this screen owns are written; everything else of the
-    // profile is carried over as it stands.
-    final updated = widget.profile.copyWith(
-      goal: _goal,
-      activityLevel: _activityLevel,
+  /// The weighing behind a row, or what stands in for it.
+  ///
+  /// A failed read is told apart from an empty series: the user cannot fix the
+  /// former by stepping on the scale.
+  String _weightValue(
+    AsyncValue<BodyWeightEntry?> weighing, {
+    required bool withDate,
+  }) {
+    if (weighing.hasError) return 'Nicht lesbar';
+
+    final entry = weighing.value;
+    if (entry == null) return 'Kein Eintrag';
+
+    final weight = '${formatDecimal(entry.weightKg, 1)} kg';
+    return withDate ? '$weight am ${formatDate(entry.date)}' : weight;
+  }
+
+  Future<void> _editGoal(BuildContext context, WidgetRef ref) async {
+    final chosen = await showChoiceEditor<WeightGoal>(
+      context,
+      title: 'Ziel',
+      value: profile.goal,
+      options: WeightGoal.values,
+      labelOf: (goal) => goal.label,
     );
+    // The goal always has a value, so an empty choice cannot come back.
+    if (chosen?.value == null || !context.mounted) return;
+
+    await _save(context, ref, profile.copyWith(goal: chosen!.value));
+  }
+
+  Future<void> _editActivityLevel(BuildContext context, WidgetRef ref) async {
+    final chosen = await showChoiceEditor<ActivityLevel>(
+      context,
+      title: 'Aktivitätslevel',
+      value: profile.activityLevel,
+      options: ActivityLevel.values,
+      labelOf: (level) => level.label,
+      noneLabel: 'Keine Angabe',
+    );
+    if (chosen == null || !context.mounted) return;
+
+    await _save(context, ref, profile.copyWith(activityLevel: chosen.value));
+  }
+
+  /// Writes [updated], with the calorie target brought along.
+  ///
+  /// Both values on this screen go into the calorie calculation, so leaving the
+  /// target where it was would leave the user with a number that no longer
+  /// matches what they just asked for. This overrules the earlier decision to
+  /// never touch a target by itself (#4): back then the profile screen offered
+  /// a button to take the calculation over, and that button is gone.
+  Future<void> _save(
+    BuildContext context,
+    WidgetRef ref,
+    UserProfile updated,
+  ) async {
+    final weight = ref.read(latestBodyWeightProvider).value;
+    final calculation = CalorieCalculation.forProfile(
+      updated,
+      weightKg: weight?.weightKg,
+      today: DateTime.now(),
+    );
+    // A target at or below zero is one the profile refuses; body data that is
+    // off by enough produces one, and it is no better than the old value.
+    final recalculated = calculation != null && calculation.calorieTarget > 0
+        ? calculation.calorieTarget
+        : null;
 
     try {
-      await ref.read(userProfileRepositoryProvider).save(updated);
+      await ref
+          .read(userProfileRepositoryProvider)
+          .save(
+            recalculated == null
+                ? updated
+                : updated.copyWith(calorieTarget: recalculated),
+          );
     } catch (error, stackTrace) {
-      // Without this the write fails silently: the button callback drops the
-      // error and the screen looks exactly as it does after a success.
+      // Without this the write fails silently: the callback drops the error
+      // and the screen looks exactly as it does after a success.
       _logger.error('Saving the goals failed', error, stackTrace);
-      if (!mounted) return;
-      _show('Die Ziele konnten nicht gespeichert werden.');
+      if (!context.mounted) return;
+      _show(context, 'Die Ziele konnten nicht gespeichert werden.');
       return;
     }
 
-    if (!mounted) return;
-    _show('Ziele gespeichert');
+    if (!context.mounted || recalculated == null) return;
+    // Said out loud: the number the user may have typed themselves has just
+    // been replaced.
+    _show(context, 'Kalorienziel auf $recalculated kcal angepasst');
   }
 
-  void _show(String message) => ScaffoldMessenger.of(
+  void _show(BuildContext context, String message) => ScaffoldMessenger.of(
     context,
   ).showSnackBar(SnackBar(content: Text(message)));
-}
-
-/// Where the user started and where they stand, straight from the weight
-/// entries.
-///
-/// Read-only on purpose: weighing happens on the home screen, and a second
-/// place to enter it would be a second place to get it wrong.
-class _WeightSummaryCard extends ConsumerWidget {
-  const _WeightSummaryCard();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final first = ref.watch(firstBodyWeightProvider);
-    final latest = ref.watch(latestBodyWeightProvider);
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Gewicht', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 12),
-            if (first.hasError || latest.hasError)
-              // Not "weigh yourself" — the user has no way to fix a failed
-              // read by stepping on the scale.
-              Text(
-                'Die Gewichtseinträge konnten nicht gelesen werden.',
-                style: theme.textTheme.bodyMedium,
-              )
-            else ...[
-              _WeightRow(label: 'Startgewicht', entry: first.value),
-              _WeightRow(label: 'Aktuelles Gewicht', entry: latest.value),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One weighing, or the note that there is none yet.
-class _WeightRow extends StatelessWidget {
-  const _WeightRow({required this.label, required this.entry});
-
-  final String label;
-  final BodyWeightEntry? entry;
-
-  @override
-  Widget build(BuildContext context) {
-    final entry = this.entry;
-
-    return ValueRow(
-      label: entry == null ? label : '$label (${formatDate(entry.date)})',
-      value: entry == null
-          ? 'Kein Eintrag'
-          : '${formatDecimal(entry.weightKg, 1)} kg',
-    );
-  }
 }
 
 /// Way into the nutrition targets, which divide up what the goal above adds
