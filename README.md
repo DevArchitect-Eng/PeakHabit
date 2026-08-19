@@ -5,9 +5,22 @@ Auswertungen über den Verlauf. Alle Daten bleiben lokal auf dem Gerät.
 
 ## Stand
 
-Navigationsgerüst mit vier Tabs (Start, Ernährung, Training, Statistik) und Platzhalter-Screens.
-Die lokale Datenbank (Drift) ist eingerichtet, hat aber noch keine fachlichen Tabellen.
-Noch keine Features.
+Fünf Tabs in der Bottom-Navigation: Start, Ernährung, Training, Statistik und Optionen.
+
+Vorhanden:
+
+- **Erststart-Onboarding** mit Benutzername, Ziel, Größe, Gewicht und Kalorienziel. Es ist
+  verpflichtend und lässt sich nicht überspringen, weil die App auf diesen Werten aufbaut.
+- **Optionen** mit Theme-Auswahl (Dark, Light oder Systemeinstellung, gespeichert) und dem
+  Nutzerprofil unter `/settings/profile`, das das Kalorienziel auf Wunsch aus Gewicht, Größe,
+  Alter, Geschlecht, Aktivität und Ziel berechnet.
+- **Start** mit einer Begrüßung, die den hinterlegten Benutzernamen verwendet.
+
+Platzhalter-Screens sind noch Ernährung, Training und Statistik.
+
+Die lokale Datenbank (Drift) hält die Tabellen `user_profiles`, `app_settings` und
+`body_weight_entries`. Für Gewichtseinträge gibt es bereits Repository und Provider, aber noch
+keine eigenen Screens — gefüllt wird die Tabelle bisher nur vom Onboarding.
 
 ## Entwicklung
 
