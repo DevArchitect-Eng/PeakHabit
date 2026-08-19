@@ -3,14 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/app_logger.dart';
-import '../../body_weight/data/body_weight_providers.dart';
-import '../../body_weight/domain/body_weight_entry.dart';
 import '../data/user_profile_providers.dart';
-import '../domain/calorie_calculation.dart';
 import '../domain/macro_distribution.dart';
 import '../domain/user_profile.dart';
-import 'profile_formatting.dart';
-import 'value_row.dart';
+import 'setting_row.dart';
+import 'value_editor.dart';
 
 const _logger = AppLogger('profile');
 
@@ -20,6 +17,10 @@ const _logger = AppLogger('profile');
 /// gets, this screen decides the number and what it is made of. The split
 /// lives here rather than on the profile because it only means something next
 /// to the calorie target it divides up.
+///
+/// The target is not calculated here — the goals screen keeps it in step with
+/// the goal and the activity level on its own. What is entered here is a
+/// number the user brings themselves.
 class NutritionTargetsScreen extends ConsumerWidget {
   const NutritionTargetsScreen({super.key});
 
@@ -29,10 +30,8 @@ class NutritionTargetsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ernährungsziele')),
-      // The form seeds its fields from the profile it is given, so it is only
-      // built once the profile is actually there.
       body: switch (profile) {
-        AsyncData(:final value) => _NutritionTargetsForm(profile: value),
+        AsyncData(:final value) => _NutritionTargetsList(profile: value),
         AsyncError() => const Center(
           child: Padding(
             padding: EdgeInsets.all(24),
@@ -48,42 +47,170 @@ class NutritionTargetsScreen extends ConsumerWidget {
   }
 }
 
-class _NutritionTargetsForm extends ConsumerStatefulWidget {
-  const _NutritionTargetsForm({required this.profile});
+class _NutritionTargetsList extends ConsumerWidget {
+  const _NutritionTargetsList({required this.profile});
 
   final UserProfile profile;
 
   @override
-  ConsumerState<_NutritionTargetsForm> createState() =>
-      _NutritionTargetsFormState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final macros = profile.macros;
+    final targets = profile.macroTargets;
+
+    return ListView(
+      children: [
+        SettingRow(
+          label: 'Kalorien',
+          value: profile.calorieTarget == null
+              ? 'Keine Angabe'
+              : '${profile.calorieTarget}',
+          onTap: () => _editCalorieTarget(context, ref),
+        ),
+        const Divider(height: 1),
+        // Tapping any of the three opens the same editor: a share cannot be
+        // changed on its own without breaking the 100 the three have to add
+        // up to.
+        _MacroRow(
+          label: 'Kohlenhydrate',
+          percent: macros.carbPercent,
+          grams: targets?.carbGrams,
+          onTap: () => _editMacros(context, ref),
+        ),
+        const Divider(height: 1),
+        _MacroRow(
+          label: 'Eiweiß',
+          percent: macros.proteinPercent,
+          grams: targets?.proteinGrams,
+          onTap: () => _editMacros(context, ref),
+        ),
+        const Divider(height: 1),
+        _MacroRow(
+          label: 'Fett',
+          percent: macros.fatPercent,
+          grams: targets?.fatGrams,
+          onTap: () => _editMacros(context, ref),
+        ),
+        const Divider(height: 1),
+      ],
+    );
+  }
+
+  Future<void> _editCalorieTarget(BuildContext context, WidgetRef ref) async {
+    final entered = await showTextEditor(
+      context,
+      title: 'Kalorien',
+      initialValue: profile.calorieTarget?.toString() ?? '',
+      suffix: 'kcal',
+      digitsOnly: true,
+      // Empty means "not set yet" and stays allowed; anything else has to be a
+      // number the domain model would accept.
+      validate: (value) =>
+          value.trim().isEmpty || _positiveOrNull(value) != null
+          ? null
+          : 'Das Kalorienziel muss größer als 0 sein.',
+    );
+    if (entered == null || !context.mounted) return;
+
+    await _save(
+      context,
+      ref,
+      profile.copyWith(calorieTarget: _positiveOrNull(entered)),
+    );
+  }
+
+  Future<void> _editMacros(BuildContext context, WidgetRef ref) async {
+    final chosen = await showModalBottomSheet<MacroDistribution>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _MacroEditorSheet(macros: profile.macros),
+    );
+    if (chosen == null || !context.mounted) return;
+
+    await _save(context, ref, profile.copyWith(macros: chosen));
+  }
+
+  int? _positiveOrNull(String text) {
+    final number = int.tryParse(text.trim());
+    return number != null && number > 0 ? number : null;
+  }
+
+  Future<void> _save(
+    BuildContext context,
+    WidgetRef ref,
+    UserProfile updated,
+  ) async {
+    try {
+      await ref.read(userProfileRepositoryProvider).save(updated);
+    } catch (error, stackTrace) {
+      // Without this the write fails silently: the callback drops the error
+      // and the screen looks exactly as it does after a success.
+      _logger.error('Saving the nutrition targets failed', error, stackTrace);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Die Ernährungsziele konnten nicht gespeichert werden.',
+          ),
+        ),
+      );
+    }
+  }
 }
 
-class _NutritionTargetsFormState extends ConsumerState<_NutritionTargetsForm> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _calorieTargetController;
-  late final TextEditingController _carbController;
-  late final TextEditingController _proteinController;
-  late final TextEditingController _fatController;
+/// One share of the split: its percentage on the right, what that comes to in
+/// grams next to the name.
+///
+/// The grams are what is eaten, so they are what makes a split easy to judge —
+/// they are missing while no calorie target says what to divide up.
+class _MacroRow extends StatelessWidget {
+  const _MacroRow({
+    required this.label,
+    required this.percent,
+    required this.grams,
+    required this.onTap,
+  });
+
+  final String label;
+  final int percent;
+  final double? grams;
+  final VoidCallback onTap;
 
   @override
-  void initState() {
-    super.initState();
-    final macros = widget.profile.macros;
-    _calorieTargetController = TextEditingController(
-      text: widget.profile.calorieTarget?.toString() ?? '',
+  Widget build(BuildContext context) {
+    final grams = this.grams;
+
+    return SettingRow(
+      label: label,
+      detail: grams == null ? null : '${grams.round()} g',
+      value: '$percent %',
+      onTap: onTap,
     );
-    _carbController = TextEditingController(
-      text: macros.carbPercent.toString(),
-    );
-    _proteinController = TextEditingController(
-      text: macros.proteinPercent.toString(),
-    );
-    _fatController = TextEditingController(text: macros.fatPercent.toString());
   }
+}
+
+/// All three shares at once, because 100 is a property of the three together.
+class _MacroEditorSheet extends StatefulWidget {
+  const _MacroEditorSheet({required this.macros});
+
+  final MacroDistribution macros;
+
+  @override
+  State<_MacroEditorSheet> createState() => _MacroEditorSheetState();
+}
+
+class _MacroEditorSheetState extends State<_MacroEditorSheet> {
+  late final _carbController = TextEditingController(
+    text: widget.macros.carbPercent.toString(),
+  );
+  late final _proteinController = TextEditingController(
+    text: widget.macros.proteinPercent.toString(),
+  );
+  late final _fatController = TextEditingController(
+    text: widget.macros.fatPercent.toString(),
+  );
 
   @override
   void dispose() {
-    _calorieTargetController.dispose();
     _carbController.dispose();
     _proteinController.dispose();
     _fatController.dispose();
@@ -92,116 +219,75 @@ class _NutritionTargetsFormState extends ConsumerState<_NutritionTargetsForm> {
 
   @override
   Widget build(BuildContext context) {
-    // The weight is not part of the profile; it comes from the weight entries,
-    // where the most recent one is the one to calculate with.
-    final weighings = ref.watch(latestBodyWeightProvider);
-    final latestWeight = weighings.value;
-    final calculation = CalorieCalculation.forProfile(
-      widget.profile,
-      weightKg: latestWeight?.weightKg,
-      today: DateTime.now(),
-    );
+    final theme = Theme.of(context);
+    final split = _draft();
 
-    return Form(
-      key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+    return EditorSheet(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          TextFormField(
-            controller: _calorieTargetController,
-            decoration: const InputDecoration(
-              labelText: 'Kalorienziel',
-              suffixText: 'kcal',
-            ),
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            validator: (value) =>
-                _validatePositiveNumber(value, 'Das Kalorienziel'),
-            // The gram targets below follow the calorie target, so they have
-            // to be rebuilt while it is being typed.
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: 16),
-          _CalorieCalculationCard(
-            calculation: calculation,
-            weight: latestWeight,
-            // A failed read looks like an empty series from here on — without
-            // this the card would ask for an entry the user already made.
-            weightUnreadable: weighings.hasError,
-            missing: _missingForCalculation(widget.profile, latestWeight),
-            // Only offered when the result is one the profile would accept:
-            // body data that is off by enough puts the target at or below
-            // zero, and taking that over would be a dead end.
-            onApply: calculation == null || calculation.calorieTarget <= 0
+          EditorHeader(
+            title: 'Makroverteilung',
+            onConfirm: split == null
                 ? null
-                : () => _applyCalculated(calculation),
+                : () => Navigator.of(context).pop(split),
           ),
-          const SizedBox(height: 16),
-          _MacroCard(
-            carbController: _carbController,
-            proteinController: _proteinController,
-            fatController: _fatController,
-            onChanged: () => setState(() {}),
-            validate: _validatePercent,
-            distribution: _draftMacros(),
-            percentSum: _percentSum(),
-            calorieTarget: _positiveOrNull(_calorieTargetController.text),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            child: Column(
+              children: [
+                _PercentField(
+                  label: 'Kohlenhydrate',
+                  controller: _carbController,
+                  onChanged: () => setState(() {}),
+                  autofocus: true,
+                ),
+                const SizedBox(height: 12),
+                _PercentField(
+                  label: 'Eiweiß',
+                  controller: _proteinController,
+                  onChanged: () => setState(() {}),
+                ),
+                const SizedBox(height: 12),
+                _PercentField(
+                  label: 'Fett',
+                  controller: _fatController,
+                  onChanged: () => setState(() {}),
+                ),
+                // Only spoken about when it is in the way: a split that adds
+                // up needs no comment, it is what the user was aiming for.
+                if (split == null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Die drei Anteile müssen zusammen 100 % ergeben '
+                    '(aktuell ${_sum()} %).',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
-          const SizedBox(height: 32),
-          FilledButton(onPressed: _save, child: const Text('Speichern')),
         ],
       ),
     );
   }
 
-  /// Empty means "not set yet" and stays allowed; anything else has to be a
-  /// number the domain model would accept.
-  String? _validatePositiveNumber(String? value, String subject) {
-    if (value == null || value.trim().isEmpty) return null;
-
-    final number = int.tryParse(value);
-    if (number == null) return '$subject muss eine Zahl sein.';
-    if (number <= 0) return '$subject muss größer als 0 sein.';
-    return null;
-  }
-
-  /// Unlike the calorie target, a share may not be left empty: the three of
-  /// them have to add up to 100, and a missing one cannot.
-  String? _validatePercent(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Bitte einen Wert.';
-
-    final number = int.tryParse(value);
-    if (number == null) return 'Nur ganze Zahlen.';
-    if (number > 100) return 'Höchstens 100 %.';
-    return null;
-  }
-
-  int? _positiveOrNull(String text) {
-    final number = int.tryParse(text);
-    return number != null && number > 0 ? number : null;
-  }
-
   int? _percentOrNull(TextEditingController controller) =>
       int.tryParse(controller.text);
 
-  /// The running total, counting a field that holds nothing as nothing.
-  ///
-  /// Only ever shown, never stored — [_draftMacros] is stricter about an empty
-  /// field than this is.
-  int _percentSum() =>
+  int _sum() =>
       (_percentOrNull(_carbController) ?? 0) +
       (_percentOrNull(_proteinController) ?? 0) +
       (_percentOrNull(_fatController) ?? 0);
 
-  /// The split as the fields currently stand, or `null` while they do not
-  /// describe one.
+  /// The split the fields describe, or `null` while they do not describe one.
   ///
-  /// An empty field makes it `null` rather than counting as a zero share:
-  /// otherwise 70 / 30 / nothing would look like a valid split in the card
-  /// while saving refuses it, and the screen would claim something it cannot
-  /// store. A sum other than 100 is `null` as well — exactly the case
-  /// [MacroDistribution] would throw on.
-  MacroDistribution? _draftMacros() {
+  /// An empty field makes it `null` rather than counting as a zero share, and
+  /// so does a sum other than 100 — exactly the case [MacroDistribution] would
+  /// throw on.
+  MacroDistribution? _draft() {
     final carbPercent = _percentOrNull(_carbController);
     final proteinPercent = _percentOrNull(_proteinController);
     final fatPercent = _percentOrNull(_fatController);
@@ -217,326 +303,30 @@ class _NutritionTargetsFormState extends ConsumerState<_NutritionTargetsForm> {
       fatPercent: fatPercent,
     );
   }
-
-  /// What the calculation is still waiting for, named the way the fields are
-  /// on the screens holding them.
-  List<String> _missingForCalculation(
-    UserProfile profile,
-    BodyWeightEntry? weight,
-  ) => [
-    if (weight == null) 'ein Gewichtseintrag',
-    if (profile.heightCm == null) 'die Größe',
-    if (profile.sex == null) 'das Geschlecht',
-    if (profile.birthDate == null) 'das Geburtsdatum',
-    if (profile.activityLevel == null) 'das Aktivitätslevel',
-  ];
-
-  /// Puts the calculated target into the field — and no further.
-  ///
-  /// Nothing is stored until the user saves, so a target entered by hand is
-  /// only ever replaced by an explicit tap on this button.
-  void _applyCalculated(CalorieCalculation calculation) {
-    setState(() {
-      _calorieTargetController.text = calculation.calorieTarget.toString();
-    });
-    _show('Kalorienziel übernommen — noch nicht gespeichert');
-  }
-
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    // Checked against the controller rather than trusting the validator
-    // alone. `validate()` only ever asks the fields that are currently built,
-    // and these sit in a ListView, which drops what is far enough out of
-    // sight — a dropped field unregisters from the Form and is passed over.
-    // The list keeps every field of this screen alive today, so the validator
-    // does run; the check is here so a longer screen cannot turn a `0` into a
-    // silent "no target at all" later on.
-    final calorieText = _calorieTargetController.text.trim();
-    final calorieTarget = _positiveOrNull(calorieText);
-    if (calorieText.isNotEmpty && calorieTarget == null) {
-      _show('Das Kalorienziel muss größer als 0 sein.');
-      return;
-    }
-
-    final macros = _draftMacros();
-    if (macros == null) {
-      _show('Die Makroverteilung braucht drei Anteile, zusammen 100 %.');
-      return;
-    }
-
-    final updated = widget.profile.copyWith(
-      calorieTarget: calorieTarget,
-      macros: macros,
-    );
-
-    try {
-      await ref.read(userProfileRepositoryProvider).save(updated);
-    } catch (error, stackTrace) {
-      // Without this the write fails silently: the button callback drops the
-      // error and the screen looks exactly as it does after a success.
-      _logger.error('Saving the nutrition targets failed', error, stackTrace);
-      if (!mounted) return;
-      _show('Die Ernährungsziele konnten nicht gespeichert werden.');
-      return;
-    }
-
-    if (!mounted) return;
-    _show('Ernährungsziele gespeichert');
-  }
-
-  void _show(String message) => ScaffoldMessenger.of(
-    context,
-  ).showSnackBar(SnackBar(content: Text(message)));
 }
 
-/// The three shares, the running sum, and what they come to in grams.
-class _MacroCard extends StatelessWidget {
-  const _MacroCard({
-    required this.carbController,
-    required this.proteinController,
-    required this.fatController,
-    required this.onChanged,
-    required this.validate,
-    required this.distribution,
-    required this.percentSum,
-    required this.calorieTarget,
-  });
-
-  final TextEditingController carbController;
-  final TextEditingController proteinController;
-  final TextEditingController fatController;
-  final VoidCallback onChanged;
-  final FormFieldValidator<String> validate;
-
-  /// The split the fields describe, or `null` while they do not add up to 100.
-  final MacroDistribution? distribution;
-
-  final int percentSum;
-  final int? calorieTarget;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final distribution = this.distribution;
-    final calorieTarget = this.calorieTarget;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Makroverteilung', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(
-              'Anteile am Kalorienziel, zusammen 100 %.',
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            _PercentField(
-              label: 'Kohlenhydrate',
-              controller: carbController,
-              onChanged: onChanged,
-              validator: validate,
-            ),
-            const SizedBox(height: 12),
-            _PercentField(
-              label: 'Eiweiß',
-              controller: proteinController,
-              onChanged: onChanged,
-              validator: validate,
-            ),
-            const SizedBox(height: 12),
-            _PercentField(
-              label: 'Fett',
-              controller: fatController,
-              onChanged: onChanged,
-              validator: validate,
-            ),
-            const SizedBox(height: 12),
-            // Always shown, not only when it is wrong: a sum that is right is
-            // what the user is aiming for while typing.
-            Text(
-              percentSum == 100
-                  ? 'Summe: 100 %'
-                  : 'Summe: $percentSum % — muss 100 % ergeben.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: percentSum == 100 ? null : theme.colorScheme.error,
-              ),
-            ),
-            if (distribution != null && calorieTarget != null) ...[
-              const Divider(height: 24),
-              // The percentages are what is stored; the grams are what is
-              // eaten, so they are what makes a split easy to judge.
-              Text(
-                'Ergibt bei $calorieTarget kcal',
-                style: theme.textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 8),
-              ..._gramRows(distribution.gramsFor(calorieTarget)),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _gramRows(MacroTargets targets) => [
-    ValueRow(label: 'Kohlenhydrate', value: _grams(targets.carbGrams)),
-    ValueRow(label: 'Eiweiß', value: _grams(targets.proteinGrams)),
-    ValueRow(label: 'Fett', value: _grams(targets.fatGrams)),
-  ];
-
-  String _grams(double value) => '${value.round()} g';
-}
-
-/// One share of the split, in whole percent.
 class _PercentField extends StatelessWidget {
   const _PercentField({
     required this.label,
     required this.controller,
     required this.onChanged,
-    required this.validator,
+    this.autofocus = false,
   });
 
   final String label;
   final TextEditingController controller;
   final VoidCallback onChanged;
-  final FormFieldValidator<String> validator;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    return TextField(
       controller: controller,
+      autofocus: autofocus,
       decoration: InputDecoration(labelText: label, suffixText: '%'),
       keyboardType: TextInputType.number,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      validator: validator,
       onChanged: (_) => onChanged(),
     );
   }
-}
-
-/// Shows how the calorie target is calculated, and hands the result over to
-/// the field above on request.
-///
-/// The steps are laid out rather than just the result: a target that appears
-/// out of nowhere is one nobody can check, and the numbers behind it are what
-/// tells the user which value to correct when it looks wrong.
-class _CalorieCalculationCard extends StatelessWidget {
-  const _CalorieCalculationCard({
-    required this.calculation,
-    required this.weight,
-    required this.weightUnreadable,
-    required this.missing,
-    required this.onApply,
-  });
-
-  /// The calculation, or `null` while [missing] still holds something.
-  final CalorieCalculation? calculation;
-
-  /// The entry the weight comes from, shown so its date is visible too.
-  final BodyWeightEntry? weight;
-
-  /// Whether the weight entries could not be read at all — a different case
-  /// from not having any, and one the user cannot fix by weighing themselves.
-  final bool weightUnreadable;
-
-  final List<String> missing;
-  final VoidCallback? onApply;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final calculation = this.calculation;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Kalorienziel berechnen', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 12),
-            if (weightUnreadable)
-              Text(
-                'Das letzte Gewicht konnte nicht gelesen werden.',
-                style: theme.textTheme.bodyMedium,
-              )
-            else if (calculation == null) ...[
-              Text(
-                '${missing.length == 1 ? 'Dafür fehlt' : 'Dafür fehlen'} noch: '
-                '${missing.join(', ')}.',
-                style: theme.textTheme.bodyMedium,
-              ),
-              // None of it is entered here, so the note has to say where it is.
-              if (missing.length > 1 || missing.single != 'ein Gewichtseintrag')
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    'Größe, Geschlecht und Geburtsdatum stehen im Profil, '
-                    'das Aktivitätslevel unter „Ziele".',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ),
-            ] else
-              ..._steps(context, calculation),
-          ],
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _steps(BuildContext context, CalorieCalculation calculation) {
-    final weight = this.weight;
-
-    return [
-      if (weight != null)
-        ValueRow(
-          label: 'Gewicht vom ${formatDate(weight.date)}',
-          value: '${formatDecimal(weight.weightKg, 1)} kg',
-        ),
-      ValueRow(
-        label: 'Grundumsatz (Mifflin-St Jeor)',
-        value: _kcal(calculation.basalMetabolicRate.round()),
-      ),
-      ValueRow(
-        label:
-            'Aktivität (× ${formatDecimal(calculation.activityLevel.calorieFactor, 3)})',
-        value: _kcal(calculation.totalEnergyExpenditure.round()),
-      ),
-      ValueRow(
-        label:
-            '${calculation.goal.label} '
-            '(${_gramsPerWeek(calculation.goal.weeklyWeightChangeGrams)})',
-        value: _signedKcal(calculation.goalAdjustment),
-      ),
-      const Divider(height: 24),
-      ValueRow(
-        label: 'Kalorienziel',
-        value: _kcal(calculation.calorieTarget),
-        emphasised: true,
-      ),
-      const SizedBox(height: 12),
-      // Tonal rather than filled: it fills in the field above, the save
-      // button below is the one that stores anything. Full width like every
-      // filled button in the app — the theme sizes them that way.
-      FilledButton.tonal(onPressed: onApply, child: const Text('Übernehmen')),
-    ];
-  }
-
-  String _kcal(int value) => '$value kcal';
-
-  String _signedKcal(int value) => switch (value) {
-    0 => '±0 kcal',
-    < 0 => '−${value.abs()} kcal',
-    _ => '+$value kcal',
-  };
-
-  String _gramsPerWeek(int grams) => switch (grams) {
-    0 => 'Gewicht bleibt',
-    < 0 => '−${grams.abs()} g pro Woche',
-    _ => '+$grams g pro Woche',
-  };
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:peakhabit/features/body_weight/domain/body_weight_entry.dart';
 import 'package:peakhabit/features/profile/domain/macro_distribution.dart';
 import 'package:peakhabit/features/profile/domain/user_profile.dart';
 import 'package:peakhabit/features/profile/presentation/nutrition_targets_screen.dart';
 
 import '../../../support/pump_app.dart';
+import '../../../support/settings_rows.dart';
 
 void main() {
   Future<void> openNutritionTargets(WidgetTester tester) async {
@@ -13,27 +13,25 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Ziele'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Ernährungsziele'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Ernährungsziele'));
     await tester.pumpAndSettle();
   }
 
-  /// The button sits below the fold of the test window, so it has to be
-  /// scrolled into view before it can be tapped.
-  Future<void> tapSave(WidgetTester tester) async {
-    await tester.ensureVisible(find.text('Speichern'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Speichern'));
+  /// Types [value] into the field labelled [label] of the open editor.
+  Future<void> enter(WidgetTester tester, String label, String value) async {
+    await tester.enterText(find.widgetWithText(TextField, label), value);
     await tester.pumpAndSettle();
   }
 
-  Future<void> enter(WidgetTester tester, String label, String value) async {
-    await tester.ensureVisible(find.widgetWithText(TextFormField, label));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.widgetWithText(TextFormField, label), value);
-    await tester.pumpAndSettle();
-  }
+  UserProfile withMacros(int carb, int protein, int fat, {int? calories}) =>
+      UserProfile(
+        calorieTarget: calories,
+        macros: MacroDistribution(
+          carbPercent: carb,
+          proteinPercent: protein,
+          fatPercent: fat,
+        ),
+      );
 
   testWidgets('opens from the goals screen', (tester) async {
     await pumpApp(tester);
@@ -43,143 +41,75 @@ void main() {
     expect(find.byType(NutritionTargetsScreen), findsOneWidget);
   });
 
+  testWidgets('the calorie calculation is no longer shown here', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    await openNutritionTargets(tester);
+
+    // The goals screen keeps the target in step on its own; there is nothing
+    // to take over by hand any more.
+    expect(find.text('Kalorienziel berechnen'), findsNothing);
+    expect(find.text('Übernehmen'), findsNothing);
+    expect(find.text('Speichern'), findsNothing);
+  });
+
   testWidgets('shows the targets that are already stored', (tester) async {
     await pumpApp(
       tester,
-      on: storesWith(
-        profile: UserProfile(
-          calorieTarget: 2200,
-          macros: MacroDistribution(
-            carbPercent: 45,
-            proteinPercent: 30,
-            fatPercent: 25,
-          ),
-        ),
-      ),
+      on: storesWith(profile: withMacros(45, 30, 25, calories: 2200)),
     );
 
     await openNutritionTargets(tester);
 
-    expect(find.widgetWithText(TextFormField, '2200'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, '45'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, '30'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, '25'), findsOneWidget);
+    expect(valueOfRow(tester, 'Kalorien'), '2200');
+    expect(valueOfRow(tester, 'Kohlenhydrate'), '45 %');
+    expect(valueOfRow(tester, 'Eiweiß'), '30 %');
+    expect(valueOfRow(tester, 'Fett'), '25 %');
   });
 
-  testWidgets('saves a changed calorie target', (tester) async {
-    final stores = await pumpApp(tester);
-    await openNutritionTargets(tester);
-
-    await enter(tester, 'Kalorienziel', '2400');
-    await tapSave(tester);
-
-    expect(stores.profile.profile.calorieTarget, 2400);
-    expect(find.text('Ernährungsziele gespeichert'), findsOneWidget);
-  });
-
-  testWidgets('refuses a calorie target of zero instead of storing it', (
+  testWidgets('a confirmed calorie target is stored right away', (
     tester,
   ) async {
     final stores = await pumpApp(tester);
     await openNutritionTargets(tester);
 
-    await enter(tester, 'Kalorienziel', '0');
-    await tapSave(tester);
+    await openRow(tester, 'Kalorien');
+    await tester.enterText(find.byType(TextField), '2400');
+    await tester.pumpAndSettle();
+    await confirmEditor(tester);
+
+    expect(stores.profile.profile.calorieTarget, 2400);
+    expect(valueOfRow(tester, 'Kalorien'), '2400');
+  });
+
+  testWidgets('a calorie target of zero cannot be confirmed', (tester) async {
+    final stores = await pumpApp(tester);
+    await openNutritionTargets(tester);
+
+    await openRow(tester, 'Kalorien');
+    await tester.enterText(find.byType(TextField), '0');
+    await tester.pumpAndSettle();
 
     expect(
       find.text('Das Kalorienziel muss größer als 0 sein.'),
       findsOneWidget,
     );
-    expect(stores.profile.profile, UserProfile.empty);
+    expect(confirmIsOffered(tester), isFalse);
+
+    await cancelEditor(tester);
+    expect(stores.profile.profile.calorieTarget, isNull);
   });
 
   group('the macro split', () {
-    testWidgets('saves shares that add up to 100', (tester) async {
-      final stores = await pumpApp(tester);
-      await openNutritionTargets(tester);
-
-      await enter(tester, 'Kohlenhydrate', '50');
-      await enter(tester, 'Eiweiß', '25');
-      await enter(tester, 'Fett', '25');
-      await tapSave(tester);
-
-      expect(
-        stores.profile.profile.macros,
-        MacroDistribution(carbPercent: 50, proteinPercent: 25, fatPercent: 25),
-      );
-    });
-
-    testWidgets('refuses shares that do not add up to 100', (tester) async {
-      final stores = await pumpApp(tester);
-      await openNutritionTargets(tester);
-
-      await enter(tester, 'Kohlenhydrate', '50');
-      await tapSave(tester);
-
-      expect(find.text('Summe: 110 % — muss 100 % ergeben.'), findsOneWidget);
-      expect(
-        find.text('Die Makroverteilung braucht drei Anteile, zusammen 100 %.'),
-        findsOneWidget,
-      );
-      expect(stores.profile.profile, UserProfile.empty);
-    });
-
-    testWidgets('reports a sum of 100 as it stands', (tester) async {
-      await pumpApp(tester);
-
-      await openNutritionTargets(tester);
-
-      expect(find.text('Summe: 100 %'), findsOneWidget);
-    });
-
-    testWidgets('refuses an empty share instead of storing it', (tester) async {
-      final stores = await pumpApp(tester);
-      await openNutritionTargets(tester);
-
-      await enter(tester, 'Fett', '');
-      await tapSave(tester);
-
-      expect(find.text('Bitte einen Wert.'), findsOneWidget);
-      expect(stores.profile.profile, UserProfile.empty);
-    });
-
-    testWidgets('does not pass an empty share off as a zero one', (
-      tester,
-    ) async {
-      await pumpApp(
-        tester,
-        on: storesWith(profile: UserProfile(calorieTarget: 2000)),
-      );
-      await openNutritionTargets(tester);
-
-      await enter(tester, 'Kohlenhydrate', '70');
-      await enter(tester, 'Eiweiß', '30');
-      await enter(tester, 'Fett', '');
-
-      // The three shares would add up to 100 with the empty one counted as
-      // zero — but that is a split the screen refuses to save, so it must not
-      // show the grams that go with it either.
-      expect(find.textContaining('Ergibt bei'), findsNothing);
-    });
-
     testWidgets('shows what the shares come to in grams', (tester) async {
       await pumpApp(
         tester,
-        on: storesWith(
-          profile: UserProfile(
-            calorieTarget: 2000,
-            macros: MacroDistribution(
-              carbPercent: 40,
-              proteinPercent: 30,
-              fatPercent: 30,
-            ),
-          ),
-        ),
+        on: storesWith(profile: withMacros(40, 30, 30, calories: 2000)),
       );
 
       await openNutritionTargets(tester);
-      await tester.ensureVisible(find.text('Ergibt bei 2000 kcal'));
-      await tester.pumpAndSettle();
 
       // 40 % of 2000 kcal is 800 kcal at 4 kcal per gram, 30 % is 600 kcal at
       // 4 and at 9 kcal per gram.
@@ -195,187 +125,69 @@ void main() {
 
       await openNutritionTargets(tester);
 
-      expect(find.textContaining('Ergibt bei'), findsNothing);
+      expect(find.textContaining(' g'), findsNothing);
     });
-  });
 
-  group('calorie calculation', () {
-    /// A profile the calculation has everything for, save the weight entry.
-    ///
-    /// The screen counts the age against the current date, so the birth date
-    /// is set relative to it: the first of January thirty years back is thirty
-    /// on every day of the year, while a fixed date would age the profile out
-    /// of the expected numbers.
-    UserProfile calculableProfile({WeightGoal goal = WeightGoal.maintain}) =>
-        UserProfile(
-          username: 'mila',
-          heightCm: 180,
-          sex: BiologicalSex.male,
-          birthDate: DateTime(DateTime.now().year - 30, 1, 1),
-          activityLevel: ActivityLevel.moderatelyActive,
-          goal: goal,
-        );
+    testWidgets('a confirmed split is stored right away', (tester) async {
+      final stores = await pumpApp(tester);
+      await openNutritionTargets(tester);
 
-    final weighing = BodyWeightEntry(date: DateTime(2026, 8, 18), weightKg: 80);
+      await openRow(tester, 'Kohlenhydrate');
+      await enter(tester, 'Kohlenhydrate', '50');
+      await enter(tester, 'Eiweiß', '25');
+      await enter(tester, 'Fett', '25');
+      await confirmEditor(tester);
 
-    Future<void> scrollToCalculation(WidgetTester tester) async {
-      await tester.ensureVisible(find.text('Kalorienziel berechnen'));
-      await tester.pumpAndSettle();
-    }
+      expect(
+        stores.profile.profile.macros,
+        MacroDistribution(carbPercent: 50, proteinPercent: 25, fatPercent: 25),
+      );
+    });
 
-    testWidgets('names what it is still missing and where it stands', (
-      tester,
-    ) async {
+    testWidgets('every share opens the same editor', (tester) async {
       await pumpApp(tester);
       await openNutritionTargets(tester);
-      await scrollToCalculation(tester);
 
-      expect(
-        find.textContaining('ein Gewichtseintrag, die Größe'),
-        findsOneWidget,
-      );
-      // None of it is entered on this screen, so the note has to say where.
-      expect(
-        find.textContaining('stehen im Profil, das Aktivitätslevel unter'),
-        findsOneWidget,
-      );
-      expect(find.text('Übernehmen'), findsNothing);
+      // A share cannot be changed on its own without breaking the 100 the
+      // three have to add up to, so tapping "Fett" offers all three.
+      await openRow(tester, 'Fett');
+
+      expect(find.widgetWithText(TextField, 'Kohlenhydrate'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Eiweiß'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Fett'), findsOneWidget);
     });
 
-    testWidgets('names the weight entry as the only thing missing', (
+    testWidgets('shares that do not add up to 100 cannot be confirmed', (
       tester,
     ) async {
-      await pumpApp(tester, on: storesWith(profile: calculableProfile()));
+      final stores = await pumpApp(tester);
       await openNutritionTargets(tester);
-      await scrollToCalculation(tester);
+
+      await openRow(tester, 'Kohlenhydrate');
+      await enter(tester, 'Kohlenhydrate', '50');
 
       expect(
-        find.text('Dafür fehlt noch: ein Gewichtseintrag.'),
+        find.text(
+          'Die drei Anteile müssen zusammen 100 % ergeben (aktuell 110 %).',
+        ),
         findsOneWidget,
       );
-      // Weighing happens on the home screen, not in the profile or the goals.
-      expect(find.textContaining('stehen im Profil'), findsNothing);
+      expect(confirmIsOffered(tester), isFalse);
+
+      await cancelEditor(tester);
+      expect(stores.profile.profile.macros, MacroDistribution.standard);
     });
 
-    testWidgets('says so when the entries cannot be read at all', (
-      tester,
-    ) async {
-      await pumpApp(
-        tester,
-        on: storesWith(
-          profile: calculableProfile(),
-          weightEntriesUnreadable: true,
-        ),
-      );
-      await openNutritionTargets(tester);
-      await scrollToCalculation(tester);
-
-      // Not "make an entry" — the user has no way to fix a failed read by
-      // stepping on the scale.
-      expect(
-        find.text('Das letzte Gewicht konnte nicht gelesen werden.'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('shows every step of the calculation', (tester) async {
-      await pumpApp(
-        tester,
-        on: storesWith(
-          profile: calculableProfile(goal: WeightGoal.lose),
-          weightEntries: [weighing],
-        ),
-      );
-      await openNutritionTargets(tester);
-      await scrollToCalculation(tester);
-
-      // 10 × 80 + 6.25 × 180 − 5 × 30 + 5 = 1780, × 1.55 = 2759, − 500.
-      expect(find.text('80 kg'), findsOneWidget);
-      expect(find.text('1780 kcal'), findsOneWidget);
-      expect(find.text('Aktivität (× 1,55)'), findsOneWidget);
-      expect(find.text('2759 kcal'), findsOneWidget);
-      expect(find.text('Abnehmen (−500 g pro Woche)'), findsOneWidget);
-      expect(find.text('−500 kcal'), findsOneWidget);
-      expect(find.text('2259 kcal'), findsOneWidget);
-    });
-
-    testWidgets('follows the goal stored on the goals screen', (tester) async {
-      await pumpApp(
-        tester,
-        on: storesWith(
-          profile: calculableProfile(goal: WeightGoal.gain),
-          weightEntries: [weighing],
-        ),
-      );
-      await openNutritionTargets(tester);
-      await scrollToCalculation(tester);
-
-      expect(find.text('2959 kcal'), findsOneWidget);
-    });
-
-    testWidgets('puts the result into the field on demand', (tester) async {
-      final stores = storesWith(
-        profile: calculableProfile(),
-        weightEntries: [weighing],
-      );
-      await pumpApp(tester, on: stores);
-      await openNutritionTargets(tester);
-      await scrollToCalculation(tester);
-
-      await tester.tap(find.text('Übernehmen'));
-      await tester.pumpAndSettle();
-
-      expect(find.widgetWithText(TextFormField, '2759'), findsOneWidget);
-      // Taking it over is not saving it — that stays the user's own step.
-      expect(stores.profile.profile.calorieTarget, isNull);
-
-      await tapSave(tester);
-
-      expect(stores.profile.profile.calorieTarget, 2759);
-    });
-
-    testWidgets('does not offer a target the profile would refuse', (
-      tester,
-    ) async {
-      // 10 × 30 + 6.25 × 100 − 5 × 90 − 161 = 314 kcal basal, × 1.2 = 377,
-      // minus the 500 of the goal — a target below zero.
-      await pumpApp(
-        tester,
-        on: storesWith(
-          profile: UserProfile(
-            username: 'mila',
-            heightCm: 100,
-            sex: BiologicalSex.female,
-            birthDate: DateTime(DateTime.now().year - 90, 1, 1),
-            activityLevel: ActivityLevel.sedentary,
-            goal: WeightGoal.lose,
-          ),
-          weightEntries: [
-            BodyWeightEntry(date: DateTime(2026, 8, 18), weightKg: 30),
-          ],
-        ),
-      );
-      await openNutritionTargets(tester);
-      await scrollToCalculation(tester);
-
-      final button = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Übernehmen'),
-      );
-      expect(button.enabled, isFalse);
-    });
-
-    testWidgets('leaves a target entered by hand alone', (tester) async {
-      final stores = storesWith(
-        profile: calculableProfile(),
-        weightEntries: [weighing],
-      );
-      await pumpApp(tester, on: stores);
+    testWidgets('an empty share cannot be confirmed either', (tester) async {
+      await pumpApp(tester);
       await openNutritionTargets(tester);
 
-      await enter(tester, 'Kalorienziel', '2100');
-      await tapSave(tester);
+      await openRow(tester, 'Kohlenhydrate');
+      await enter(tester, 'Fett', '');
 
-      expect(stores.profile.profile.calorieTarget, 2100);
+      // Not passed off as a zero share: 40 / 30 / nothing would otherwise look
+      // like a valid split.
+      expect(confirmIsOffered(tester), isFalse);
     });
   });
 
@@ -391,8 +203,10 @@ void main() {
     final stores = await pumpApp(tester, on: storesWith(profile: stored));
     await openNutritionTargets(tester);
 
-    await enter(tester, 'Kalorienziel', '2500');
-    await tapSave(tester);
+    await openRow(tester, 'Kalorien');
+    await tester.enterText(find.byType(TextField), '2500');
+    await tester.pumpAndSettle();
+    await confirmEditor(tester);
 
     final saved = stores.profile.profile;
     expect(saved.calorieTarget, 2500);
