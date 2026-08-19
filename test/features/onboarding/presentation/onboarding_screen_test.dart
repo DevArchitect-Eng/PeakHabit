@@ -133,6 +133,59 @@ void main() {
   );
 
   testWidgets(
+    'body data that calculates to a non-positive target says so instead of '
+    'offering a "Fertig" that cannot go through',
+    (tester) async {
+      final stores = storesWith(onboardingCompleted: false);
+      await pumpApp(tester, on: stores);
+
+      // Height mistyped as 1 rather than 170. With 60 kg, sedentary, female
+      // and a deficit the formula lands at −146 kcal — a target the profile
+      // refuses, so completing on it used to throw out of `_finish` unseen
+      // and leave this flow, which cannot be skipped, permanently stuck.
+      await fillUpToCalorieStep(
+        tester,
+        username: 'ben',
+        goal: 'Abnehmen',
+        heightCm: '1',
+        weightKg: '60',
+      );
+      await tester.tap(find.text('Nein, für mich berechnen'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('weiblich'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Auswählen'));
+      await tester.tap(find.text('Auswählen'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Sitzend, kaum Bewegung'));
+      await tester.tap(find.text('Sitzend, kaum Bewegung'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('kein sinnvolles Kalorienziel'),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.ancestor(
+                of: find.text('Fertig'),
+                matching: find.byType(FilledButton),
+              ),
+            )
+            .onPressed,
+        isNull,
+      );
+      // Nothing written, and the flow is still up rather than wedged.
+      expect(await stores.settings.readOnboardingCompleted(), isFalse);
+      expect(stores.bodyWeight.entries, isEmpty);
+      expect(find.byType(OnboardingScreen), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'letting the app calculate the calorie target needs sex, birth date and '
     'activity level, since onboarding collects nothing else the calculation '
     'needs',

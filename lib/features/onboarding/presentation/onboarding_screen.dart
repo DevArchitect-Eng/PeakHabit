@@ -181,9 +181,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _Step.calorieTarget => switch (_calorieChoice) {
       null => false,
       _CalorieChoice.manual => _positiveInt(_calorieController.text) != null,
-      _CalorieChoice.calculate => _calculation != null,
+      // Not just "there is a calculation": body data that is off by enough —
+      // a height typed as 1 rather than 170, say — puts the result at or
+      // below zero, and the profile refuses such a target. Letting it through
+      // here would throw on the way out of a flow nobody can skip.
+      _CalorieChoice.calculate => _calculatedTarget != null,
     },
   };
+
+  /// The calculated target, but only when it is one the profile would accept.
+  int? get _calculatedTarget {
+    final target = _calculation?.calorieTarget;
+    return target != null && target > 0 ? target : null;
+  }
 
   /// The calculation from the values entered so far — body weight and height
   /// are not saved yet at this point, so they are passed in directly rather
@@ -241,10 +251,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final heightCm = _positiveInt(_heightController.text);
     final weightKg = _positiveDouble(_weightController.text);
     final goal = _goal;
-    final calculation = _calculation;
     final calorieTarget = switch (_calorieChoice) {
       _CalorieChoice.manual => _positiveInt(_calorieController.text),
-      _CalorieChoice.calculate => calculation?.calorieTarget,
+      _CalorieChoice.calculate => _calculatedTarget,
       null => null,
     };
     // The button that reaches here is disabled unless `_canContinue` already
@@ -257,25 +266,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
 
     final calculating = _calorieChoice == _CalorieChoice.calculate;
-    final profile = UserProfile(
-      username: _usernameController.text.trim(),
-      heightCm: heightCm,
-      sex: calculating ? _sex : null,
-      birthDate: calculating ? _birthDate : null,
-      activityLevel: calculating ? _activityLevel : null,
-      goal: goal,
-      calorieTarget: calorieTarget,
-    );
-    final weightEntry = BodyWeightEntry(
-      date: DateTime.now(),
-      weightKg: weightKg,
-    );
 
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
+      // Built inside the try on purpose: both constructors validate and throw
+      // on a value they will not take. Outside it, that throw would leave the
+      // flow through `unawaited(_finish())` — unlogged, without a message, and
+      // with the button still live, so the screen would simply stop reacting.
+      final profile = UserProfile(
+        username: _usernameController.text.trim(),
+        heightCm: heightCm,
+        sex: calculating ? _sex : null,
+        birthDate: calculating ? _birthDate : null,
+        activityLevel: calculating ? _activityLevel : null,
+        goal: goal,
+        calorieTarget: calorieTarget,
+      );
+      final weightEntry = BodyWeightEntry(
+        date: DateTime.now(),
+        weightKg: weightKg,
+      );
+
       await ref.read(userProfileRepositoryProvider).save(profile);
       await ref.read(bodyWeightRepositoryProvider).save(weightEntry);
       await ref.read(settingsRepositoryProvider).saveOnboardingCompleted();
@@ -446,7 +460,20 @@ class _CalorieTargetStep extends StatelessWidget {
               ),
               if (calculation case final calculation?) ...[
                 const SizedBox(height: 16),
-                _CalculatedTargetCard(calculation: calculation),
+                // A result at or below zero means the body data cannot be
+                // right — without saying so, "Fertig" would just sit there
+                // greyed out and the user would have nothing to go on.
+                if (calculation.calorieTarget > 0)
+                  _CalculatedTargetCard(calculation: calculation)
+                else
+                  Text(
+                    'Daraus lässt sich kein sinnvolles Kalorienziel '
+                    'berechnen. Bitte Größe, Gewicht und Geburtsdatum '
+                    'prüfen — oder das Ziel selbst eingeben.',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
               ],
             ],
           ),

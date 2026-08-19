@@ -70,8 +70,8 @@ class AppDatabase extends _$AppDatabase {
       if (from >= 2 && from < 6) {
         await m.addColumn(userProfiles, userProfiles.username);
       }
-      // Not just `from < 7`: an installation on 0 or 1 creates `appSettings`
-      // fresh above, already with the column.
+      // Not just `from < 7`: anything below 3 creates `appSettings` fresh
+      // above, already with the column.
       if (from >= 3 && from < 7) {
         await m.addColumn(appSettings, appSettings.onboardingCompleted);
       }
