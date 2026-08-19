@@ -45,12 +45,12 @@ void main() {
 
     await container
         .read(userProfileRepositoryProvider)
-        .save(UserProfile(heightCm: 175, goal: WeightGoal.gain));
+        .save(UserProfile(heightCm: 175, goal: WeightGoal.gain200));
     await pumpEventQueue();
 
     expect(
       container.read(userProfileProvider).value,
-      UserProfile(heightCm: 175, goal: WeightGoal.gain),
+      UserProfile(heightCm: 175, goal: WeightGoal.gain200),
     );
   });
 }

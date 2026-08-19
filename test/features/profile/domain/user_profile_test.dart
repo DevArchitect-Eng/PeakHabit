@@ -93,13 +93,13 @@ void main() {
         sex: BiologicalSex.male,
         birthDate: DateTime(1990, 5, 17),
         activityLevel: ActivityLevel.moderatelyActive,
-        goal: WeightGoal.lose,
+        goal: WeightGoal.lose500,
         calorieTarget: 2200,
       );
 
-      final changed = profile.copyWith(goal: WeightGoal.gain);
+      final changed = profile.copyWith(goal: WeightGoal.gain200);
 
-      expect(changed.goal, WeightGoal.gain);
+      expect(changed.goal, WeightGoal.gain200);
       expect(changed.username, 'mila');
       expect(changed.heightCm, 182);
       expect(changed.sex, BiologicalSex.male);

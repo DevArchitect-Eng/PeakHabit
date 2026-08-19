@@ -28,6 +28,7 @@ AppStores storesWith({
   AppThemeMode? themeMode,
   bool onboardingCompleted = true,
   UserProfile? profile,
+  bool profileUnwritable = false,
   List<BodyWeightEntry> weightEntries = const [],
   bool weightEntriesUnreadable = false,
 }) {
@@ -36,7 +37,10 @@ AppStores storesWith({
       themeMode ?? AppThemeMode.dark,
       onboardingCompleted,
     ),
-    profile: InMemoryUserProfileRepository(profile ?? UserProfile.empty),
+    profile: InMemoryUserProfileRepository(
+      profile ?? UserProfile.empty,
+      profileUnwritable,
+    ),
     bodyWeight: InMemoryBodyWeightRepository(
       entries: weightEntries,
       failing: weightEntriesUnreadable,

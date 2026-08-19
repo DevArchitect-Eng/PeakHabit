@@ -10,6 +10,8 @@ import '../../body_weight/domain/body_weight_entry.dart';
 import '../../profile/data/user_profile_providers.dart';
 import '../../profile/domain/calorie_calculation.dart';
 import '../../profile/domain/user_profile.dart';
+import '../../profile/presentation/goal_warning.dart';
+import '../../profile/presentation/profile_formatting.dart';
 import '../../settings/data/settings_providers.dart';
 
 const _logger = AppLogger('onboarding');
@@ -136,7 +138,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       value: _goal,
       options: WeightGoal.values,
       labelOf: (goal) => goal.label,
-      onChanged: (value) => setState(() => _goal = value),
+      onChanged: _pickGoal,
     ),
     _Step.height => TextField(
       controller: _heightController,
@@ -188,6 +190,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       _CalorieChoice.calculate => _calculatedTarget != null,
     },
   };
+
+  /// Takes the picked rate, and says so where it is one of the hard ones.
+  ///
+  /// Warned about at the pick rather than at the end of the flow: this is the
+  /// moment the user is still weighing the rates against each other, and by
+  /// the last step they have moved on to the calorie target.
+  void _pickGoal(WeightGoal goal) {
+    setState(() => _goal = goal);
+    unawaited(showGoalWarnings(context, goalWarnings(goal: goal)));
+  }
 
   /// The calculated target, but only when it is one the profile would accept.
   int? get _calculatedTarget {
@@ -266,6 +278,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
 
     final calculating = _calorieChoice == _CalorieChoice.calculate;
+
+    // Said before the write, not after: the moment the profile lands,
+    // `PeakHabitApp` swaps this screen out for the routed app, and a dialog
+    // put up afterwards would belong to a screen that is already gone. Only
+    // the floor can fire here — the rate had its say back on its own step.
+    //
+    // Only while the app is the one calculating: the body data behind
+    // `_calculation` survives a switch back to a hand-typed target, and
+    // warning about a number nothing stores would point at a target the user
+    // never asked for.
+    await showGoalWarnings(
+      context,
+      goalWarnings(calculation: calculating ? _calculation : null),
+    );
+    if (!mounted) return;
 
     setState(() {
       _saving = true;
@@ -496,7 +523,7 @@ class _BirthDateField extends StatelessWidget {
       onTap: () => _pick(context),
       child: InputDecorator(
         decoration: const InputDecoration(labelText: 'Geburtsdatum'),
-        child: Text(value == null ? 'Auswählen' : _formatDate(value)),
+        child: Text(value == null ? 'Auswählen' : formatDate(value)),
       ),
     );
   }
@@ -542,34 +569,4 @@ class _CalculatedTargetCard extends StatelessWidget {
       ),
     );
   }
-}
-
-String _formatDate(DateTime date) =>
-    '${date.day.toString().padLeft(2, '0')}.'
-    '${date.month.toString().padLeft(2, '0')}.'
-    '${date.year}';
-
-extension on WeightGoal {
-  String get label => switch (this) {
-    WeightGoal.lose => 'Abnehmen',
-    WeightGoal.maintain => 'Gewicht halten',
-    WeightGoal.gain => 'Zunehmen',
-  };
-}
-
-extension on BiologicalSex {
-  String get label => switch (this) {
-    BiologicalSex.female => 'weiblich',
-    BiologicalSex.male => 'männlich',
-  };
-}
-
-extension on ActivityLevel {
-  String get label => switch (this) {
-    ActivityLevel.sedentary => 'Sitzend, kaum Bewegung',
-    ActivityLevel.lightlyActive => 'Leicht aktiv, 1–2× Sport pro Woche',
-    ActivityLevel.moderatelyActive => 'Mäßig aktiv, 3–4× Sport pro Woche',
-    ActivityLevel.veryActive => 'Sehr aktiv, 5–6× Sport pro Woche',
-    ActivityLevel.extraActive => 'Extrem aktiv, täglich hart oder körperlich',
-  };
 }

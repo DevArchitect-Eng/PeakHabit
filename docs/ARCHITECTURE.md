@@ -139,6 +139,14 @@ der dritte Fall: **Eine bestehende Tabelle bekommt eine neue Spalte per `m.addCo
 zusätzlich zur `schemaVersion`-Erhöhung und dem `if (from < n)`-Block**, ohne dass dafür eine
 neue Tabelle nötig wäre.
 
+Schema-Version 8 räumt wie Version 5 nur Daten auf, diesmal in `user_profiles.goal`:
+`WeightGoal` hat seine drei Richtungen gegen acht Wochenraten getauscht (#43), die alten
+Namen `lose` und `gain` gibt es nicht mehr. Die Migration schreibt sie auf die Rate um, für
+die sie standen (`lose` → `lose500`, `gain` → `gain200`); `maintain` heißt weiter so und
+braucht keine Anweisung. **Derselbe Fall wie Version 5 — wer die möglichen Werte einer
+Spalte ändert, braucht eine Migration**, ganz gleich ob Werte wegfallen oder umbenannt
+werden.
+
 `body_weight_entries` liegt in einem eigenen Feature statt unter `home/`: Startseite (#5) und
 Statistik (#6) lesen dieselbe Reihe, und ein Feature, das aus einem anderen liest, wäre die
 erste Ausnahme von der Feature-Trennung. Der Kalendertag ist der Primärschlüssel — pro Tag

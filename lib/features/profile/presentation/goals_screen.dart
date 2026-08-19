@@ -8,6 +8,7 @@ import '../../body_weight/domain/body_weight_entry.dart';
 import '../data/user_profile_providers.dart';
 import '../domain/calorie_calculation.dart';
 import '../domain/user_profile.dart';
+import 'goal_warning.dart';
 import 'profile_formatting.dart';
 import 'setting_row.dart';
 import 'value_editor.dart';
@@ -74,7 +75,7 @@ class _GoalsList extends ConsumerWidget {
         const Divider(height: 1),
         SettingRow(
           label: 'Ziel',
-          value: profile.goal.label,
+          value: profile.goal.shortLabel,
           onTap: () => _editGoal(context, ref),
         ),
         const Divider(height: 1),
@@ -122,7 +123,16 @@ class _GoalsList extends ConsumerWidget {
     // just because they opened the picker to look at it.
     if (goal == null || goal == profile.goal || !context.mounted) return;
 
-    await _save(context, ref, profile.copyWith(goal: goal));
+    final saved = await _save(context, ref, profile.copyWith(goal: goal));
+    // Nothing to warn about where nothing was stored: the screen has already
+    // said that the write failed, and a word about a rate that is not in
+    // force would only muddy it.
+    if (!context.mounted || !saved.stored) return;
+
+    await showGoalWarnings(
+      context,
+      goalWarnings(goal: goal, calculation: saved.calculation),
+    );
   }
 
   Future<void> _editActivityLevel(BuildContext context, WidgetRef ref) async {
@@ -140,17 +150,38 @@ class _GoalsList extends ConsumerWidget {
       return;
     }
 
-    await _save(context, ref, profile.copyWith(activityLevel: chosen.value));
+    final saved = await _save(
+      context,
+      ref,
+      profile.copyWith(activityLevel: chosen.value),
+    );
+    if (!context.mounted || !saved.stored) return;
+
+    // No `goal:` here: the rate did not change, and a warning about it would
+    // return every time something else on this screen is saved. What a lower
+    // activity level can do is push the recalculated target under the basal
+    // rate, and that is worth saying.
+    await showGoalWarnings(
+      context,
+      goalWarnings(calculation: saved.calculation),
+    );
   }
 
-  /// Writes [updated], with the calorie target brought along.
+  /// Writes [updated], with the calorie target brought along, and reports
+  /// whether it landed plus the calculation behind it.
   ///
   /// Both values on this screen go into the calorie calculation, so leaving the
   /// target where it was would leave the user with a number that no longer
   /// matches what they just asked for. This overrules the earlier decision to
   /// never touch a target by itself (#4): back then the profile screen offered
   /// a button to take the calculation over, and that button is gone.
-  Future<void> _save(
+  ///
+  /// The calculation goes back to the caller because the warnings are drawn
+  /// from it, and recomputing it there would be the same numbers twice.
+  /// `stored` is separate from it being `null`: a profile with too little in
+  /// it to calculate from saves perfectly well, and a failed write is not the
+  /// same thing at all.
+  Future<({bool stored, CalorieCalculation? calculation})> _save(
     BuildContext context,
     WidgetRef ref,
     UserProfile updated,
@@ -179,15 +210,17 @@ class _GoalsList extends ConsumerWidget {
       // Without this the write fails silently: the callback drops the error
       // and the screen looks exactly as it does after a success.
       _logger.error('Saving the goals failed', error, stackTrace);
-      if (!context.mounted) return;
+      if (!context.mounted) return (stored: false, calculation: null);
       _show(context, 'Die Ziele konnten nicht gespeichert werden.');
-      return;
+      return (stored: false, calculation: null);
     }
 
-    if (!context.mounted || recalculated == null) return;
-    // Said out loud: the number the user may have typed themselves has just
-    // been replaced.
-    _show(context, 'Kalorienziel auf $recalculated kcal angepasst');
+    if (context.mounted && recalculated != null) {
+      // Said out loud: the number the user may have typed themselves has just
+      // been replaced.
+      _show(context, 'Kalorienziel auf $recalculated kcal angepasst');
+    }
+    return (stored: true, calculation: calculation);
   }
 
   void _show(BuildContext context, String message) => ScaffoldMessenger.of(
