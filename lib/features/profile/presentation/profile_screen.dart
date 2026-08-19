@@ -8,6 +8,7 @@ import '../../body_weight/domain/body_weight_entry.dart';
 import '../data/user_profile_providers.dart';
 import '../domain/calorie_calculation.dart';
 import '../domain/user_profile.dart';
+import 'profile_formatting.dart';
 
 const _logger = AppLogger('profile');
 
@@ -307,7 +308,7 @@ class _BirthDateField extends StatelessWidget {
                   onPressed: () => onChanged(null),
                 ),
         ),
-        child: Text(value == null ? 'Keine Angabe' : _formatDate(value)),
+        child: Text(value == null ? 'Keine Angabe' : formatDate(value)),
       ),
     );
   }
@@ -392,8 +393,8 @@ class _CalorieCalculationCard extends StatelessWidget {
     return [
       if (weight != null)
         _Step(
-          label: 'Gewicht vom ${_formatDate(weight.date)}',
-          value: '${_decimal(weight.weightKg, 1)} kg',
+          label: 'Gewicht vom ${formatDate(weight.date)}',
+          value: '${formatDecimal(weight.weightKg, 1)} kg',
         ),
       _Step(
         label: 'Grundumsatz (Mifflin-St Jeor)',
@@ -401,7 +402,7 @@ class _CalorieCalculationCard extends StatelessWidget {
       ),
       _Step(
         label:
-            'Aktivität (× ${_decimal(calculation.activityLevel.calorieFactor, 3)})',
+            'Aktivität (× ${formatDecimal(calculation.activityLevel.calorieFactor, 3)})',
         value: _kcal(calculation.totalEnergyExpenditure.round()),
       ),
       _Step(
@@ -437,18 +438,6 @@ class _CalorieCalculationCard extends StatelessWidget {
     < 0 => '−${grams.abs()} g pro Woche',
     _ => '+$grams g pro Woche',
   };
-
-  /// A decimal number with a comma, the way it is written in German. Trailing
-  /// zeros of a shorter number are dropped: 1,375 but 1,2 rather than 1,200.
-  String _decimal(double value, int maxDecimals) {
-    final text = value.toStringAsFixed(maxDecimals);
-    // Only zeros behind the point go — the same pattern on a number without
-    // one would eat the zeros of 100.
-    final trimmed = text.contains('.')
-        ? text.replaceFirst(RegExp(r'\.?0+$'), '')
-        : text;
-    return trimmed.replaceFirst('.', ',');
-  }
 }
 
 /// One line of the calculation: what it is on the left, what it costs on the
@@ -483,34 +472,4 @@ class _Step extends StatelessWidget {
       ),
     );
   }
-}
-
-String _formatDate(DateTime date) =>
-    '${date.day.toString().padLeft(2, '0')}.'
-    '${date.month.toString().padLeft(2, '0')}.'
-    '${date.year}';
-
-extension on BiologicalSex {
-  String get label => switch (this) {
-    BiologicalSex.female => 'weiblich',
-    BiologicalSex.male => 'männlich',
-  };
-}
-
-extension on ActivityLevel {
-  String get label => switch (this) {
-    ActivityLevel.sedentary => 'Sitzend, kaum Bewegung',
-    ActivityLevel.lightlyActive => 'Leicht aktiv, 1–2× Sport pro Woche',
-    ActivityLevel.moderatelyActive => 'Mäßig aktiv, 3–4× Sport pro Woche',
-    ActivityLevel.veryActive => 'Sehr aktiv, 5–6× Sport pro Woche',
-    ActivityLevel.extraActive => 'Extrem aktiv, täglich hart oder körperlich',
-  };
-}
-
-extension on WeightGoal {
-  String get label => switch (this) {
-    WeightGoal.lose => 'Abnehmen',
-    WeightGoal.maintain => 'Gewicht halten',
-    WeightGoal.gain => 'Zunehmen',
-  };
 }
