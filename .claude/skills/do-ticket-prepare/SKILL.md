@@ -16,12 +16,15 @@ Lies zuerst `../ticket-workflow-shared/references/conventions.md` und
 
 1. Issue inklusive Kommentare lesen, auf bereits erledigt/blockiert prüfen
 2. Board auf „In Progress"
-3. Branch `<nummer>-<slug>` von aktuellem `main`
-4. Umsetzen
-5. `dart format .`, `flutter analyze`, `flutter test`; bei UI zusätzlich Simulator/Emulator
-6. Code Review, bei Bedarf Security Review; Findings beheben und erneut verifizieren
-7. Lokal committen
-8. Akzeptanzkriterien einzeln gegen das Ergebnis prüfen und nachweislich erfüllte im
+3. Offene Fragen stellen, **bevor** programmiert wird: Geschäftsentscheidungen und alles, was
+   Code außerhalb des Tickets betrifft (`conventions.md` § Rückfragen). Dafür den betroffenen
+   Code vorher ansehen
+4. Branch `<nummer>-<slug>` von aktuellem `main`
+5. Umsetzen
+6. `dart format .`, `flutter analyze`, `flutter test`; bei UI zusätzlich Simulator/Emulator
+7. Code Review, bei Bedarf Security Review; Findings beheben und erneut verifizieren
+8. Lokal committen
+9. Akzeptanzkriterien einzeln gegen das Ergebnis prüfen und nachweislich erfüllte im
    Issue-Body abhaken — selbständig, ohne nachzufragen (Details in `conventions.md`)
 
 ## Was ausdrücklich NICHT gemacht wird
@@ -43,6 +46,7 @@ Melde knapp:
 - Review-Findings und wie sie behoben wurden
 - welche Akzeptanzkriterien abgehakt wurden und welche nicht (mit Grund)
 - getroffene Annahmen (die gehören später in den PR-Body)
+- offene Rückfragen und was der Nutzer dazu entschieden hat
 - offene Risiken oder Gründe, warum nicht fertig geworden
 
 Bei Blockade: Branch mit dem bisherigen Stand committen, klar als blockiert melden und den

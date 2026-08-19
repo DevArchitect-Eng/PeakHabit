@@ -212,6 +212,11 @@ sicherheits-/datenrelevanten Änderungen, und **niemals selbst mergen** — Merg
 die ausdrückliche Freigabe des Nutzers. Details in
 `.claude/skills/ticket-workflow-shared/references/conventions.md`.
 
+**Rückfragen sind Pflicht, sobald etwas auffällt, das Code außerhalb des Tickets betrifft** —
+gefragt wird, bevor programmiert wird, nicht hinterher im PR. Auch ein Folge-Ticket für so
+einen Fund entsteht erst nach Freigabe. Abgrenzung und Ablauf stehen in `conventions.md`
+§ Rückfragen; im Loop-Modus werden die Fragen vorab gesammelt gestellt.
+
 ## Boards
 
 | Board | Zweck |

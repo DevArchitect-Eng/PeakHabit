@@ -28,6 +28,22 @@ offenes Issue, überspringen. Verweist es auf ein geschlossenes, ist es nicht bl
 
 Tickets, die dieselben Dateien anfassen, nicht gleichzeitig einplanen.
 
+## Sichtung vor dem ersten Ticket
+
+Der Loop läuft ohne mitlesenden Nutzer — deshalb wird gefragt, solange er noch da ist.
+
+Nach der Auswahl und **vor** der ersten Umsetzung alle eingeplanten Tickets durchgehen: Issue
+samt Kommentaren lesen und den betroffenen Code ansehen. Notiert wird, was eine Rückfrage
+braucht — offene Geschäftsentscheidungen und alles, was Code außerhalb des jeweiligen Tickets
+betrifft (Abgrenzung in `../ticket-workflow-shared/references/conventions.md` § Rückfragen).
+
+Alle Fragen **gesammelt in einem Block** stellen, nach Ticket sortiert, und die Antworten
+abwarten. Erst danach beginnt der Ablauf. Ziel der Sichtung ist, dass im weiteren Verlauf
+keine Rückfrage mehr nötig wird.
+
+Bleibt ein Ticket unbeantwortet oder stellt der Nutzer es zurück, dieses Ticket aus dem Lauf
+nehmen und mit den übrigen weitermachen.
+
 ## Ablauf
 
 Vorbereitung läuft **seriell**, Veröffentlichung **parallel im Hintergrund**:
@@ -61,7 +77,8 @@ Durchgehend nach `~/peakhabit-logs/loop.log` schreiben, Format siehe `log-format
 Ordner bei Bedarf anlegen. Einträge treffen in Abschlussreihenfolge ein, nicht in
 Startreihenfolge — deshalb trägt jede Zeile die Ticketnummer.
 
-Je Ticket protokollieren: Ergebnis, PR, Tests, CI, Folge-Tickets, Entscheidungen.
+Je Ticket protokollieren: Ergebnis, PR, Tests, CI, Folge-Tickets, Entscheidungen und
+Rückfragen, die während des Laufs offen geblieben sind.
 
 ## Fehler und Blockaden
 
@@ -75,10 +92,14 @@ Je Ticket protokollieren: Ergebnis, PR, Tests, CI, Folge-Tickets, Entscheidungen
 
 ## Kein Nutzer live dabei
 
-Der Loop läuft ohne mitlesenden Nutzer. Auf keine Rückfrage warten: Bei echter Unsicherheit
-das betroffene Ticket sicher anhalten, als blockiert loggen und mit dem nächsten weitermachen.
+Ab dem ersten Ticket läuft der Loop ohne mitlesenden Nutzer — die Fragen sind in der Sichtung
+gestellt. Danach auf keine Rückfrage mehr warten: Bei echter Unsicherheit, und ebenso bei
+einem Fund außerhalb des Ticket-Scopes, der in der Sichtung nicht aufgefallen ist, das
+betroffene Ticket sicher anhalten, als blockiert loggen und mit dem nächsten weitermachen.
+Nichts davon selbst entscheiden.
 
 ## Abschlussbericht
 
 Tabelle über alle bearbeiteten Tickets: Nummer, Ergebnis, PR, CI-Status, offene Blockaden,
-angelegte Folge-Tickets.
+angelegte Folge-Tickets. Danach die Rückfragen auflisten, die erst während des Laufs
+aufgekommen sind — sie sind der Grund für jedes so angehaltene Ticket.

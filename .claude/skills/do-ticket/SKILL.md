@@ -33,11 +33,18 @@ Prüfe den aktuellen Code gegen die Beschreibung. Manche Tickets sind bereits du
 Item-ID ermitteln und Status setzen (Befehle in `board.md`). Ist das Issue nicht auf dem
 Board, zuerst hinzufügen.
 
-### 3. Nur bei echter Geschäftsentscheidung fragen
+### 3. Vor dem Programmieren fragen
 
-Alles, was aus Code, Doku oder Ticket-Kommentaren ableitbar ist, selbst klären. Nachfragen
-nur bei Produktentscheidungen, die niemand aus dem Repository beantworten kann. Getroffene
-Annahmen später im PR dokumentieren.
+Beides wird hier geklärt, **bevor** ein Branch entsteht:
+
+- **Geschäftsentscheidungen** — nur die, die niemand aus dem Repository beantworten kann.
+  Alles aus Code, Doku oder Ticket-Kommentaren Ableitbare selbst klären und die Annahme
+  später im PR dokumentieren.
+- **Alles, was Code außerhalb des Tickets betrifft** — hier **immer** fragen. Dafür jetzt
+  den betroffenen Code ansehen: Was hängt am Ticket dran, das es selbst nicht abdeckt?
+  Abgrenzung in `../ticket-workflow-shared/references/conventions.md` § Rückfragen.
+
+Fällt beim Umsetzen doch noch etwas auf, sofort fragen und so lange anhalten.
 
 ### 4. Branch anlegen
 
@@ -98,7 +105,11 @@ danach auf „Done" setzen.
 
 ### 12. Nebenbefunde
 
-Echte Funde außerhalb des Scopes als eigenes Issue anlegen, nicht nur im Chat erwähnen.
-Format nach `../ticket-workflow-shared/references/ticket-format.md`, dabei Label
-**`claude-found`** setzen — diese Tickets stammen aus der eigenen
-Arbeit, nicht vom Nutzer. Im Body auf das Ursprungsticket verweisen.
+Funde außerhalb des Scopes sind zu diesem Zeitpunkt bereits vorgelegt — in Schritt 3 oder,
+wenn sie erst beim Umsetzen auffielen, sofort danach. Was der Nutzer freigegeben hat, wird
+jetzt als eigenes Issue angelegt — Format nach
+`../ticket-workflow-shared/references/ticket-format.md`, dabei Label **`claude-found`**
+setzen, weil diese Tickets aus der eigenen Arbeit stammen, nicht vom Nutzer. Im Body auf das
+Ursprungsticket verweisen.
+
+Ohne Freigabe entsteht kein Issue.

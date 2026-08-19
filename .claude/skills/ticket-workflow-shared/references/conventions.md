@@ -132,13 +132,45 @@ Einstellungen, Secrets, Labels löschen.
 
 ## Rückfragen
 
-Nur bei echten Geschäftsentscheidungen nachfragen. Alles, was aus Code, Doku oder
-Ticket-Kommentaren klärbar ist, selbst klären und die Annahme im PR dokumentieren.
+Zwei Fälle lösen eine Rückfrage aus:
 
-Hintergrund-Subagents ohne live mitlesenden Nutzer dürfen nicht auf Rückfragen warten: bei
-Unsicherheit sicher anhalten und klar berichten.
+1. **Echte Geschäftsentscheidungen** — Produktentscheidungen, die niemand aus dem Repository
+   beantworten kann. Alles, was aus Code, Doku oder Ticket-Kommentaren klärbar ist, selbst
+   klären und die Annahme im PR dokumentieren.
+2. **Alles, was Code außerhalb des Ticket-Scopes betrifft** — hier wird **immer** gefragt,
+   ohne eigene Abwägung, ob es die Unterbrechung wert ist.
+
+### Was „außerhalb des Scopes" heißt
+
+- **Zählt dazu:** jede Änderung, die eine Datei anfassen würde, die das Ticket nicht ohnehin
+  betrifft. Dazu jeder Bug, jede Tech Debt und jeder Sicherheitsfund außerhalb des Tickets —
+  auch wenn er nur beobachtet und gar nicht behoben werden soll.
+- **Zählt nicht dazu:** Entscheidungen innerhalb des eigenen Diffs — Benennung, Aufteilung,
+  Formulierung, Teststruktur. Das ist normale Umsetzungsarbeit.
+
+### Wann gefragt wird
+
+**Vor dem Programmieren.** Der Fund wird vorgelegt, bevor die erste Zeile Code entsteht — in
+`/do-ticket` und `/do-ticket-prepare` also in Schritt 3, vor dem Branch. Deshalb gehört zum
+Ticketverständnis ein Blick auf den betroffenen Code, statt erst beim Umsetzen zu merken, was
+alles daranhängt.
+
+Fällt später trotzdem etwas auf, sofort fragen und die Umsetzung so lange anhalten — nicht
+nebenbei miterledigen und nicht erst im PR-Body erwähnen.
+
+### Ohne live mitlesenden Nutzer
+
+Hintergrund-Subagents und der Loop-Modus dürfen nicht auf Rückfragen warten. Dort gilt: Fragen
+so früh stellen, dass der Nutzer noch dabei ist (`/do-ticket-loop` § Sichtung vor dem ersten
+Ticket), und alles, was danach noch auffällt, führt zum sicheren Anhalten des betroffenen
+Tickets — nicht zu einer eigenen Entscheidung.
 
 ## Nebenbefunde
 
-Echte Funde außerhalb des Ticket-Scopes (Bugs, Tech Debt, Sicherheitsrisiken) als eigenes
-Issue anlegen, nicht nur im Chat erwähnen. Keine Scope-Ausweitung im laufenden PR.
+Echte Funde außerhalb des Ticket-Scopes (Bugs, Tech Debt, Sicherheitsrisiken) sind
+rückfragepflichtig (siehe „Rückfragen"): erst vorlegen, dann entscheidet der Nutzer, was
+daraus wird.
+
+Nach der Freigabe als eigenes Issue anlegen, nicht nur im Chat erwähnen — Format nach
+`ticket-format.md`, Label `claude-found`, im Body auf das Ursprungsticket verweisen. Ohne
+Freigabe entsteht kein Issue, und Scope-Ausweitung im laufenden PR gibt es weiterhin nicht.
