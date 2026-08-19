@@ -30,6 +30,22 @@ class BodyWeightRepository {
       .watchSingleOrNull()
       .map((row) => row == null ? null : _toEntry(row));
 
+  /// The oldest entry, or `null` while nothing has been recorded.
+  ///
+  /// This is the starting weight: the goals screen holds it against the most
+  /// recent one to show what has happened since. Queried rather than stored
+  /// separately, so correcting or deleting the first weighing moves the
+  /// starting point with it.
+  Future<BodyWeightEntry?> readFirst() async {
+    final row = await _firstQuery().getSingleOrNull();
+    return row == null ? null : _toEntry(row);
+  }
+
+  /// Emits the oldest entry and every later change to it.
+  Stream<BodyWeightEntry?> watchFirst() => _firstQuery()
+      .watchSingleOrNull()
+      .map((row) => row == null ? null : _toEntry(row));
+
   /// The entries from [from] to [to], oldest first.
   Future<List<BodyWeightEntry>> readRange(DateTime from, DateTime to) async {
     final rows = await _rangeQuery(from, to).get();
@@ -70,6 +86,11 @@ class BodyWeightRepository {
   _latestQuery() => _database.select(_database.bodyWeightEntries)
     ..orderBy([(row) => OrderingTerm.desc(row.date)])
     ..limit(1);
+
+  SimpleSelectStatement<$BodyWeightEntriesTable, BodyWeightRow> _firstQuery() =>
+      _database.select(_database.bodyWeightEntries)
+        ..orderBy([(row) => OrderingTerm.asc(row.date)])
+        ..limit(1);
 
   SimpleSelectStatement<$BodyWeightEntriesTable, BodyWeightRow> _rangeQuery(
     DateTime from,

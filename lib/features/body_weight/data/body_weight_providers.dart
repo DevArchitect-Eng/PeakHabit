@@ -20,3 +20,9 @@ final bodyWeightRepositoryProvider = Provider<BodyWeightRepository>(
 final latestBodyWeightProvider = StreamProvider<BodyWeightEntry?>(
   (ref) => ref.watch(bodyWeightRepositoryProvider).watchLatest(),
 );
+
+/// The oldest weight entry — the starting weight — re-emitted on every change,
+/// and `null` while nothing has been recorded.
+final firstBodyWeightProvider = StreamProvider<BodyWeightEntry?>(
+  (ref) => ref.watch(bodyWeightRepositoryProvider).watchFirst(),
+);

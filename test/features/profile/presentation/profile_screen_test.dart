@@ -1,26 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:peakhabit/features/body_weight/domain/body_weight_entry.dart';
 import 'package:peakhabit/features/profile/domain/macro_distribution.dart';
 import 'package:peakhabit/features/profile/domain/user_profile.dart';
 import 'package:peakhabit/features/profile/presentation/profile_screen.dart';
 
 import '../../../support/pump_app.dart';
+import '../../../support/settings_rows.dart';
 
 void main() {
   Future<void> openProfile(WidgetTester tester) async {
     await tester.tap(find.widgetWithText(NavigationDestination, 'Optionen'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Profil bearbeiten'));
-    await tester.pumpAndSettle();
-  }
-
-  /// The button sits below the fold of the test window, so it has to be
-  /// scrolled into view before it can be tapped.
-  Future<void> tapSave(WidgetTester tester) async {
-    await tester.ensureVisible(find.text('Speichern'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Speichern'));
     await tester.pumpAndSettle();
   }
 
@@ -39,257 +30,160 @@ void main() {
         profile: UserProfile(
           username: 'mila',
           heightCm: 182,
-          calorieTarget: 2200,
+          sex: BiologicalSex.female,
+          birthDate: DateTime(1996, 4, 2),
         ),
       ),
     );
 
     await openProfile(tester);
 
-    expect(find.widgetWithText(TextFormField, 'mila'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, '182'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, '2200'), findsOneWidget);
+    expect(valueOfRow(tester, 'Benutzername'), 'mila');
+    expect(valueOfRow(tester, 'Größe'), '182 cm');
+    expect(valueOfRow(tester, 'Geschlecht'), 'weiblich');
+    expect(valueOfRow(tester, 'Geburtsdatum'), '02.04.1996');
   });
 
-  testWidgets('saves a changed username, height and calorie target', (
-    tester,
-  ) async {
+  testWidgets('names what has not been filled in yet', (tester) async {
+    await pumpApp(tester);
+
+    await openProfile(tester);
+
+    expect(find.text('Keine Angabe'), findsNWidgets(4));
+  });
+
+  testWidgets('a confirmed username is stored right away', (tester) async {
     final stores = await pumpApp(
       tester,
       on: storesWith(profile: UserProfile(username: 'mila')),
     );
     await openProfile(tester);
 
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Benutzername'),
-      'ben',
-    );
-    await tester.enterText(find.widgetWithText(TextFormField, 'Größe'), '175');
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Kalorienziel'),
-      '2400',
-    );
-    await tapSave(tester);
+    await openRow(tester, 'Benutzername');
+    await tester.enterText(find.byType(TextField), 'ben');
+    await tester.pumpAndSettle();
+    await confirmEditor(tester);
 
+    // No save button anywhere — confirming the editor is the whole of it.
     expect(stores.profile.profile.username, 'ben');
-    expect(stores.profile.profile.heightCm, 175);
-    expect(stores.profile.profile.calorieTarget, 2400);
-    expect(find.text('Profil gespeichert'), findsOneWidget);
+    expect(find.text('Speichern'), findsNothing);
   });
 
-  testWidgets('refuses an empty username instead of storing it', (
-    tester,
-  ) async {
+  testWidgets('a dropped editor changes nothing', (tester) async {
     final stores = await pumpApp(
       tester,
       on: storesWith(profile: UserProfile(username: 'mila')),
     );
     await openProfile(tester);
 
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Benutzername'),
-      '',
+    await openRow(tester, 'Benutzername');
+    await tester.enterText(find.byType(TextField), 'ben');
+    await tester.pumpAndSettle();
+    await cancelEditor(tester);
+
+    expect(stores.profile.profile.username, 'mila');
+    expect(valueOfRow(tester, 'Benutzername'), 'mila');
+  });
+
+  testWidgets('an empty username cannot be confirmed', (tester) async {
+    final stores = await pumpApp(
+      tester,
+      on: storesWith(profile: UserProfile(username: 'mila')),
     );
-    await tapSave(tester);
+    await openProfile(tester);
+
+    await openRow(tester, 'Benutzername');
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pumpAndSettle();
 
     expect(find.text('Bitte einen Benutzernamen eingeben.'), findsOneWidget);
+    expect(confirmIsOffered(tester), isFalse);
+
+    await cancelEditor(tester);
     expect(stores.profile.profile.username, 'mila');
   });
 
-  testWidgets('saves a changed goal', (tester) async {
-    final stores = await pumpApp(
-      tester,
-      on: storesWith(profile: UserProfile(username: 'mila')),
-    );
-    await openProfile(tester);
-
-    await tester.tap(find.text('Gewicht halten'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Abnehmen').last);
-    await tester.pumpAndSettle();
-    await tapSave(tester);
-
-    expect(stores.profile.profile.goal, WeightGoal.lose);
-  });
-
-  testWidgets('refuses a height of zero instead of storing it', (tester) async {
+  testWidgets('a confirmed height is stored right away', (tester) async {
     final stores = await pumpApp(tester);
     await openProfile(tester);
 
-    await tester.enterText(find.widgetWithText(TextFormField, 'Größe'), '0');
-    await tapSave(tester);
+    await openRow(tester, 'Größe');
+    await tester.enterText(find.byType(TextField), '175');
+    await tester.pumpAndSettle();
+    await confirmEditor(tester);
+
+    expect(stores.profile.profile.heightCm, 175);
+    expect(valueOfRow(tester, 'Größe'), '175 cm');
+  });
+
+  testWidgets('a height of zero cannot be confirmed', (tester) async {
+    await pumpApp(tester);
+    await openProfile(tester);
+
+    await openRow(tester, 'Größe');
+    await tester.enterText(find.byType(TextField), '0');
+    await tester.pumpAndSettle();
 
     expect(find.text('Die Größe muss größer als 0 sein.'), findsOneWidget);
-    expect(stores.profile.profile, UserProfile.empty);
+    expect(confirmIsOffered(tester), isFalse);
   });
 
-  group('calorie calculation', () {
-    /// A profile the calculation has everything for, save the weight entry.
-    ///
-    /// The screen counts the age against the current date, so the birth date
-    /// is set relative to it: the first of January thirty years back is thirty
-    /// on every day of the year, while a fixed date would age the profile out
-    /// of the expected numbers.
-    UserProfile calculableProfile({WeightGoal goal = WeightGoal.maintain}) =>
-        UserProfile(
-          username: 'mila',
-          heightCm: 180,
-          sex: BiologicalSex.male,
-          birthDate: DateTime(DateTime.now().year - 30, 1, 1),
-          activityLevel: ActivityLevel.moderatelyActive,
-          goal: goal,
-        );
+  testWidgets('a confirmed sex is stored right away', (tester) async {
+    final stores = await pumpApp(tester);
+    await openProfile(tester);
 
-    final weighing = BodyWeightEntry(date: DateTime(2026, 8, 18), weightKg: 80);
+    await openRow(tester, 'Geschlecht');
+    await tester.tap(find.text('männlich').last);
+    await tester.pumpAndSettle();
+    await confirmEditor(tester);
 
-    /// The calculation sits below the fold of the test window.
-    Future<void> scrollToCalculation(WidgetTester tester) async {
-      await tester.ensureVisible(find.text('Kalorienziel berechnen'));
-      await tester.pumpAndSettle();
-    }
-
-    testWidgets('names what it is still missing', (tester) async {
-      await pumpApp(tester);
-      await openProfile(tester);
-      await scrollToCalculation(tester);
-
-      expect(
-        find.textContaining('ein Gewichtseintrag, die Größe'),
-        findsOneWidget,
-      );
-      expect(find.text('Übernehmen'), findsNothing);
-    });
-
-    testWidgets('names the weight entry as the only thing missing', (
-      tester,
-    ) async {
-      await pumpApp(tester, on: storesWith(profile: calculableProfile()));
-      await openProfile(tester);
-      await scrollToCalculation(tester);
-
-      expect(
-        find.text('Dafür fehlt noch: ein Gewichtseintrag.'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('says so when the entries cannot be read at all', (
-      tester,
-    ) async {
-      await pumpApp(
-        tester,
-        on: storesWith(
-          profile: calculableProfile(),
-          weightEntriesUnreadable: true,
-        ),
-      );
-      await openProfile(tester);
-      await scrollToCalculation(tester);
-
-      // Not "make an entry" — the user has no way to fix a failed read by
-      // stepping on the scale.
-      expect(
-        find.text('Das letzte Gewicht konnte nicht gelesen werden.'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('shows every step of the calculation', (tester) async {
-      await pumpApp(
-        tester,
-        on: storesWith(
-          profile: calculableProfile(goal: WeightGoal.lose),
-          weightEntries: [weighing],
-        ),
-      );
-      await openProfile(tester);
-      await scrollToCalculation(tester);
-
-      // 10 × 80 + 6.25 × 180 − 5 × 30 + 5 = 1780, × 1.55 = 2759, − 500.
-      expect(find.text('80 kg'), findsOneWidget);
-      expect(find.text('1780 kcal'), findsOneWidget);
-      expect(find.text('Aktivität (× 1,55)'), findsOneWidget);
-      expect(find.text('2759 kcal'), findsOneWidget);
-      expect(find.text('Abnehmen (−500 g pro Woche)'), findsOneWidget);
-      expect(find.text('−500 kcal'), findsOneWidget);
-      expect(find.text('2259 kcal'), findsOneWidget);
-    });
-
-    testWidgets('follows the goal picked in the form', (tester) async {
-      await pumpApp(
-        tester,
-        on: storesWith(profile: calculableProfile(), weightEntries: [weighing]),
-      );
-      await openProfile(tester);
-
-      await tester.tap(find.text('Gewicht halten'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Zunehmen').last);
-      await tester.pumpAndSettle();
-      await scrollToCalculation(tester);
-
-      expect(find.text('2959 kcal'), findsOneWidget);
-    });
-
-    testWidgets('puts the result into the field on demand', (tester) async {
-      final stores = storesWith(
-        profile: calculableProfile(),
-        weightEntries: [weighing],
-      );
-      await pumpApp(tester, on: stores);
-      await openProfile(tester);
-      await scrollToCalculation(tester);
-
-      await tester.tap(find.text('Übernehmen'));
-      await tester.pumpAndSettle();
-
-      expect(find.widgetWithText(TextFormField, '2759'), findsOneWidget);
-      // Taking it over is not saving it — that stays the user's own step.
-      expect(stores.profile.profile.calorieTarget, isNull);
-
-      await tapSave(tester);
-
-      expect(stores.profile.profile.calorieTarget, 2759);
-    });
-
-    testWidgets('leaves a target entered by hand alone', (tester) async {
-      final stores = storesWith(
-        profile: calculableProfile(),
-        weightEntries: [weighing],
-      );
-      await pumpApp(tester, on: stores);
-      await openProfile(tester);
-
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Kalorienziel'),
-        '2100',
-      );
-      await tapSave(tester);
-
-      expect(stores.profile.profile.calorieTarget, 2100);
-    });
+    expect(stores.profile.profile.sex, BiologicalSex.male);
   });
 
-  testWidgets('leaves the macro split alone', (tester) async {
+  testWidgets('"Keine Angabe" clears a sex that was set', (tester) async {
+    final stores = await pumpApp(
+      tester,
+      on: storesWith(profile: UserProfile(sex: BiologicalSex.female)),
+    );
+    await openProfile(tester);
+
+    await openRow(tester, 'Geschlecht');
+    await tester.tap(
+      find.widgetWithText(RadioListTile<BiologicalSex?>, 'Keine Angabe'),
+    );
+    await tester.pumpAndSettle();
+    await confirmEditor(tester);
+
+    expect(stores.profile.profile.sex, isNull);
+  });
+
+  testWidgets('leaves the goals and the nutrition targets alone', (
+    tester,
+  ) async {
     final stored = UserProfile(
       username: 'mila',
+      goal: WeightGoal.lose,
+      activityLevel: ActivityLevel.veryActive,
       calorieTarget: 2000,
       macros: MacroDistribution(
-        proteinPercent: 40,
         carbPercent: 30,
+        proteinPercent: 40,
         fatPercent: 30,
       ),
     );
-    final stores = storesWith(profile: stored);
-    await pumpApp(tester, on: stores);
+    final stores = await pumpApp(tester, on: storesWith(profile: stored));
     await openProfile(tester);
 
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Kalorienziel'),
-      '2500',
-    );
-    await tapSave(tester);
+    await openRow(tester, 'Größe');
+    await tester.enterText(find.byType(TextField), '175');
+    await tester.pumpAndSettle();
+    await confirmEditor(tester);
 
-    expect(stores.profile.profile.macros, stored.macros);
+    final saved = stores.profile.profile;
+    expect(saved.heightCm, 175);
+    expect(saved.goal, WeightGoal.lose);
+    expect(saved.activityLevel, ActivityLevel.veryActive);
+    expect(saved.calorieTarget, 2000);
+    expect(saved.macros, stored.macros);
   });
 }

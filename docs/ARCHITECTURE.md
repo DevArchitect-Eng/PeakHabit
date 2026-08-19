@@ -213,15 +213,69 @@ Drei Punkte, die sich daraus ergeben:
 
 - **Das Gewicht kommt nicht aus dem Profil,** sondern aus dem jüngsten Eintrag in
   `body_weight_entries` — es ändert sich laufend und liegt deshalb als eigene Reihe vor.
-  Ohne Eintrag ist keine Berechnung möglich; der Profil-Screen benennt das dann.
-- **Geschrieben wird nichts von allein.** Die Berechnung füllt auf Knopfdruck das Feld
-  „Kalorienziel", gespeichert wird erst beim Speichern des Profils. Ein von Hand gesetztes
-  Ziel wird damit nie ohne Zutun überschrieben — auch nicht, wenn sich das Gewicht deutlich
-  ändert (offene Frage aus #4, so entschieden).
-- **Die Rechnung wird angezeigt, nicht nur ihr Ergebnis.** Grundumsatz, Faktor und
-  Zielanpassung stehen als einzelne Zeilen im Profil. Eine Zahl, die aus dem Nichts kommt,
-  kann niemand prüfen, und die Zwischenschritte zeigen, welcher Profilwert zu korrigieren
-  ist, wenn das Ergebnis nicht passt.
+  Ohne Eintrag ist keine Berechnung möglich; der Ernährungsziele-Screen benennt das dann.
+- **Ziel und Aktivität ziehen das Kalorienziel mit.** Wer auf der Ziele-Seite eines von
+  beiden ändert, bekommt das neue Kalorienziel sofort mitgespeichert; die Snackbar nennt
+  die Zahl, damit die Änderung nicht stillschweigend passiert. Reicht das Profil für die
+  Rechnung nicht (kein Gewichtseintrag, keine Größe, kein Geburtsdatum), bleibt der alte
+  Wert stehen.
+
+  Das **kehrt die Entscheidung aus #4 um**, nach der nie ohne Zutun geschrieben wurde.
+  Damals gab es auf der Profil-Seite den Knopf „Übernehmen", der die Rechnung ins Feld
+  schrieb; mit dem zeilenweisen Umbau (#33) ist er weg, und ohne ihn gäbe es keinen Weg
+  mehr vom geänderten Ziel zum passenden Kalorienziel. Ein von Hand gesetztes Ziel hält
+  weiterhin, solange Ziel und Aktivität unangetastet bleiben — die Ernährungsziele-Seite
+  schreibt genau das, was eingetippt wurde.
+- **Die Rechnung selbst wird nicht mehr angezeigt.** Grundumsatz, Faktor und Zielanpassung
+  standen als Zeilen unter dem Kalorienziel, solange der Nutzer die Rechnung selbst
+  auslösen musste. Sichtbar bleibt sie im Onboarding, wo das erste Kalorienziel entsteht
+  und die Zahl sonst aus dem Nichts käme.
+
+Die Eingaben, aus denen sich das ergibt, liegen bewusst auf drei Seiten statt in einem
+Formular (#33):
+
+| Seite | Route | Inhalt |
+| --- | --- | --- |
+| Profil | `/settings/profile` | Benutzername, Größe, Geschlecht, Geburtsdatum |
+| Ziele | `/settings/goals` | Start- und aktuelles Gewicht, Ziel, Aktivitätslevel |
+| Ernährungsziele | `/settings/goals/nutrition` | Kalorienziel, Makroverteilung samt Gramm-Werten |
+
+Der Schnitt folgt der Frage, die eine Seite beantwortet: Das Profil sagt, wer jemand ist, die
+Ziele sagen, wohin es gehen soll, und die Ernährungsziele teilen auf, was daraus folgt.
+Deshalb liegt die Makroverteilung nicht im Profil, sondern neben dem Kalorienziel, das sie
+aufteilt — und deshalb steht das Aktivitätslevel bei den Zielen, obwohl es eine Körperangabe
+ist: es geht nur in die Zielrechnung ein.
+
+Start- und aktuelles Gewicht auf der Ziele-Seite sind **schreibgeschützt**. Gewogen wird auf
+der Startseite; eine zweite Stelle zum Eintragen wäre eine zweite Stelle, an der es
+danebengehen kann. Beide Werte werden abgefragt (`readFirst`/`readLatest`) statt gespeichert,
+damit ein korrigierter oder gelöschter erster Eintrag den Startpunkt mitzieht.
+
+### Einstellungen: Zeilen statt Formulare
+
+Die drei Seiten sind Listen aus `SettingRow`, nicht Formulare mit einem Speichern-Knopf
+darunter. Eine Zeile wird angetippt, der Editor darüber mit dem Haken bestätigt oder mit dem
+Kreuz verworfen — geschrieben wird beim Bestätigen. Die Teile liegen in
+`lib/features/profile/presentation/`:
+
+| Datei | Inhalt |
+| --- | --- |
+| `setting_row.dart` | `SettingRow` — Beschriftung, optionaler Zusatz, Wert; ohne `onTap` eine reine Anzeige |
+| `value_editor.dart` | `showTextEditor`, `showChoiceEditor`, dazu `EditorHeader` und `EditorSheet` |
+
+Zwei Punkte, die daran hängen:
+
+- **Der Haken ist der einzige Weg nach vorn.** Solange der Editor einen Wert hält, den die
+  Seite nicht speichern würde — ein leerer Benutzername, eine Makroverteilung, die nicht 100
+  ergibt —, ist er nicht auslösbar, und der Grund steht am Feld. Vorher ließ sich so ein Wert
+  eintippen und wurde erst beim Speichern abgelehnt.
+- **Die Makroverteilung wird zu dritt bearbeitet.** Ein einzelner Anteil lässt sich nicht
+  ändern, ohne die 100 zu brechen, die die drei zusammen ergeben müssen; jede der drei Zeilen
+  öffnet deshalb denselben Editor mit allen dreien.
+
+`showChoiceEditor` gibt die Auswahl als Record (`({T? value})?`) zurück. Nötig, weil es zwei
+leere Antworten gibt, die nichts miteinander zu tun haben: `null` heißt „abgebrochen",
+`(value: null)` heißt „Keine Angabe gewählt".
 
 ### Design: dark-first mit hellblauem Akzent
 
@@ -318,4 +372,7 @@ Fünf Tabs in der Bottom-Navigation:
 | Optionen | `/settings` | Darstellung, Zugang zum Profil |
 
 Unterseiten eines Tabs sind verschachtelte Routen seines Branches, damit die Bottom-Navigation
-stehen bleibt und der Tab seine Position behält — `/settings/profile` ist das erste Beispiel.
+stehen bleibt und der Tab seine Position behält. Der Optionen-Tab hat davon bisher drei:
+`/settings/profile`, `/settings/goals` und darunter `/settings/goals/nutrition` — die
+Verschachtelung bildet ab, dass die Ernährungsziele von der Ziele-Seite aus erreicht werden
+und der Zurück-Weg über sie führt.
