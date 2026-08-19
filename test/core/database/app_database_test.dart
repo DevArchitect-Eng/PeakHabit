@@ -33,14 +33,14 @@ void main() {
     final messages = captured.map((entry) => entry.message).toList();
     expect(messages, [
       'Opening database',
-      'Creating schema at version 7',
+      'Creating schema at version 8',
       'Database opened',
       'Closing database',
       'Database closed',
     ]);
   });
 
-  test('creates a fresh database at schema version 7', () async {
+  test('creates a fresh database at schema version 8', () async {
     final database = AppDatabase.inMemory();
     addTearDown(database.close);
 
@@ -49,7 +49,7 @@ void main() {
     // Pinned to the literal version on purpose: raising `schemaVersion` should
     // force a look at this test, and with it at the matching migration step.
     final row = await database.customSelect('PRAGMA user_version').getSingle();
-    expect(row.read<int>('user_version'), 7);
+    expect(row.read<int>('user_version'), 8);
   });
 
   test('enforces foreign keys', () async {
@@ -236,5 +236,48 @@ void main() {
         expect(await repository.readThemeMode(), AppThemeMode.dark);
       },
     );
+
+    /// Stores [goal] the way version 7 held it and opens the database again.
+    ///
+    /// Raw SQL because the three old names are gone from `WeightGoal` — there
+    /// is no companion left that could write such a row.
+    Future<UserProfile> profileAfterMigratingGoal(String goal) async {
+      final legacy = AppDatabase.atFile(file);
+      await legacy.open();
+      await legacy.customStatement(
+        'INSERT INTO user_profiles (id, username, goal, protein_percent, '
+        'carb_percent, fat_percent, updated_at) '
+        "VALUES (1, 'mila', '$goal', 30, 40, 30, 0)",
+      );
+      await legacy.customStatement('PRAGMA user_version = 7');
+      await legacy.close();
+
+      final migrated = AppDatabase.atFile(file);
+      addTearDown(migrated.close);
+      await migrated.open();
+      return UserProfileRepository(migrated).read();
+    }
+
+    test('puts a stored "lose" on the rate it used to stand for', () async {
+      final profile = await profileAfterMigratingGoal('lose');
+
+      expect(profile.goal, WeightGoal.lose500);
+      // The rest of the row survives the migration untouched.
+      expect(profile.username, 'mila');
+    });
+
+    test('puts a stored "gain" on the rate it used to stand for', () async {
+      final profile = await profileAfterMigratingGoal('gain');
+
+      expect(profile.goal, WeightGoal.gain200);
+    });
+
+    test('leaves a stored "maintain" where it is', () async {
+      // The one old name the new enum still has — the migration must not go
+      // looking for something to rewrite it to.
+      final profile = await profileAfterMigratingGoal('maintain');
+
+      expect(profile.goal, WeightGoal.maintain);
+    });
   });
 }

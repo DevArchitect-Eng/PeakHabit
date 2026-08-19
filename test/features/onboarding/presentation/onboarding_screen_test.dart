@@ -109,7 +109,7 @@ void main() {
       await fillUpToCalorieStep(
         tester,
         username: 'ben',
-        goal: 'Abnehmen',
+        goal: 'Abnehmen, 0,5 kg pro Woche',
         heightCm: '180',
         weightKg: '82,5',
       );
@@ -120,7 +120,7 @@ void main() {
 
       expect(stores.profile.profile.username, 'ben');
       expect(stores.profile.profile.heightCm, 180);
-      expect(stores.profile.profile.goal, WeightGoal.lose);
+      expect(stores.profile.profile.goal, WeightGoal.lose500);
       expect(stores.profile.profile.calorieTarget, 2200);
       expect(stores.bodyWeight.entries, hasLength(1));
       expect(stores.bodyWeight.entries.single.weightKg, 82.5);
@@ -146,7 +146,7 @@ void main() {
       await fillUpToCalorieStep(
         tester,
         username: 'ben',
-        goal: 'Abnehmen',
+        goal: 'Abnehmen, 0,5 kg pro Woche',
         heightCm: '1',
         weightKg: '60',
       );

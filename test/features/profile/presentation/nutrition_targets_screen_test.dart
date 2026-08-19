@@ -199,7 +199,7 @@ void main() {
       sex: BiologicalSex.female,
       birthDate: DateTime(1996, 4, 2),
       activityLevel: ActivityLevel.veryActive,
-      goal: WeightGoal.lose,
+      goal: WeightGoal.lose500,
     );
     final stores = await pumpApp(tester, on: storesWith(profile: stored));
     await openNutritionTargets(tester);
@@ -216,7 +216,7 @@ void main() {
     expect(saved.sex, BiologicalSex.female);
     expect(saved.birthDate, DateTime(1996, 4, 2));
     expect(saved.activityLevel, ActivityLevel.veryActive);
-    expect(saved.goal, WeightGoal.lose);
+    expect(saved.goal, WeightGoal.lose500);
   });
 
   testWidgets('the editor stays usable when the keyboard squeezes it', (

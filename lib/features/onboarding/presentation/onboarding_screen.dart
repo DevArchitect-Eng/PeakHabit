@@ -10,6 +10,7 @@ import '../../body_weight/domain/body_weight_entry.dart';
 import '../../profile/data/user_profile_providers.dart';
 import '../../profile/domain/calorie_calculation.dart';
 import '../../profile/domain/user_profile.dart';
+import '../../profile/presentation/profile_formatting.dart';
 import '../../settings/data/settings_providers.dart';
 
 const _logger = AppLogger('onboarding');
@@ -496,7 +497,7 @@ class _BirthDateField extends StatelessWidget {
       onTap: () => _pick(context),
       child: InputDecorator(
         decoration: const InputDecoration(labelText: 'Geburtsdatum'),
-        child: Text(value == null ? 'Auswählen' : _formatDate(value)),
+        child: Text(value == null ? 'Auswählen' : formatDate(value)),
       ),
     );
   }
@@ -542,34 +543,4 @@ class _CalculatedTargetCard extends StatelessWidget {
       ),
     );
   }
-}
-
-String _formatDate(DateTime date) =>
-    '${date.day.toString().padLeft(2, '0')}.'
-    '${date.month.toString().padLeft(2, '0')}.'
-    '${date.year}';
-
-extension on WeightGoal {
-  String get label => switch (this) {
-    WeightGoal.lose => 'Abnehmen',
-    WeightGoal.maintain => 'Gewicht halten',
-    WeightGoal.gain => 'Zunehmen',
-  };
-}
-
-extension on BiologicalSex {
-  String get label => switch (this) {
-    BiologicalSex.female => 'weiblich',
-    BiologicalSex.male => 'männlich',
-  };
-}
-
-extension on ActivityLevel {
-  String get label => switch (this) {
-    ActivityLevel.sedentary => 'Sitzend, kaum Bewegung',
-    ActivityLevel.lightlyActive => 'Leicht aktiv, 1–2× Sport pro Woche',
-    ActivityLevel.moderatelyActive => 'Mäßig aktiv, 3–4× Sport pro Woche',
-    ActivityLevel.veryActive => 'Sehr aktiv, 5–6× Sport pro Woche',
-    ActivityLevel.extraActive => 'Extrem aktiv, täglich hart oder körperlich',
-  };
 }

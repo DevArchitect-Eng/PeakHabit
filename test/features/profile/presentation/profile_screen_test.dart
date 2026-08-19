@@ -162,7 +162,7 @@ void main() {
   ) async {
     final stored = UserProfile(
       username: 'mila',
-      goal: WeightGoal.lose,
+      goal: WeightGoal.lose500,
       activityLevel: ActivityLevel.veryActive,
       calorieTarget: 2000,
       macros: MacroDistribution(
@@ -181,7 +181,7 @@ void main() {
 
     final saved = stores.profile.profile;
     expect(saved.heightCm, 175);
-    expect(saved.goal, WeightGoal.lose);
+    expect(saved.goal, WeightGoal.lose500);
     expect(saved.activityLevel, ActivityLevel.veryActive);
     expect(saved.calorieTarget, 2000);
     expect(saved.macros, stored.macros);

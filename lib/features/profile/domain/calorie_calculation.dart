@@ -157,20 +157,38 @@ extension ActivityFactor on ActivityLevel {
 extension GoalAdjustment on WeightGoal {
   /// The weight change per week this goal aims for, in grams.
   ///
-  /// Deliberately modest, and deliberately not selectable: a rate the user can
-  /// crank up is an invitation to a deficit nobody keeps up. Losing is the
-  /// faster of the two because a deficit is easier to hold than a surplus is
-  /// to fill without putting on fat.
+  /// Selectable, where this used to be one fixed rate per direction (#43). The
+  /// old argument was that a rate the user can crank up invites a deficit
+  /// nobody keeps up — but a rate the user cannot touch invites the mirror
+  /// image of that: somebody with 30 kg to lose creeping off 500 g a week and
+  /// giving up long before the end, and somebody 2 kg from their target
+  /// overshooting it. The pace is the user's to pick; what the app owes them
+  /// is a word where the pace gets hard on the body, which is what
+  /// `GoalWarning` is for.
+  ///
+  /// The ladder stops at −1000 and +800 g. Past those the number stops
+  /// describing fat: a faster loss comes out of muscle as well, and a faster
+  /// gain goes back on as fat rather than as anything the training built.
+  /// Losing reaches one step further than gaining because a body can give up
+  /// stored energy faster than it can build new tissue.
   int get weeklyWeightChangeGrams => switch (this) {
-    WeightGoal.lose => -500,
+    WeightGoal.gain200 => 200,
+    WeightGoal.gain500 => 500,
+    WeightGoal.gain800 => 800,
     WeightGoal.maintain => 0,
-    WeightGoal.gain => 200,
+    WeightGoal.lose200 => -200,
+    WeightGoal.lose500 => -500,
+    WeightGoal.lose800 => -800,
+    WeightGoal.lose1000 => -1000,
   };
 
   /// What that rate costs or adds per day, in kcal.
   ///
   /// Converted with the usual convention of about 7000 kcal per kilogram of
   /// body fat: 500 g per week is 3500 kcal over seven days, so 500 kcal a day.
+  /// The two numbers come out equal for every rate — 7000 divided by 7 days is
+  /// 1000, the same thousand the grams are divided by — which is why the
+  /// steepest rate on offer is exactly the 1000 kcal a day the warning names.
   int get dailyCalorieAdjustment =>
       (weeklyWeightChangeGrams * _kcalPerKilogramOfFat / 1000 / 7).round();
 }

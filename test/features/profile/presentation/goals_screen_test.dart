@@ -111,7 +111,7 @@ void main() {
       tester,
       on: storesWith(
         profile: UserProfile(
-          goal: WeightGoal.lose,
+          goal: WeightGoal.lose500,
           activityLevel: ActivityLevel.veryActive,
         ),
       ),
@@ -119,8 +119,8 @@ void main() {
 
     await openGoals(tester);
 
-    expect(valueOfRow(tester, 'Ziel'), 'Abnehmen');
-    // The row shows the short form; the picker spells it out.
+    // Both rows show the short form; the picker spells them out.
+    expect(valueOfRow(tester, 'Ziel'), '−0,5 kg/Woche');
     expect(valueOfRow(tester, 'Aktivitätslevel'), 'Sehr aktiv');
   });
 
@@ -128,9 +128,9 @@ void main() {
     final stores = await pumpApp(tester);
     await openGoals(tester);
 
-    await pick(tester, row: 'Ziel', option: 'Abnehmen');
+    await pick(tester, row: 'Ziel', option: 'Abnehmen, 0,5 kg pro Woche');
 
-    expect(stores.profile.profile.goal, WeightGoal.lose);
+    expect(stores.profile.profile.goal, WeightGoal.lose500);
     expect(find.text('Speichern'), findsNothing);
   });
 
@@ -139,7 +139,7 @@ void main() {
     await openGoals(tester);
 
     await openRow(tester, 'Ziel');
-    await tester.tap(find.text('Abnehmen').last);
+    await tester.tap(find.text('Abnehmen, 0,5 kg pro Woche').last);
     await tester.pumpAndSettle();
     await cancelEditor(tester);
 
@@ -189,7 +189,7 @@ void main() {
       );
       await openGoals(tester);
 
-      await pick(tester, row: 'Ziel', option: 'Abnehmen');
+      await pick(tester, row: 'Ziel', option: 'Abnehmen, 0,5 kg pro Woche');
 
       // 10 × 80 + 6.25 × 180 − 5 × 30 + 5 = 1780, × 1.55 = 2759, − 500.
       expect(stores.profile.profile.calorieTarget, 2259);
@@ -248,9 +248,9 @@ void main() {
       );
       await openGoals(tester);
 
-      await pick(tester, row: 'Ziel', option: 'Abnehmen');
+      await pick(tester, row: 'Ziel', option: 'Abnehmen, 0,5 kg pro Woche');
 
-      expect(stores.profile.profile.goal, WeightGoal.lose);
+      expect(stores.profile.profile.goal, WeightGoal.lose500);
       expect(stores.profile.profile.calorieTarget, 2000);
       expect(find.textContaining('Kalorienziel auf'), findsNothing);
     });
@@ -266,10 +266,10 @@ void main() {
     final stores = await pumpApp(tester, on: storesWith(profile: stored));
     await openGoals(tester);
 
-    await pick(tester, row: 'Ziel', option: 'Zunehmen');
+    await pick(tester, row: 'Ziel', option: 'Zunehmen, 0,2 kg pro Woche');
 
     final saved = stores.profile.profile;
-    expect(saved.goal, WeightGoal.gain);
+    expect(saved.goal, WeightGoal.gain200);
     expect(saved.username, 'mila');
     expect(saved.heightCm, 182);
     expect(saved.sex, BiologicalSex.female);

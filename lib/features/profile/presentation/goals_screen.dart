@@ -74,7 +74,7 @@ class _GoalsList extends ConsumerWidget {
         const Divider(height: 1),
         SettingRow(
           label: 'Ziel',
-          value: profile.goal.label,
+          value: profile.goal.shortLabel,
           onTap: () => _editGoal(context, ref),
         ),
         const Divider(height: 1),

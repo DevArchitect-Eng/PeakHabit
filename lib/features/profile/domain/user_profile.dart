@@ -1,7 +1,29 @@
 import 'macro_distribution.dart';
 
-/// What the user wants their body weight to do.
-enum WeightGoal { lose, maintain, gain }
+/// What the user wants their body weight to do, and at what pace.
+///
+/// Eight rates rather than the three bare directions this started out as
+/// (#43): "abnehmen" on its own leaves the pace to the app, and the pace is
+/// the whole difference between a deficit somebody holds for months and one
+/// they drop after a fortnight.
+///
+/// The names carry the grams per week, so a value read out of the database
+/// says what it means without a table to look it up in. The rates themselves
+/// live on the `GoalAdjustment` extension in `calorie_calculation.dart`,
+/// which is also where the range they stop at is argued for.
+///
+/// Order is the order they are offered in: the gaining rates together, then
+/// holding, then the losing ones.
+enum WeightGoal {
+  gain200,
+  gain500,
+  gain800,
+  maintain,
+  lose200,
+  lose500,
+  lose800,
+  lose1000,
+}
 
 /// Needed by the calorie formulas, which use a different constant for women
 /// and men.

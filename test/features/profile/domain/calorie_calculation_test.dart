@@ -64,8 +64,8 @@ void main() {
 
   group('goal adjustment', () {
     test('takes 500 kcal a day off for losing half a kilo a week', () {
-      expect(WeightGoal.lose.weeklyWeightChangeGrams, -500);
-      expect(WeightGoal.lose.dailyCalorieAdjustment, -500);
+      expect(WeightGoal.lose500.weeklyWeightChangeGrams, -500);
+      expect(WeightGoal.lose500.dailyCalorieAdjustment, -500);
     });
 
     test('changes nothing for maintaining', () {
@@ -73,8 +73,53 @@ void main() {
     });
 
     test('adds 200 kcal a day for gaining 200 grams a week', () {
-      expect(WeightGoal.gain.weeklyWeightChangeGrams, 200);
-      expect(WeightGoal.gain.dailyCalorieAdjustment, 200);
+      expect(WeightGoal.gain200.weeklyWeightChangeGrams, 200);
+      expect(WeightGoal.gain200.dailyCalorieAdjustment, 200);
+    });
+
+    test('carries a rate for every one of the eight goals', () {
+      final rates = {
+        for (final goal in WeightGoal.values)
+          goal: goal.weeklyWeightChangeGrams,
+      };
+
+      expect(rates, {
+        WeightGoal.gain200: 200,
+        WeightGoal.gain500: 500,
+        WeightGoal.gain800: 800,
+        WeightGoal.maintain: 0,
+        WeightGoal.lose200: -200,
+        WeightGoal.lose500: -500,
+        WeightGoal.lose800: -800,
+        WeightGoal.lose1000: -1000,
+      });
+    });
+
+    test('spends a kcal a day per gram a week, at every rate', () {
+      // 7000 kcal per kilogram over seven days works out to exactly one kcal
+      // a day per gram a week — the steepest rate on offer is therefore the
+      // 1000 kcal a day the warning is about.
+      for (final goal in WeightGoal.values) {
+        expect(
+          goal.dailyCalorieAdjustment,
+          goal.weeklyWeightChangeGrams,
+          reason: 'the adjustment for $goal',
+        );
+      }
+    });
+
+    test('names every goal after the grams it stands for', () {
+      // The names are what the database holds, so a mismatch between a name
+      // and its rate would be a stored value that lies about itself.
+      for (final goal in WeightGoal.values.where(
+        (goal) => goal != WeightGoal.maintain,
+      )) {
+        expect(
+          goal.name,
+          '${goal.weeklyWeightChangeGrams.isNegative ? 'lose' : 'gain'}'
+          '${goal.weeklyWeightChangeGrams.abs()}',
+        );
+      }
     });
   });
 
@@ -85,11 +130,11 @@ void main() {
     });
 
     test('is the total expenditure minus the deficit while losing', () {
-      expect(calculationFor(goal: WeightGoal.lose).calorieTarget, 2259);
+      expect(calculationFor(goal: WeightGoal.lose500).calorieTarget, 2259);
     });
 
     test('is the total expenditure plus the surplus while gaining', () {
-      expect(calculationFor(goal: WeightGoal.gain).calorieTarget, 2959);
+      expect(calculationFor(goal: WeightGoal.gain200).calorieTarget, 2959);
     });
 
     test('is a whole number of kcal', () {
@@ -130,7 +175,7 @@ void main() {
       sex: BiologicalSex.male,
       birthDate: DateTime(1996, 8, 18),
       activityLevel: ActivityLevel.moderatelyActive,
-      goal: WeightGoal.lose,
+      goal: WeightGoal.lose500,
     );
 
     test('takes its age from the birth date', () {
@@ -174,12 +219,12 @@ void main() {
 
     test('carries the goal of the profile', () {
       final calculation = CalorieCalculation.forProfile(
-        complete.copyWith(goal: WeightGoal.gain),
+        complete.copyWith(goal: WeightGoal.gain200),
         weightKg: 80,
         today: today,
       );
 
-      expect(calculation?.goal, WeightGoal.gain);
+      expect(calculation?.goal, WeightGoal.gain200);
     });
   });
 }

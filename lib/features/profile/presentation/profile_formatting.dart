@@ -1,3 +1,4 @@
+import '../domain/calorie_calculation.dart';
 import '../domain/user_profile.dart';
 
 /// The German labels and number formats the profile screens share.
@@ -66,9 +67,25 @@ extension ActivityLevelLabel on ActivityLevel {
 }
 
 extension WeightGoalLabel on WeightGoal {
-  String get label => switch (this) {
-    WeightGoal.lose => 'Abnehmen',
-    WeightGoal.maintain => 'Gewicht halten',
-    WeightGoal.gain => 'Zunehmen',
+  /// The explaining form, for a picker with room for it.
+  ///
+  /// Derived from the rate rather than written out eight times: a label spelled
+  /// by hand can say 0,5 next to a goal that means 0,8, and nothing in the code
+  /// would notice.
+  String get label => switch (weeklyWeightChangeGrams) {
+    0 => 'Gewicht halten',
+    final grams when grams > 0 => 'Zunehmen, ${_kilograms(grams)} kg pro Woche',
+    final grams => 'Abnehmen, ${_kilograms(grams)} kg pro Woche',
   };
+
+  /// The form a settings row shows, where the explaining one would wrap into a
+  /// second line.
+  String get shortLabel {
+    final grams = weeklyWeightChangeGrams;
+    if (grams == 0) return 'Gewicht halten';
+    return '${grams > 0 ? '+' : '−'}${_kilograms(grams)} kg/Woche';
+  }
 }
+
+/// [grams] as the kilogram figure a label prints, without its sign: 0,2 or 1.
+String _kilograms(int grams) => formatDecimal(grams.abs() / 1000, 1);

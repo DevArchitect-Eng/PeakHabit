@@ -32,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.atFile(File file) : super(openDatabaseAtFile(file));
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -74,6 +74,19 @@ class AppDatabase extends _$AppDatabase {
       // above, already with the column.
       if (from >= 3 && from < 7) {
         await m.addColumn(appSettings, appSettings.onboardingCompleted);
+      }
+      // `WeightGoal` traded its three directions for eight weekly rates (#43),
+      // so the three stored names are gone. Same trap as version 5 above: the
+      // column keeps the enum by name and drift throws on one the enum no
+      // longer has. Each old name maps onto the rate it used to stand for —
+      // `maintain` kept its name and needs no statement.
+      if (from < 8) {
+        await customStatement(
+          "UPDATE user_profiles SET goal = 'lose500' WHERE goal = 'lose'",
+        );
+        await customStatement(
+          "UPDATE user_profiles SET goal = 'gain200' WHERE goal = 'gain'",
+        );
       }
       AppLogger.database.info('Migration to $to complete');
     },
