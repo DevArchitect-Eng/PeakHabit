@@ -65,6 +65,14 @@ raten und nichts unbeaufsichtigt entscheiden. PR offen lassen und klar als warte
 Bei grüner CI: PR zur Freigabe vorlegen, Status `waiting` loggen, Board bleibt „In Review".
 Erst nach dem Merge durch den Nutzer auf „Done".
 
+## Rückfragen
+
+Dieser Skill implementiert nichts von sich aus — Fragen zum Ticket sind in
+`/do-ticket-prepare` schon gestellt. Fällt hier trotzdem etwas auf, das Code außerhalb des
+Tickets betrifft (etwa bei einer CI-Reparatur), gilt `conventions.md` § Rückfragen: interaktiv
+sofort fragen, im Loop-Modus nicht selbst entscheiden, sondern das Ticket als blockiert melden
+und loggen.
+
 ## Logging
 
 Im Loop-Modus jede Phase in `~/peakhabit-logs/loop.log` schreiben — Format in
