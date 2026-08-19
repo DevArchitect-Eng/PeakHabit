@@ -21,7 +21,11 @@ lib/
     logging/                    AppLogger, Lifecycle- und Fehler-Hooks
     router/app_router.dart      go_router-Konfiguration
     theme/app_theme.dart        Farbschema, Light/Dark
+    startup.dart                warmUp: liest Theme und Onboarding-Flag vor dem ersten Frame
+    startup_gate.dart           entscheidet zwischen Fehlerbildschirm und App
+    startup_error_screen.dart   Anzeige, wenn die Datenbank nicht öffnet
   features/
+    onboarding/                 Erststart-Ablauf, läuft vor der Bottom-Navigation
     shell/                      Bottom-Navigation-Gerüst
     home/                       Startseite (u.a. Körpergewicht-Widget)
     body_weight/                Gewichtseinträge, von Startseite und Statistik genutzt
@@ -46,7 +50,7 @@ für ein lokal-first Datenmodell gut mit asynchronen Quellen (Datenbank-Streams)
 
 ### Routing: go_router mit StatefulShellRoute
 
-`StatefulShellRoute.indexedStack` gibt jedem der vier Tabs einen eigenen Navigations-Stack.
+`StatefulShellRoute.indexedStack` gibt jedem der fünf Tabs einen eigenen Navigations-Stack.
 Ein Wechsel zwischen Tabs verliert damit nicht die Position im jeweiligen Tab — wichtig, weil
 z.B. ein laufendes Workout im Training-Tab erhalten bleiben muss, wenn kurz in die Statistik
 gewechselt wird.

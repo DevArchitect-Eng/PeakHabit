@@ -48,7 +48,8 @@ duplizieren. Kurzfassung:
   `docs/ARCHITECTURE.md`
 - Logging: zentraler `AppLogger` unter `lib/core/logging/`, rein lokal — kein Analytik- oder
   Crash-Reporting-Dienst. Details in `docs/ARCHITECTURE.md`
-- Design: dark-first, hellblauer Akzent (`#38BDF8`), `themeMode` fest auf dark
+- Design: dark-first, hellblauer Akzent (`#38BDF8`), Standard dark und im
+  Einstellungen-Tab zwischen Dark, Light und System wählbar
 
 Package-Strategie: zurückhaltend. Neue Abhängigkeiten nur, wenn sie ein echtes Problem lösen.
 Cloud-Dienste, Bezahlservices, Analytik, Werbung oder Tracking **nie ohne Freigabe** einbauen.
