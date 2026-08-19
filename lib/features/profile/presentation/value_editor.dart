@@ -100,6 +100,11 @@ class EditorHeader extends StatelessWidget {
 
 /// Lifts the sheet above the keyboard, which would otherwise cover the field
 /// it belongs to.
+///
+/// What is left over between the keyboard and the top of the screen can be
+/// less than the sheet needs — a large system text size on a small phone gets
+/// there quickly. The content scrolls in that case instead of overflowing,
+/// which would cut off the very line explaining why the check is out of reach.
 class EditorSheet extends StatelessWidget {
   const EditorSheet({super.key, required this.child});
 
@@ -110,7 +115,9 @@ class EditorSheet extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SafeArea(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [child]),
+        child: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [child]),
+        ),
       ),
     );
   }
@@ -220,24 +227,20 @@ class _ChoiceEditorSheetState<T> extends State<_ChoiceEditorSheet<T>> {
             title: widget.title,
             onConfirm: () => Navigator.of(context).pop((value: _selected)),
           ),
-          Flexible(
-            child: SingleChildScrollView(
-              child: RadioGroup<T?>(
-                groupValue: _selected,
-                onChanged: (value) => setState(() => _selected = value),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (noneLabel != null)
-                      RadioListTile<T?>(value: null, title: Text(noneLabel)),
-                    for (final option in widget.options)
-                      RadioListTile<T?>(
-                        value: option,
-                        title: Text(widget.labelOf(option)),
-                      ),
-                  ],
-                ),
-              ),
+          RadioGroup<T?>(
+            groupValue: _selected,
+            onChanged: (value) => setState(() => _selected = value),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (noneLabel != null)
+                  RadioListTile<T?>(value: null, title: Text(noneLabel)),
+                for (final option in widget.options)
+                  RadioListTile<T?>(
+                    value: option,
+                    title: Text(widget.labelOf(option)),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 8),

@@ -116,9 +116,13 @@ class _GoalsList extends ConsumerWidget {
       labelOf: (goal) => goal.label,
     );
     // The goal always has a value, so an empty choice cannot come back.
-    if (chosen?.value == null || !context.mounted) return;
+    final goal = chosen?.value;
+    // Confirming what was already set writes nothing: the save recalculates
+    // the calorie target, and a target the user typed themselves must not go
+    // just because they opened the picker to look at it.
+    if (goal == null || goal == profile.goal || !context.mounted) return;
 
-    await _save(context, ref, profile.copyWith(goal: chosen!.value));
+    await _save(context, ref, profile.copyWith(goal: goal));
   }
 
   Future<void> _editActivityLevel(BuildContext context, WidgetRef ref) async {
@@ -130,7 +134,11 @@ class _GoalsList extends ConsumerWidget {
       labelOf: (level) => level.label,
       noneLabel: 'Keine Angabe',
     );
-    if (chosen == null || !context.mounted) return;
+    if (chosen == null ||
+        chosen.value == profile.activityLevel ||
+        !context.mounted) {
+      return;
+    }
 
     await _save(context, ref, profile.copyWith(activityLevel: chosen.value));
   }

@@ -216,6 +216,26 @@ void main() {
       expect(stores.profile.profile.calorieTarget, 2136);
     });
 
+    testWidgets('but not when the picker only confirms what was set', (
+      tester,
+    ) async {
+      final stores = await pumpApp(
+        tester,
+        on: storesWith(
+          profile: calculableProfile().copyWith(calorieTarget: 2000),
+          weightEntries: [weighing],
+        ),
+      );
+      await openGoals(tester);
+
+      // Opening the picker to look at the goal and confirming it must not
+      // cost the user the target they typed themselves.
+      await pick(tester, row: 'Ziel', option: 'Gewicht halten');
+
+      expect(stores.profile.profile.calorieTarget, 2000);
+      expect(find.textContaining('Kalorienziel auf'), findsNothing);
+    });
+
     testWidgets('but stays put while the calculation is short of something', (
       tester,
     ) async {

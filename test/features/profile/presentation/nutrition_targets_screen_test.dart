@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:peakhabit/features/profile/domain/macro_distribution.dart';
 import 'package:peakhabit/features/profile/domain/user_profile.dart';
 import 'package:peakhabit/features/profile/presentation/nutrition_targets_screen.dart';
+import 'package:peakhabit/features/profile/presentation/value_editor.dart';
 
 import '../../../support/pump_app.dart';
 import '../../../support/settings_rows.dart';
@@ -216,5 +217,26 @@ void main() {
     expect(saved.birthDate, DateTime(1996, 4, 2));
     expect(saved.activityLevel, ActivityLevel.veryActive);
     expect(saved.goal, WeightGoal.lose);
+  });
+
+  testWidgets('the editor stays usable when the keyboard squeezes it', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await openNutritionTargets(tester);
+
+    // A small phone with the system text size turned up and the keyboard
+    // open: the sheet no longer fits, and has to scroll rather than cut its
+    // own error line off.
+    tester.view.physicalSize = const Size(375, 667);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await tester.pumpAndSettle();
+
+    await openRow(tester, 'Kohlenhydrate');
+
+    expect(find.byType(EditorSheet), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
