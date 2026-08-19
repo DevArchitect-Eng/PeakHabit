@@ -46,7 +46,7 @@ für ein lokal-first Datenmodell gut mit asynchronen Quellen (Datenbank-Streams)
 
 ### Routing: go_router mit StatefulShellRoute
 
-`StatefulShellRoute.indexedStack` gibt jedem der vier Tabs einen eigenen Navigations-Stack.
+`StatefulShellRoute.indexedStack` gibt jedem der fünf Tabs einen eigenen Navigations-Stack.
 Ein Wechsel zwischen Tabs verliert damit nicht die Position im jeweiligen Tab — wichtig, weil
 z.B. ein laufendes Workout im Training-Tab erhalten bleiben muss, wenn kurz in die Statistik
 gewechselt wird.
