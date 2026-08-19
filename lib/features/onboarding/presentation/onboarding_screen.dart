@@ -283,7 +283,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     // `PeakHabitApp` swaps this screen out for the routed app, and a dialog
     // put up afterwards would belong to a screen that is already gone. Only
     // the floor can fire here — the rate had its say back on its own step.
-    await showGoalWarnings(context, goalWarnings(calculation: _calculation));
+    //
+    // Only while the app is the one calculating: the body data behind
+    // `_calculation` survives a switch back to a hand-typed target, and
+    // warning about a number nothing stores would point at a target the user
+    // never asked for.
+    await showGoalWarnings(
+      context,
+      goalWarnings(calculation: calculating ? _calculation : null),
+    );
     if (!mounted) return;
 
     setState(() {

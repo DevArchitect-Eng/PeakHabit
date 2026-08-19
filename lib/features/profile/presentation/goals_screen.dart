@@ -123,12 +123,15 @@ class _GoalsList extends ConsumerWidget {
     // just because they opened the picker to look at it.
     if (goal == null || goal == profile.goal || !context.mounted) return;
 
-    final calculation = await _save(context, ref, profile.copyWith(goal: goal));
-    if (!context.mounted) return;
+    final saved = await _save(context, ref, profile.copyWith(goal: goal));
+    // Nothing to warn about where nothing was stored: the screen has already
+    // said that the write failed, and a word about a rate that is not in
+    // force would only muddy it.
+    if (!context.mounted || !saved.stored) return;
 
     await showGoalWarnings(
       context,
-      goalWarnings(goal: goal, calculation: calculation),
+      goalWarnings(goal: goal, calculation: saved.calculation),
     );
   }
 
@@ -147,23 +150,25 @@ class _GoalsList extends ConsumerWidget {
       return;
     }
 
-    final calculation = await _save(
+    final saved = await _save(
       context,
       ref,
       profile.copyWith(activityLevel: chosen.value),
     );
-    if (!context.mounted) return;
+    if (!context.mounted || !saved.stored) return;
 
     // No `goal:` here: the rate did not change, and a warning about it would
     // return every time something else on this screen is saved. What a lower
     // activity level can do is push the recalculated target under the basal
     // rate, and that is worth saying.
-    await showGoalWarnings(context, goalWarnings(calculation: calculation));
+    await showGoalWarnings(
+      context,
+      goalWarnings(calculation: saved.calculation),
+    );
   }
 
-  /// Writes [updated], with the calorie target brought along, and hands back
-  /// the calculation behind it — `null` where there was none to make, or where
-  /// the write failed.
+  /// Writes [updated], with the calorie target brought along, and reports
+  /// whether it landed plus the calculation behind it.
   ///
   /// Both values on this screen go into the calorie calculation, so leaving the
   /// target where it was would leave the user with a number that no longer
@@ -173,7 +178,10 @@ class _GoalsList extends ConsumerWidget {
   ///
   /// The calculation goes back to the caller because the warnings are drawn
   /// from it, and recomputing it there would be the same numbers twice.
-  Future<CalorieCalculation?> _save(
+  /// `stored` is separate from it being `null`: a profile with too little in
+  /// it to calculate from saves perfectly well, and a failed write is not the
+  /// same thing at all.
+  Future<({bool stored, CalorieCalculation? calculation})> _save(
     BuildContext context,
     WidgetRef ref,
     UserProfile updated,
@@ -202,9 +210,9 @@ class _GoalsList extends ConsumerWidget {
       // Without this the write fails silently: the callback drops the error
       // and the screen looks exactly as it does after a success.
       _logger.error('Saving the goals failed', error, stackTrace);
-      if (!context.mounted) return null;
+      if (!context.mounted) return (stored: false, calculation: null);
       _show(context, 'Die Ziele konnten nicht gespeichert werden.');
-      return null;
+      return (stored: false, calculation: null);
     }
 
     if (context.mounted && recalculated != null) {
@@ -212,7 +220,7 @@ class _GoalsList extends ConsumerWidget {
       // been replaced.
       _show(context, 'Kalorienziel auf $recalculated kcal angepasst');
     }
-    return calculation;
+    return (stored: true, calculation: calculation);
   }
 
   void _show(BuildContext context, String message) => ScaffoldMessenger.of(

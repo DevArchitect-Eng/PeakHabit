@@ -289,6 +289,51 @@ void main() {
   );
 
   testWidgets(
+    'stays quiet about the basal rate once the target is typed by hand, even '
+    'after a look at the calculator',
+    (tester) async {
+      final stores = storesWith(onboardingCompleted: false);
+      await pumpApp(tester, on: stores);
+
+      await fillUpToCalorieStep(
+        tester,
+        username: 'ben',
+        goal: 'Abnehmen, 0,5 kg pro Woche',
+        heightCm: '180',
+        weightKg: '80',
+      );
+      // A look at the calculator first — this is what leaves sex, birth date
+      // and activity level behind in the state.
+      await tester.tap(find.text('Nein, für mich berechnen'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('männlich'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Auswählen'));
+      await tester.tap(find.text('Auswählen'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Sitzend, kaum Bewegung'));
+      await tester.tap(find.text('Sitzend, kaum Bewegung'));
+      await tester.pumpAndSettle();
+
+      // Then a change of mind: a target of their own, well above the basal
+      // rate the calculation would have landed under.
+      await tester.tap(find.text('Ja, ich gebe es ein'));
+      await tester.pumpAndSettle();
+      await enterText(tester, 'Kalorienziel', '2500');
+      await tapFertig(tester);
+
+      // The 1636 the calculator would have produced is not what is stored,
+      // so it has no business warning about it.
+      expect(find.text(GoalWarning.belowBasalRate.message), findsNothing);
+      expect(stores.profile.profile.calorieTarget, 2500);
+      expect(stores.profile.profile.sex, isNull);
+      expect(await stores.settings.readOnboardingCompleted(), isTrue);
+    },
+  );
+
+  testWidgets(
     'letting the app calculate the calorie target needs sex, birth date and '
     'activity level, since onboarding collects nothing else the calculation '
     'needs',

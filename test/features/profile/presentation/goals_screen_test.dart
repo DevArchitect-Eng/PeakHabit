@@ -343,6 +343,25 @@ void main() {
       await acknowledge(tester);
     });
 
+    testWidgets('stays away when the write did not land', (tester) async {
+      final stores = await pumpApp(
+        tester,
+        on: storesWith(profileUnwritable: true),
+      );
+      await openGoals(tester);
+
+      await pick(tester, row: 'Ziel', option: 'Abnehmen, 1 kg pro Woche');
+
+      // The screen already says the save failed; a health warning about a
+      // rate that is not in force would only muddy that.
+      expect(
+        find.text('Die Ziele konnten nicht gespeichert werden.'),
+        findsOneWidget,
+      );
+      expect(find.text(GoalWarning.deficitTooHigh.message), findsNothing);
+      expect(stores.profile.profile.goal, WeightGoal.maintain);
+    });
+
     testWidgets(
       'follows a changed activity level under the basal rate, without '
       'repeating the rate the user already picked',
