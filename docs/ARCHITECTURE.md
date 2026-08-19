@@ -22,6 +22,7 @@ lib/
     router/app_router.dart      go_router-Konfiguration
     theme/app_theme.dart        Farbschema, Light/Dark
   features/
+    onboarding/                 Erststart-Ablauf, läuft vor der Bottom-Navigation
     shell/                      Bottom-Navigation-Gerüst
     home/                       Startseite (u.a. Körpergewicht-Widget)
     body_weight/                Gewichtseinträge, von Startseite und Statistik genutzt
