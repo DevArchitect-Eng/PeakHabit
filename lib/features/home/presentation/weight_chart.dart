@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../body_weight/domain/body_weight_entry.dart';
@@ -121,19 +122,21 @@ class _WeightChartPainter extends CustomPainter {
     final left =
         [topLabel.width, bottomLabel.width].reduce((a, b) => a > b ? a : b) +
         _gap;
+    // The weight labels are centred on the lines they name, so each needs half
+    // of itself in hand above the top line and below the bottom one.
+    final labelHalf = topLabel.height / 2;
     final bottom = size.height - fromLabel.height - _gap;
-    final right = size.width;
-    // Half a line width of air at the top and bottom, so the dot on an entry
-    // sitting exactly on a bound is not cut in half by the edge.
-    const top = 4.0;
-    final plot = Rect.fromLTRB(left, top, right, bottom - 4);
+    final plot = Rect.fromLTRB(left, labelHalf, size.width, bottom - labelHalf);
     if (plot.width <= 0 || plot.height <= 0) return;
 
     _paintGrid(canvas, plot, gridColor);
-    topLabel.paint(canvas, Offset(left - _gap - topLabel.width, plot.top - 2));
+    topLabel.paint(
+      canvas,
+      Offset(left - _gap - topLabel.width, plot.top - labelHalf),
+    );
     bottomLabel.paint(
       canvas,
-      Offset(left - _gap - bottomLabel.width, plot.bottom - bottomLabel.height),
+      Offset(left - _gap - bottomLabel.width, plot.bottom - labelHalf),
     );
     fromLabel.paint(canvas, Offset(left, bottom + _gap / 2));
     toLabel.paint(
@@ -243,7 +246,7 @@ class _WeightChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_WeightChartPainter old) =>
-      !identical(old.entries, entries) ||
+      !listEquals(old.entries, entries) ||
       old.from != from ||
       old.to != to ||
       old.lineColor != lineColor ||
