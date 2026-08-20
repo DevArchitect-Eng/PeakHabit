@@ -7,9 +7,11 @@ import 'package:peakhabit/core/database/database_provider.dart';
 import 'package:peakhabit/core/logging/app_logger.dart';
 import 'package:peakhabit/core/startup_error_screen.dart';
 import 'package:peakhabit/core/startup_gate.dart';
+import 'package:peakhabit/features/body_weight/data/body_weight_providers.dart';
 import 'package:peakhabit/features/profile/data/user_profile_providers.dart';
 import 'package:peakhabit/features/settings/data/settings_providers.dart';
 
+import '../support/in_memory_body_weight_repository.dart';
 import '../support/in_memory_settings_repository.dart';
 import '../support/in_memory_user_profile_repository.dart';
 
@@ -58,8 +60,10 @@ void main() {
   ProviderContainer buildContainer(_FakeDatabase database) {
     final settings = InMemorySettingsRepository();
     final profile = InMemoryUserProfileRepository();
+    final bodyWeight = InMemoryBodyWeightRepository();
     addTearDown(settings.dispose);
     addTearDown(profile.dispose);
+    addTearDown(bodyWeight.dispose);
 
     return ProviderContainer(
       overrides: [
@@ -73,6 +77,7 @@ void main() {
         }),
         settingsRepositoryProvider.overrideWithValue(settings),
         userProfileRepositoryProvider.overrideWithValue(profile),
+        bodyWeightRepositoryProvider.overrideWithValue(bodyWeight),
       ],
     );
   }
