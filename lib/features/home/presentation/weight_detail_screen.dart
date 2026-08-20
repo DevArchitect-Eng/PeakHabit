@@ -13,13 +13,19 @@ import 'weight_period_picker.dart';
 const _logger = AppLogger('body-weight');
 
 /// The whole weight history behind the home card: what the chosen period did
-/// to the weight, the chart of it, and every weighing in it as a line that can
-/// be corrected or thrown away.
+/// to the weight, the chart of it, and every weighing on record as a line that
+/// can be corrected or thrown away.
 ///
-/// Everything on this screen reads the **chosen period**, not the series as a
-/// whole: the starting weight is the first weighing inside the window, not the
-/// first one ever recorded. The goals screen is where the all-time starting
-/// weight lives.
+/// The **chosen period** frames the figures and the chart, not the series as a
+/// whole: the starting weight there is the first weighing inside the window,
+/// not the first one ever recorded. The goals screen is where the all-time
+/// starting weight lives.
+///
+/// The list underneath is the exception, and deliberately so: it shows every
+/// weighing on record, whatever the period says. The period asks what a
+/// stretch of time did to the weight; the list is the record it did it to, and
+/// a shorter window is no reason to hide entries from the one place they can
+/// be corrected or deleted.
 class WeightDetailScreen extends ConsumerStatefulWidget {
   const WeightDetailScreen({super.key, required this.initialPeriod});
 
@@ -38,10 +44,20 @@ class _WeightDetailScreenState extends ConsumerState<WeightDetailScreen> {
   Widget build(BuildContext context) {
     final latest = ref.watch(latestBodyWeightProvider);
     final series = ref.watch(bodyWeightSeriesProvider(_period));
+    // The list below the chart is deliberately not the period's: the period
+    // frames the figures and the chart — the question "what did the last three
+    // months do" — while the list is the record itself, and a weighing does
+    // not stop existing because the window above it got shorter. Reached
+    // through the same provider on [WeightPeriod.allTime], which runs from the
+    // earliest entry on record to today.
+    final everything = ref.watch(
+      bodyWeightSeriesProvider(WeightPeriod.allTime),
+    );
     // A failed read is told apart from an empty series, the same way the card
     // does it: stepping on the scale fixes the one and not the other, and a
     // weighing entered here would land where nobody can see it.
-    final unreadable = latest.hasError || series.hasError;
+    final unreadable =
+        latest.hasError || series.hasError || everything.hasError;
 
     return Scaffold(
       appBar: AppBar(
@@ -54,13 +70,14 @@ class _WeightDetailScreenState extends ConsumerState<WeightDetailScreen> {
           ),
         ],
       ),
-      body: _body(latest, series, unreadable: unreadable),
+      body: _body(latest, series, everything, unreadable: unreadable),
     );
   }
 
   Widget _body(
     AsyncValue<BodyWeightEntry?> latest,
-    AsyncValue<BodyWeightSeries> series, {
+    AsyncValue<BodyWeightSeries> series,
+    AsyncValue<BodyWeightSeries> everything, {
     required bool unreadable,
   }) {
     if (unreadable) {
@@ -84,15 +101,22 @@ class _WeightDetailScreenState extends ConsumerState<WeightDetailScreen> {
     final entries = series.value?.entries ?? const <BodyWeightEntry>[];
     // Newest first, against the oldest-first order the repository reads in:
     // the list is read from the top, and the top is where today belongs.
-    final newestFirst = entries.reversed.toList();
+    final newestFirst = (everything.value?.entries ?? const <BodyWeightEntry>[])
+        .reversed
+        .toList();
 
     // One scroll view for the whole screen, so the head scrolls away with the
-    // list instead of the list scrolling inside it — a year of daily weighings
+    // list instead of the list scrolling inside it — every weighing on record
     // is far too long to sit in a box of its own. Built lazily for the same
     // reason.
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(child: _head(series.value, entries)),
+        if (newestFirst.isNotEmpty)
+          // Named, because the list no longer answers to the picker above it:
+          // without the label, a period showing three weighings over a list of
+          // three hundred looks like a bug rather than a decision.
+          const SliverToBoxAdapter(child: _SectionLabel('Alle Wiegungen')),
         SliverList.builder(
           itemCount: newestFirst.length,
           itemBuilder: (context, index) => _EntryRow(
@@ -406,6 +430,28 @@ class _DismissBackground extends StatelessWidget {
       alignment: alignment,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Icon(Icons.delete_outline, color: scheme.onErrorContainer),
+    );
+  }
+}
+
+/// The heading over the entry list.
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Text(
+        text,
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
     );
   }
 }

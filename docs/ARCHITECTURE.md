@@ -391,9 +391,19 @@ in `extra`: Es ist ein einfacher Enum-Name, und einer, der eine wiederhergestell
 übersteht, statt danach als `null` zurückzukommen. Ein unbekannter Name fällt auf den
 Standardzeitraum zurück, statt zu werfen — die URL ist von Hand tippbar.
 
-Alle Zahlen auf `/home/weight` beziehen sich auf den **gewählten Zeitraum**: Das Startgewicht
-dort ist die erste Wiegung im Fenster, nicht die allererste überhaupt. Das allzeit-Startgewicht
-steht weiter auf der Ziele-Seite (`readFirst`). Grün und Rot am Trend-Icon stehen für die
+Die Zahlen und der Graph auf `/home/weight` beziehen sich auf den **gewählten Zeitraum**: Das
+Startgewicht dort ist die erste Wiegung im Fenster, nicht die allererste überhaupt. Das
+allzeit-Startgewicht steht weiter auf der Ziele-Seite (`readFirst`).
+
+**Die Liste darunter ist bewusst die Ausnahme** und zeigt immer alle Wiegungen, unabhängig vom
+Zeitraum — gelesen über denselben `bodyWeightSeriesProvider`, nur auf `WeightPeriod.allTime`.
+Der Zeitraum beantwortet die Frage, was eine Zeitspanne mit dem Gewicht gemacht hat; die Liste
+ist der Bestand, an dem das passiert ist. Ein kürzeres Fenster ist kein Grund, Einträge an der
+einzigen Stelle zu verstecken, an der sie sich korrigieren und löschen lassen. Sichtbar gemacht
+wird das durch die Überschrift „Alle Wiegungen" — ohne sie sähen drei Wiegungen unter einem
+Ein-Wochen-Fenster nach einem Fehler aus statt nach einer Entscheidung.
+
+Grün und Rot am Trend-Icon stehen für die
 Richtung, nicht für gut oder schlecht — das Ziel aus dem Profil geht dort bewusst nicht ein —,
 und sie sind nie das einzige Unterscheidungsmerkmal: Icon und Vorzeichen tragen dieselbe
 Aussage. Die beiden Farbpaare stehen in `weight_detail_screen.dart` statt im `ColorScheme`:

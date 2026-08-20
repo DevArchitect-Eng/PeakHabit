@@ -21,8 +21,8 @@ Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens für Ernährung, Tra
 Statistik. Der Start-Tab zeigt eine Begrüßung mit dem im Profil hinterlegten Benutzernamen
 und darunter die Gewichtskarte: aktueller Wert, Zeitraum-Auswahl und Verlaufsgraph. Ein Tippen
 darauf führt auf `/home/weight` — Eckwerte des Zeitraums (Start, Aktuell, Unterschied mit
-Trend-Icon), derselbe Graph und darunter die Wiegungen des Zeitraums als Liste, Zeile antippen
-zum Korrigieren, wegwischen zum Löschen.
+Trend-Icon), derselbe Graph und darunter **alle** Wiegungen als Liste, unabhängig vom
+Zeitraum; Zeile antippen zum Korrigieren, wegwischen zum Löschen.
 
 Der Einstellungen-Tab ist ausgebaut: Theme-Auswahl (Dark/Light/System, gespeichert) und drei
 Unterseiten fürs Nutzerprofil — `/settings/profile` (Benutzername als Pflichtfeld, Größe,

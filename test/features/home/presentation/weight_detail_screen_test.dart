@@ -139,7 +139,10 @@ void main() {
       expect(inSummary('82,5 kg'), findsOneWidget);
       expect(inSummary('−2,5 kg'), findsOneWidget);
       expect(inSummary('−2,9 %'), findsOneWidget);
-      expect(find.text('90 kg'), findsNothing);
+      // Out of the window, so out of the figures — but still on record, so
+      // still in the list below.
+      expect(inSummary('90 kg'), findsNothing);
+      expect(listedWeights(tester), contains('90 kg'));
     });
 
     testWidgets('a gain points up and is green', (tester) async {
@@ -228,13 +231,15 @@ void main() {
   });
 
   group('the list of weighings', () {
-    testWidgets('every weighing of the period stands there, newest first', (
+    testWidgets('every weighing on record stands there, newest first', (
       tester,
     ) async {
       await pumpApp(
         tester,
         on: storesWith(
           weightEntries: [
+            // Older than the three months the screen opens on, and listed all
+            // the same: the list is the record, not the window.
             weighing(300, 90),
             weighing(30, 84),
             weighing(1, 82.5),
@@ -244,7 +249,8 @@ void main() {
 
       await openDetail(tester);
 
-      expect(listedWeights(tester), ['82,5 kg', '84 kg']);
+      expect(listedWeights(tester), ['82,5 kg', '84 kg', '90 kg']);
+      expect(find.text('Alle Wiegungen'), findsOneWidget);
       expect(
         find.text(fullDate(tester, weighing(1, 82.5).date)),
         findsOneWidget,
@@ -355,7 +361,9 @@ void main() {
 
       expect(find.text('Im gewählten Zeitraum keine Wiegung.'), findsOneWidget);
       expect(find.byType(PeriodSummary), findsNothing);
-      expect(find.byType(Dismissible), findsNothing);
+      // The chart has nothing to draw, but the weighing is still on record and
+      // still reachable for correcting or deleting.
+      expect(listedWeights(tester), ['84 kg']);
 
       // Widening the window is the way out, so the picker has to stay.
       await selectPeriod(tester, '1 Jahr');
@@ -383,7 +391,7 @@ void main() {
   });
 
   group('switching the period', () {
-    testWidgets('figures, chart and list move together', (tester) async {
+    testWidgets('the figures and the chart follow it', (tester) async {
       await pumpApp(
         tester,
         on: storesWith(
@@ -398,16 +406,39 @@ void main() {
 
       expect(inSummary('85 kg'), findsOneWidget);
       expect(inSummary('−2,5 kg'), findsOneWidget);
-      expect(listedWeights(tester), ['82,5 kg', '83 kg', '85 kg']);
 
       await selectPeriod(tester, '1 Monat');
 
       // Only the last two weighings are inside a month, so they are the whole
-      // period — its start, its difference and its list.
+      // period — its start and its difference.
       expect(inSummary('83 kg'), findsOneWidget);
       expect(inSummary('−0,5 kg'), findsOneWidget);
-      expect(listedWeights(tester), ['82,5 kg', '83 kg']);
       expect(find.byType(WeightChart), findsOneWidget);
+    });
+
+    testWidgets('the list does not follow it', (tester) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          weightEntries: [
+            weighing(400, 90),
+            weighing(60, 85),
+            weighing(1, 82.5),
+          ],
+        ),
+      );
+      await openDetail(tester);
+
+      final onRecord = ['82,5 kg', '85 kg', '90 kg'];
+      expect(listedWeights(tester), onRecord);
+
+      // Down to a week, where the figures have one weighing to work with and
+      // the chart draws a dot — the record underneath is untouched.
+      await selectPeriod(tester, '1 Woche');
+      expect(listedWeights(tester), onRecord);
+
+      await selectPeriod(tester, 'Seit Beginn');
+      expect(listedWeights(tester), onRecord);
     });
   });
 }
