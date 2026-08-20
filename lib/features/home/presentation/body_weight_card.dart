@@ -6,6 +6,7 @@ import '../../body_weight/data/body_weight_providers.dart';
 import '../../body_weight/domain/body_weight_entry.dart';
 import '../../body_weight/domain/weight_period.dart';
 import '../../profile/presentation/profile_formatting.dart';
+import '../../profile/presentation/value_editor.dart';
 import 'weight_chart.dart';
 import 'weight_entry_editor.dart';
 
@@ -222,24 +223,44 @@ class _PeriodPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return SizedBox(
       width: double.infinity,
-      child: DropdownButtonFormField<WeightPeriod>(
-        initialValue: period,
-        isDense: true,
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: OutlinedButton(
+        onPressed: () => _pick(context),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: theme.colorScheme.onSurface,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         ),
-        items: [
-          for (final option in WeightPeriod.values)
-            DropdownMenuItem(value: option, child: Text(option.label)),
-        ],
-        onChanged: (option) {
-          if (option != null) onChanged(option);
-        },
+        child: Row(
+          children: [
+            Expanded(child: Text(period.label)),
+            const Icon(Icons.arrow_drop_down),
+          ],
+        ),
       ),
     );
+  }
+
+  /// Opens the choice sheet the settings rows use, rather than a dropdown
+  /// menu: it is the shape every other picking in the app already has, and
+  /// seven options read better as a list that is confirmed than as a menu
+  /// that commits on the way past.
+  Future<void> _pick(BuildContext context) async {
+    final chosen = await showChoiceEditor<WeightPeriod>(
+      context,
+      title: 'Zeitraum',
+      value: period,
+      options: WeightPeriod.values,
+      labelOf: (option) => option.label,
+    );
+    // Nothing stands in for "no period", so an empty choice only comes back
+    // from a dropped sheet.
+    final next = chosen?.value;
+    if (next == null) return;
+
+    onChanged(next);
   }
 }
 

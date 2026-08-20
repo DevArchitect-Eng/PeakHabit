@@ -46,15 +46,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Opens the period dropdown and picks the entry labelled [label].
+  /// Opens the period sheet, picks the option labelled [label] and confirms.
   ///
-  /// The label appears twice once the menu is open — once as the closed
-  /// field's current value, once as the menu item — so the item is found by
-  /// its position in the opened menu rather than by text alone.
+  /// The option is found by its tile rather than by text alone: the label the
+  /// picker already shows carries the same words, so a bare text finder would
+  /// have two of them to choose between once the sheet is open.
   Future<void> selectPeriod(WidgetTester tester, String label) async {
-    await tester.tap(find.byType(DropdownButtonFormField<WeightPeriod>));
+    await tester.tap(find.byType(OutlinedButton));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(label).last);
+    await tester.tap(find.widgetWithText(RadioListTile<WeightPeriod?>, label));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Bestätigen'));
     await tester.pumpAndSettle();
   }
 
@@ -332,6 +334,29 @@ void main() {
       // Only the last two weighings are inside a month, so the change is
       // measured — and dated — from the older of those.
       expect(find.text('−0,5 kg seit ${dateOf(10)}'), findsOneWidget);
+    });
+
+    testWidgets('a dropped sheet leaves the period alone', (tester) async {
+      await pumpApp(
+        tester,
+        on: storesWith(weightEntries: [weighing(60, 85), weighing(1, 82.5)]),
+      );
+
+      expect(find.text('−2,5 kg seit ${dateOf(60)}'), findsOneWidget);
+
+      // Picked, but dropped with the cross rather than confirmed: the window
+      // is the one it was before it opened.
+      await tester.tap(find.byType(OutlinedButton));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(RadioListTile<WeightPeriod?>, '1 Monat'),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Abbrechen'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('3 Monate'), findsOneWidget);
+      expect(find.text('−2,5 kg seit ${dateOf(60)}'), findsOneWidget);
     });
   });
 
