@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../body_weight/data/body_weight_providers.dart';
 import '../../body_weight/domain/body_weight_entry.dart';
 import '../../body_weight/domain/weight_period.dart';
 import '../../profile/presentation/profile_formatting.dart';
-import '../../profile/presentation/value_editor.dart';
 import 'weight_chart.dart';
 import 'weight_entry_editor.dart';
+import 'weight_period_picker.dart';
 
 const _logger = AppLogger('body-weight');
 
@@ -26,10 +27,7 @@ class BodyWeightCard extends ConsumerStatefulWidget {
 }
 
 class _BodyWeightCardState extends ConsumerState<BodyWeightCard> {
-  /// Three months to start with: long enough that a week of water weight does
-  /// not look like a trend, short enough that a few weeks of tracking already
-  /// fill it.
-  WeightPeriod _period = WeightPeriod.threeMonths;
+  WeightPeriod _period = defaultWeightPeriod;
 
   @override
   Widget build(BuildContext context) {
@@ -41,14 +39,20 @@ class _BodyWeightCardState extends ConsumerState<BodyWeightCard> {
     final unreadable = latest.hasError || series.hasError;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _Header(onAdd: unreadable ? null : _enterWeight),
-            _body(latest, series, unreadable: unreadable),
-          ],
+      // The whole card is the way to the detail screen — including the error
+      // state, where what there is to see about a series that will not load
+      // is the same there and worth reaching.
+      child: InkWell(
+        onTap: _openDetail,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Header(onAdd: unreadable ? null : _enterWeight),
+              _body(latest, series, unreadable: unreadable),
+            ],
+          ),
         ),
       ),
     );
@@ -75,7 +79,7 @@ class _BodyWeightCardState extends ConsumerState<BodyWeightCard> {
       children: [
         _CurrentWeight(entry: current, series: series.value),
         const SizedBox(height: 16),
-        _PeriodPicker(
+        WeightPeriodPicker(
           period: _period,
           onChanged: (period) => setState(() => _period = period),
         ),
@@ -101,11 +105,16 @@ class _BodyWeightCardState extends ConsumerState<BodyWeightCard> {
     return WeightChart(entries: value.entries, from: value.from, to: value.to);
   }
 
+  /// Opens the weight history, on the period the card is showing — switching
+  /// to a year and then tapping through should not land on three months
+  /// again.
+  void _openDetail() => context.go('/home/weight?period=${_period.name}');
+
   Future<void> _enterWeight() async {
-    final result = await showWeightEditor(
-      context,
-      initialWeightKg: ref.read(latestBodyWeightProvider).value?.weightKg,
-    );
+    // No weight filled in: an empty field is a weighing typed out, while a
+    // prefilled one is a weighing that can be confirmed without ever being
+    // read off a scale — and today's would then be yesterday's number.
+    final result = await showWeightEditor(context);
     if (result == null || !mounted) return;
 
     try {
@@ -215,55 +224,6 @@ class _CurrentWeight extends StatelessWidget {
   }
 }
 
-class _PeriodPicker extends StatelessWidget {
-  const _PeriodPicker({required this.period, required this.onChanged});
-
-  final WeightPeriod period;
-  final ValueChanged<WeightPeriod> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: () => _pick(context),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: theme.colorScheme.onSurface,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        ),
-        child: Row(
-          children: [
-            Expanded(child: Text(period.label)),
-            const Icon(Icons.arrow_drop_down),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Opens the choice sheet the settings rows use, rather than a dropdown
-  /// menu: it is the shape every other picking in the app already has, and
-  /// seven options read better as a list that is confirmed than as a menu
-  /// that commits on the way past.
-  Future<void> _pick(BuildContext context) async {
-    final chosen = await showChoiceEditor<WeightPeriod>(
-      context,
-      title: 'Zeitraum',
-      value: period,
-      options: WeightPeriod.values,
-      labelOf: (option) => option.label,
-    );
-    // Nothing stands in for "no period", so an empty choice only comes back
-    // from a dropped sheet.
-    final next = chosen?.value;
-    if (next == null) return;
-
-    onChanged(next);
-  }
-}
-
 /// What stands in for the chart before the first weighing.
 class _EmptyState extends StatelessWidget {
   const _EmptyState({required this.onAdd});
@@ -303,17 +263,4 @@ class _Message extends StatelessWidget {
       ),
     );
   }
-}
-
-extension WeightPeriodLabel on WeightPeriod {
-  /// The form the dropdown shows.
-  String get label => switch (this) {
-    WeightPeriod.allTime => 'Seit Beginn',
-    WeightPeriod.year => '1 Jahr',
-    WeightPeriod.sixMonths => '1/2 Jahr',
-    WeightPeriod.threeMonths => '3 Monate',
-    WeightPeriod.twoMonths => '2 Monate',
-    WeightPeriod.month => '1 Monat',
-    WeightPeriod.week => '1 Woche',
-  };
 }

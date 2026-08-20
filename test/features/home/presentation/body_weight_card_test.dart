@@ -156,7 +156,7 @@ void main() {
       expect(stores.bodyWeight.entries.single.weightKg, 80.4);
     });
 
-    testWidgets('the editor starts on the weight last recorded', (
+    testWidgets('the editor starts empty, even on a weight already recorded', (
       tester,
     ) async {
       await pumpApp(tester, on: storesWith(weightEntries: [weighing(1, 82.5)]));
@@ -164,7 +164,11 @@ void main() {
       await tester.tap(addButton);
       await tester.pumpAndSettle();
 
-      expect(tester.widget<TextField>(weightField).controller?.text, '82,5');
+      // A prefilled field is a weighing that can be confirmed without ever
+      // being read off a scale — today's entry would then be yesterday's
+      // number. The check stays out of reach until something is typed.
+      expect(tester.widget<TextField>(weightField).controller?.text, '');
+      expect(confirmIsOffered(tester), isFalse);
     });
 
     testWidgets('the editor starts on today', (tester) async {

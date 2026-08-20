@@ -254,6 +254,12 @@ Deshalb liegt die Makroverteilung nicht im Profil, sondern neben dem Kalorienzie
 aufteilt — und deshalb steht das Aktivitätslevel bei den Zielen, obwohl es eine Körperangabe
 ist: es geht nur in die Zielrechnung ein.
 
+**Ein neuer Gewichtseintrag startet mit leerem Feld**, auch wenn schon eine Wiegung auf Record
+ist. Vorbelegt war es der letzte Wert; damit ließ sich der Eintrag bestätigen, ohne je auf eine
+Waage gesehen zu haben — die heutige Wiegung wäre dann die gestrige Zahl. Der Haken bleibt
+unerreichbar, bis etwas getippt ist. Beim **Korrigieren** einer Zeile auf `/home/weight` steht
+der Wert des Tages weiterhin drin: Dort ist er der Ausgangspunkt, nicht eine Vermutung.
+
 Start- und aktuelles Gewicht auf der Ziele-Seite sind **schreibgeschützt**. Gewogen wird auf
 der Startseite; eine zweite Stelle zum Eintragen wäre eine zweite Stelle, an der es
 danebengehen kann. Beide Werte werden abgefragt (`readFirst`/`readLatest`) statt gespeichert,
@@ -380,7 +386,39 @@ Fünf Tabs in der Bottom-Navigation:
 | Optionen | `/settings` | Darstellung, Zugang zum Profil |
 
 Unterseiten eines Tabs sind verschachtelte Routen seines Branches, damit die Bottom-Navigation
-stehen bleibt und der Tab seine Position behält. Der Optionen-Tab hat davon bisher drei:
+stehen bleibt und der Tab seine Position behält. Der Optionen-Tab hat davon drei:
 `/settings/profile`, `/settings/goals` und darunter `/settings/goals/nutrition` — die
 Verschachtelung bildet ab, dass die Ernährungsziele von der Ziele-Seite aus erreicht werden
-und der Zurück-Weg über sie führt.
+und der Zurück-Weg über sie führt. Der Start-Tab hat eine: `/home/weight`, der
+Gewichtsverlauf hinter der Gewichtskarte.
+
+Der gewählte Zeitraum reist als Query-Parameter mit (`/home/weight?period=threeMonths`), nicht
+in `extra`: Es ist ein einfacher Enum-Name, und einer, der eine wiederhergestellte Route
+übersteht, statt danach als `null` zurückzukommen. Ein unbekannter Name fällt auf den
+Standardzeitraum zurück, statt zu werfen — die URL ist von Hand tippbar.
+
+Die Zahlen und der Graph auf `/home/weight` beziehen sich auf den **gewählten Zeitraum**: Das
+Startgewicht dort ist die erste Wiegung im Fenster, nicht die allererste überhaupt. Das
+allzeit-Startgewicht steht weiter auf der Ziele-Seite (`readFirst`).
+
+Der Screen zerfällt dafür sichtbar in zwei Blöcke: Zeitraum, Eckwerte und Graph stehen
+zusammen auf einer `Card`, die Wiegungen darunter auf dem blanken Hintergrund. Die Karte ist
+zugleich das, was den Zeitraum-Umschalter eingrenzt — er sitzt kompakt neben der Überschrift
+„Verlauf" statt über die volle Bildschirmbreite, wo er wie ein Filter für den ganzen Screen
+aussähe. Deshalb hat `WeightPeriodPicker` das Flag `expand`: Die Startseiten-Karte lässt ihn
+über die volle Kartenbreite laufen, weil er dort genau die Karte ändert.
+
+**Die Liste darunter ist bewusst die Ausnahme** und zeigt immer alle Wiegungen, unabhängig vom
+Zeitraum — gelesen über denselben `bodyWeightSeriesProvider`, nur auf `WeightPeriod.allTime`.
+Der Zeitraum beantwortet die Frage, was eine Zeitspanne mit dem Gewicht gemacht hat; die Liste
+ist der Bestand, an dem das passiert ist. Ein kürzeres Fenster ist kein Grund, Einträge an der
+einzigen Stelle zu verstecken, an der sie sich korrigieren und löschen lassen. Sichtbar gemacht
+wird das durch die Überschrift „Alle Wiegungen" — ohne sie sähen drei Wiegungen unter einem
+Ein-Wochen-Fenster nach einem Fehler aus statt nach einer Entscheidung.
+
+Grün und Rot am Trend-Icon stehen für die
+Richtung, nicht für gut oder schlecht — das Ziel aus dem Profil geht dort bewusst nicht ein —,
+und sie sind nie das einzige Unterscheidungsmerkmal: Icon und Vorzeichen tragen dieselbe
+Aussage. Die beiden Farbpaare stehen in `weight_detail_screen.dart` statt im `ColorScheme`:
+Ein hellblauer Seed liefert kein Grün, und `error` ist das Rot für einen Fehler, nicht für
+eine Richtung.

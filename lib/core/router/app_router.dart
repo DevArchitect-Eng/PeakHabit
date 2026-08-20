@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/home/presentation/home_screen.dart';
+import '../../features/home/presentation/weight_detail_screen.dart';
+import '../../features/home/presentation/weight_period_picker.dart';
 import '../../features/nutrition/presentation/nutrition_screen.dart';
 import '../../features/profile/presentation/goals_screen.dart';
 import '../../features/profile/presentation/nutrition_targets_screen.dart';
@@ -20,7 +22,25 @@ final appRouter = GoRouter(
       builder: (context, state, navigationShell) =>
           AppShell(navigationShell: navigationShell),
       branches: [
-        _branch('/home', const HomeScreen()),
+        _branch(
+          '/home',
+          const HomeScreen(),
+          // Inside the home branch, so the bottom navigation keeps its place
+          // and the tab remembers it was here.
+          routes: [
+            GoRoute(
+              path: 'weight',
+              // The period rides along in the URL rather than in `extra`: it
+              // is a plain enum name, and one that survives a restored route
+              // instead of coming back as null.
+              builder: (context, state) => WeightDetailScreen(
+                initialPeriod: weightPeriodByName(
+                  state.uri.queryParameters['period'],
+                ),
+              ),
+            ),
+          ],
+        ),
         _branch('/nutrition', const NutritionScreen()),
         _branch('/training', const TrainingScreen()),
         _branch('/stats', const StatsScreen()),

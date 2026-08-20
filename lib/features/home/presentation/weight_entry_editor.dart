@@ -12,14 +12,23 @@ import '../../profile/presentation/value_editor.dart';
 /// like every other value in the app. It brings its own field rather than
 /// going through `showTextEditor`, which types whole numbers only: a weight is
 /// the one value in the app with a decimal place.
+///
+/// [fixedDate] is the day of a weighing already on record: the sheet opens on
+/// it and does not offer to change it, because correcting an entry is about
+/// the number on the scale, not about which day it was taken. Left out — the
+/// case of adding one — the sheet opens on today and the day can be picked.
 Future<({double weightKg, DateTime date})?> showWeightEditor(
   BuildContext context, {
   double? initialWeightKg,
+  DateTime? fixedDate,
 }) {
   return showModalBottomSheet<({double weightKg, DateTime date})>(
     context: context,
     isScrollControlled: true,
-    builder: (context) => _WeightEditorSheet(initialWeightKg: initialWeightKg),
+    builder: (context) => _WeightEditorSheet(
+      initialWeightKg: initialWeightKg,
+      fixedDate: fixedDate,
+    ),
   );
 }
 
@@ -46,9 +55,18 @@ double? parseWeightKg(String text) {
 const double _maxWeightKg = 700;
 
 class _WeightEditorSheet extends StatefulWidget {
-  const _WeightEditorSheet({required this.initialWeightKg});
+  const _WeightEditorSheet({
+    required this.initialWeightKg,
+    required this.fixedDate,
+  });
 
+  /// The weight the field starts on, for correcting one already on record.
+  /// A new weighing starts empty — it is a number read off a scale, and a
+  /// prefilled field is one that can be confirmed without ever looking.
   final double? initialWeightKg;
+
+  /// The day this weighing belongs to, where it is not up for choosing.
+  final DateTime? fixedDate;
 
   @override
   State<_WeightEditorSheet> createState() => _WeightEditorSheetState();
@@ -56,8 +74,8 @@ class _WeightEditorSheet extends StatefulWidget {
 
 class _WeightEditorSheetState extends State<_WeightEditorSheet> {
   late final _controller = TextEditingController(
-    // The last weighing, so a correction of half a kilo is a keystroke rather
-    // than a number typed out again. Selected, so typing replaces it.
+    // The weighing being corrected, so a change of half a kilo is a keystroke
+    // rather than a number typed out again. Selected, so typing replaces it.
     text: widget.initialWeightKg == null
         ? ''
         : formatDecimal(widget.initialWeightKg!, 1),
@@ -65,7 +83,7 @@ class _WeightEditorSheetState extends State<_WeightEditorSheet> {
 
   // Today by default — the usual case, entering the day's own weighing, stays
   // a single tap on the check.
-  DateTime _date = DateUtils.dateOnly(DateTime.now());
+  late DateTime _date = DateUtils.dateOnly(widget.fixedDate ?? DateTime.now());
 
   @override
   void initState() {
@@ -133,6 +151,10 @@ class _WeightEditorSheetState extends State<_WeightEditorSheet> {
             leading: const Icon(Icons.calendar_today),
             title: const Text('Datum'),
             trailing: Text(formatDate(_date)),
+            // Greyed out rather than left out on a fixed day: the day still
+            // says which weighing is being corrected, it just cannot be
+            // turned into a different one from here.
+            enabled: widget.fixedDate == null,
             onTap: _pickDate,
           ),
         ],
