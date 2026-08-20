@@ -33,14 +33,14 @@ void main() {
     final messages = captured.map((entry) => entry.message).toList();
     expect(messages, [
       'Opening database',
-      'Creating schema at version 8',
+      'Creating schema at version 9',
       'Database opened',
       'Closing database',
       'Database closed',
     ]);
   });
 
-  test('creates a fresh database at schema version 8', () async {
+  test('creates a fresh database at schema version 9', () async {
     final database = AppDatabase.inMemory();
     addTearDown(database.close);
 
@@ -49,7 +49,7 @@ void main() {
     // Pinned to the literal version on purpose: raising `schemaVersion` should
     // force a look at this test, and with it at the matching migration step.
     final row = await database.customSelect('PRAGMA user_version').getSingle();
-    expect(row.read<int>('user_version'), 8);
+    expect(row.read<int>('user_version'), 9);
   });
 
   test('enforces foreign keys', () async {
@@ -68,7 +68,15 @@ void main() {
 
     expect(
       database.allTables.map((table) => table.actualTableName),
-      containsAll(['user_profiles', 'app_settings', 'body_weight_entries']),
+      containsAll([
+        'user_profiles',
+        'app_settings',
+        'body_weight_entries',
+        'foods',
+        'composite_foods',
+        'composite_food_ingredients',
+        'meal_entries',
+      ]),
     );
   });
 
@@ -84,12 +92,32 @@ void main() {
     tearDown(() => directory.delete(recursive: true));
 
     /// Rewinds a fresh database to what an older installation left behind:
-    /// the plumbing, minus the tables that only came later.
-    Future<void> rewindTo(int version, List<String> droppedTables) async {
+    /// the plumbing, minus the tables and columns that only came later.
+    ///
+    /// [droppedTables] names the feature tables the caller wants gone; what a
+    /// given version did not have yet beyond those is taken off here, so a
+    /// test only has to say which version it is standing on.
+    Future<void> rewindTo(
+      int version, [
+      List<String> droppedTables = const [],
+    ]) async {
       final legacy = AppDatabase.atFile(file);
       await legacy.open();
       for (final table in droppedTables) {
         await legacy.customStatement('DROP TABLE $table');
+      }
+      // The four nutrition tables arrived together in version 9. Dropped
+      // child first: with foreign keys on, a parent cannot go while a table
+      // pointing at it is still there.
+      if (version < 9) {
+        for (final table in [
+          'meal_entries',
+          'composite_food_ingredients',
+          'composite_foods',
+          'foods',
+        ]) {
+          await legacy.customStatement('DROP TABLE IF EXISTS $table');
+        }
       }
       // `user_profiles` gained `username` in version 6 — a table that
       // survives the rewind still has it fresh from `legacy.open()` above,
@@ -147,6 +175,20 @@ void main() {
       expect(await tablesAfterOpening(), contains('body_weight_entries'));
     });
 
+    test('adds the nutrition tables to an installation on version 8', () async {
+      await rewindTo(8);
+
+      expect(
+        await tablesAfterOpening(),
+        containsAll([
+          'foods',
+          'composite_foods',
+          'composite_food_ingredients',
+          'meal_entries',
+        ]),
+      );
+    });
+
     test('clears a stored sex the enum no longer has', () async {
       final legacy = AppDatabase.atFile(file);
       await legacy.open();
@@ -157,17 +199,8 @@ void main() {
         'carb_percent, fat_percent, updated_at) '
         "VALUES (1, 'diverse', 'maintain', 30, 40, 30, 0)",
       );
-      // Version 4 predates the `username` column added in version 6, and the
-      // `onboarding_completed` one added in version 7 — see `rewindTo` above
-      // for why these have to be stripped back off.
-      await legacy.customStatement(
-        'ALTER TABLE user_profiles DROP COLUMN username',
-      );
-      await legacy.customStatement(
-        'ALTER TABLE app_settings DROP COLUMN onboarding_completed',
-      );
-      await legacy.customStatement('PRAGMA user_version = 4');
       await legacy.close();
+      await rewindTo(4);
 
       final migrated = AppDatabase.atFile(file);
       addTearDown(migrated.close);
@@ -187,18 +220,11 @@ void main() {
         'carb_percent, fat_percent, updated_at) '
         "VALUES (1, 'maintain', 30, 40, 30, 0)",
       );
-      // Simulates version 5, which had the table but not yet the column —
-      // `DROP COLUMN` stands in for a schema that never had it, since the
-      // fresh database above starts on the current one. Same reasoning for
-      // `onboarding_completed`, added later still, in version 7.
-      await legacy.customStatement(
-        'ALTER TABLE user_profiles DROP COLUMN username',
-      );
-      await legacy.customStatement(
-        'ALTER TABLE app_settings DROP COLUMN onboarding_completed',
-      );
-      await legacy.customStatement('PRAGMA user_version = 5');
       await legacy.close();
+      // Version 5 had the table but not yet the column — `rewindTo` takes it
+      // back off, since the fresh database above starts on the current
+      // schema.
+      await rewindTo(5);
 
       final migrated = AppDatabase.atFile(file);
       addTearDown(migrated.close);
@@ -219,12 +245,9 @@ void main() {
           "INSERT INTO app_settings (id, theme_mode, updated_at) "
           "VALUES (1, 'dark', 0)",
         );
-        // Simulates version 6, which had the table but not yet the column.
-        await legacy.customStatement(
-          'ALTER TABLE app_settings DROP COLUMN onboarding_completed',
-        );
-        await legacy.customStatement('PRAGMA user_version = 6');
         await legacy.close();
+        // Version 6 had the table but not yet the column.
+        await rewindTo(6);
 
         final migrated = AppDatabase.atFile(file);
         addTearDown(migrated.close);
@@ -249,8 +272,8 @@ void main() {
         'carb_percent, fat_percent, updated_at) '
         "VALUES (1, 'mila', '$goal', 30, 40, 30, 0)",
       );
-      await legacy.customStatement('PRAGMA user_version = 7');
       await legacy.close();
+      await rewindTo(7);
 
       final migrated = AppDatabase.atFile(file);
       addTearDown(migrated.close);
