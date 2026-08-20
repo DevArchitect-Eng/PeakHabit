@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peakhabit/features/body_weight/domain/body_weight_entry.dart';
 import 'package:peakhabit/features/home/presentation/weight_chart.dart';
+import 'package:peakhabit/features/profile/presentation/profile_formatting.dart';
 import 'package:peakhabit/features/settings/domain/app_theme_mode.dart';
 
 import '../../../support/pump_app.dart';
@@ -20,6 +21,9 @@ void main() {
       weightKg: weightKg,
     );
   }
+
+  /// The day [days] back, written the way the card writes it.
+  String dateOf(int days) => formatShortDate(weighing(days, 1).date);
 
   // Finders are lazy, so one built here resolves against whatever is on
   // screen at the moment it is used.
@@ -57,7 +61,7 @@ void main() {
         on: storesWith(weightEntries: [weighing(40, 84), weighing(1, 82.5)]),
       );
 
-      expect(find.text('−1,5 kg in den letzten 3 Monaten'), findsOneWidget);
+      expect(find.text('−1,5 kg seit ${dateOf(40)}'), findsOneWidget);
     });
 
     testWidgets('says the weight held where it did not move', (tester) async {
@@ -66,7 +70,21 @@ void main() {
         on: storesWith(weightEntries: [weighing(20, 82.5), weighing(1, 82.5)]),
       );
 
-      expect(find.text('±0 kg in den letzten 3 Monaten'), findsOneWidget);
+      expect(find.text('±0 kg seit ${dateOf(20)}'), findsOneWidget);
+    });
+
+    testWidgets('dates the change from the weighing it is measured against', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        on: storesWith(weightEntries: [weighing(5, 83), weighing(0, 82.5)]),
+      );
+
+      // Five days of tracking inside a three-month window: the line says what
+      // it actually covers rather than claiming three months of it.
+      expect(find.text('−0,5 kg seit ${dateOf(5)}'), findsOneWidget);
+      expect(find.textContaining('3 Monaten'), findsNothing);
     });
 
     testWidgets('names the day instead of a change on a single weighing', (
@@ -222,13 +240,14 @@ void main() {
         ),
       );
 
-      expect(find.text('−2,5 kg in den letzten 3 Monaten'), findsOneWidget);
+      expect(find.text('−2,5 kg seit ${dateOf(60)}'), findsOneWidget);
 
       await tester.tap(find.text('1 Monat'));
       await tester.pumpAndSettle();
 
-      // Only the last two weighings are inside a month.
-      expect(find.text('−0,5 kg im letzten Monat'), findsOneWidget);
+      // Only the last two weighings are inside a month, so the change is
+      // measured — and dated — from the older of those.
+      expect(find.text('−0,5 kg seit ${dateOf(10)}'), findsOneWidget);
     });
   });
 

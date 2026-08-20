@@ -72,7 +72,7 @@ class _BodyWeightCardState extends ConsumerState<BodyWeightCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _CurrentWeight(entry: current, period: _period, series: series.value),
+        _CurrentWeight(entry: current, series: series.value),
         const SizedBox(height: 16),
         _PeriodPicker(
           period: _period,
@@ -156,22 +156,17 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// The latest weighing, and what has happened over the chosen period.
+/// The latest weighing, and what has changed since the one before it in the
+/// window.
 class _CurrentWeight extends StatelessWidget {
-  const _CurrentWeight({
-    required this.entry,
-    required this.period,
-    required this.series,
-  });
+  const _CurrentWeight({required this.entry, required this.series});
 
   final BodyWeightEntry entry;
-  final WeightPeriod period;
   final BodyWeightSeries? series;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final change = _change;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,9 +177,7 @@ class _CurrentWeight extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Text(
-          change == null
-              ? 'am ${formatShortDate(entry.date)}'
-              : '${_changeLabel(change)} ${period.changeLabel}',
+          _subtitle,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -193,12 +186,21 @@ class _CurrentWeight extends StatelessWidget {
     );
   }
 
-  /// What the weight has done over the period, or `null` where a single
-  /// weighing leaves nothing to compare it against.
-  double? get _change {
+  /// What the weight has done, or the day it was taken where a single weighing
+  /// leaves nothing to compare it against.
+  ///
+  /// The change is dated from the weighing it is measured against rather than
+  /// named after the period: the window may be three months long while the
+  /// entries in it cover a week, and "in den letzten 3 Monaten" would then
+  /// claim three months of progress from seven days of it — which is exactly
+  /// where every new user starts.
+  String get _subtitle {
     final entries = series?.entries ?? const <BodyWeightEntry>[];
-    if (entries.length < 2) return null;
-    return entries.last.weightKg - entries.first.weightKg;
+    if (entries.length < 2) return 'am ${formatShortDate(entry.date)}';
+
+    final first = entries.first;
+    final change = entries.last.weightKg - first.weightKg;
+    return '${_changeLabel(change)} seit ${formatShortDate(first.date)}';
   }
 
   /// The change with its sign, using the typographic minus the goal labels
@@ -281,12 +283,5 @@ extension WeightPeriodLabel on WeightPeriod {
     WeightPeriod.month => '1 Monat',
     WeightPeriod.threeMonths => '3 Monate',
     WeightPeriod.year => '1 Jahr',
-  };
-
-  /// The form that follows a change: "−1,3 kg im letzten Monat".
-  String get changeLabel => switch (this) {
-    WeightPeriod.month => 'im letzten Monat',
-    WeightPeriod.threeMonths => 'in den letzten 3 Monaten',
-    WeightPeriod.year => 'im letzten Jahr',
   };
 }
