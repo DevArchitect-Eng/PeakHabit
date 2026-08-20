@@ -12,15 +12,22 @@ Vorhanden:
 - **Erststart-Onboarding** mit Benutzername, Ziel, Größe, Gewicht und Kalorienziel. Es ist
   verpflichtend und lässt sich nicht überspringen, weil die App auf diesen Werten aufbaut.
 - **Optionen** mit Theme-Auswahl (Dark, Light oder Systemeinstellung, gespeichert) und dem
-  Nutzerprofil unter `/settings/profile`, das das Kalorienziel auf Wunsch aus Gewicht, Größe,
-  Alter, Geschlecht, Aktivität und Ziel berechnet.
-- **Start** mit einer Begrüßung, die den hinterlegten Benutzernamen verwendet.
+  Nutzerprofil in drei Unterseiten: `/settings/profile` (Benutzername, Größe, Geschlecht,
+  Geburtsdatum), `/settings/goals` (Start- und aktuelles Gewicht, Ziel, Aktivitätslevel) und
+  `/settings/goals/nutrition` (Kalorienziel, Makroverteilung). Ändert sich Ziel oder
+  Aktivität, wird das Kalorienziel neu berechnet und mitgespeichert.
+- **Start** mit einer Begrüßung, die den hinterlegten Benutzernamen verwendet, darunter die
+  Gewichtskarte mit aktuellem Wert, Zeitraum-Auswahl und Verlaufsgraph. Ein Tippen darauf
+  führt auf `/home/weight`: Eckwerte des Zeitraums, derselbe Graph und darunter alle
+  Wiegungen als Liste, unabhängig vom Zeitraum — Zeile antippen zum Korrigieren, wegwischen
+  zum Löschen.
 
 Platzhalter-Screens sind noch Ernährung, Training und Statistik.
 
 Die lokale Datenbank (Drift) hält die Tabellen `user_profiles`, `app_settings` und
-`body_weight_entries`. Für Gewichtseinträge gibt es bereits Repository und Provider, aber noch
-keine eigenen Screens — gefüllt wird die Tabelle bisher nur vom Onboarding.
+`body_weight_entries`, dazu Repository und Provider für Gewichtseinträge. Gefüllt wird
+`body_weight_entries` vom Onboarding und von der Gewichtskarte im Start-Tab; gelesen wird sie
+außerdem von der Ziele-Seite.
 
 ## Ordnerstruktur
 
