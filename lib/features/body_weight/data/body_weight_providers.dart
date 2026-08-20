@@ -47,11 +47,27 @@ typedef BodyWeightSeries = ({
 /// on. An app left sitting on one period across midnight still keeps
 /// yesterday's window: a day off at the far end of a month or a year is not
 /// worth a timer that fires while nobody is looking.
+///
+/// [WeightPeriod.allTime] is watched here rather than answered by
+/// [WeightPeriod.startFrom]: its start is the earliest entry on record, not a
+/// fixed offset from today, so it rides along on [firstBodyWeightProvider]
+/// instead — the same one the goals screen already reads its starting weight
+/// from. Watching it here means a change to the earliest entry rebuilds this
+/// provider with the new window, the same as switching periods does.
+///
+/// Awaited through `.future` rather than read through `.value`: the latter is
+/// `null` both while still loading and after a failed read, and either would
+/// otherwise be mistaken for "no entries yet" — the one case that is actually
+/// meant to fall back to [today]. Awaiting instead means a loading window
+/// stays loading and a failed read fails this provider too, matching the
+/// error the card already shows for the other providers it reads.
 final bodyWeightSeriesProvider = StreamProvider.autoDispose
-    .family<BodyWeightSeries, WeightPeriod>((ref, period) {
+    .family<BodyWeightSeries, WeightPeriod>((ref, period) async* {
       final today = DateTime.now();
-      final from = period.startFrom(today);
-      return ref
+      final from = period == WeightPeriod.allTime
+          ? (await ref.watch(firstBodyWeightProvider.future))?.date ?? today
+          : period.startFrom(today);
+      yield* ref
           .watch(bodyWeightRepositoryProvider)
           .watchRange(from, today)
           .map((entries) => (from: from, to: today, entries: entries));

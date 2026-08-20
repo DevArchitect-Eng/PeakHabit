@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peakhabit/features/body_weight/domain/body_weight_entry.dart';
+import 'package:peakhabit/features/body_weight/domain/weight_period.dart';
 import 'package:peakhabit/features/home/presentation/weight_chart.dart';
 import 'package:peakhabit/features/profile/presentation/profile_formatting.dart';
 import 'package:peakhabit/features/settings/domain/app_theme_mode.dart';
@@ -42,6 +43,20 @@ void main() {
   /// Opens the date picker from the editor's date row.
   Future<void> openDatePicker(WidgetTester tester) async {
     await tester.tap(dateRow);
+    await tester.pumpAndSettle();
+  }
+
+  /// Opens the period sheet, picks the option labelled [label] and confirms.
+  ///
+  /// The option is found by its tile rather than by text alone: the label the
+  /// picker already shows carries the same words, so a bare text finder would
+  /// have two of them to choose between once the sheet is open.
+  Future<void> selectPeriod(WidgetTester tester, String label) async {
+    await tester.tap(find.byType(OutlinedButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(RadioListTile<WeightPeriod?>, label));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Bestätigen'));
     await tester.pumpAndSettle();
   }
 
@@ -292,8 +307,7 @@ void main() {
       // The weight itself is still the latest one on record.
       expect(find.text('84 kg'), findsOneWidget);
 
-      await tester.tap(find.text('1 Jahr'));
-      await tester.pumpAndSettle();
+      await selectPeriod(tester, '1 Jahr');
 
       expect(find.byType(WeightChart), findsOneWidget);
       expect(find.text('Im gewählten Zeitraum keine Wiegung.'), findsNothing);
@@ -315,12 +329,34 @@ void main() {
 
       expect(find.text('−2,5 kg seit ${dateOf(60)}'), findsOneWidget);
 
-      await tester.tap(find.text('1 Monat'));
-      await tester.pumpAndSettle();
+      await selectPeriod(tester, '1 Monat');
 
       // Only the last two weighings are inside a month, so the change is
       // measured — and dated — from the older of those.
       expect(find.text('−0,5 kg seit ${dateOf(10)}'), findsOneWidget);
+    });
+
+    testWidgets('a dropped sheet leaves the period alone', (tester) async {
+      await pumpApp(
+        tester,
+        on: storesWith(weightEntries: [weighing(60, 85), weighing(1, 82.5)]),
+      );
+
+      expect(find.text('−2,5 kg seit ${dateOf(60)}'), findsOneWidget);
+
+      // Picked, but dropped with the cross rather than confirmed: the window
+      // is the one it was before it opened.
+      await tester.tap(find.byType(OutlinedButton));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(RadioListTile<WeightPeriod?>, '1 Monat'),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Abbrechen'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('3 Monate'), findsOneWidget);
+      expect(find.text('−2,5 kg seit ${dateOf(60)}'), findsOneWidget);
     });
   });
 

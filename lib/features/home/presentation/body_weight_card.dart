@@ -6,6 +6,7 @@ import '../../body_weight/data/body_weight_providers.dart';
 import '../../body_weight/domain/body_weight_entry.dart';
 import '../../body_weight/domain/weight_period.dart';
 import '../../profile/presentation/profile_formatting.dart';
+import '../../profile/presentation/value_editor.dart';
 import 'weight_chart.dart';
 import 'weight_entry_editor.dart';
 
@@ -222,18 +223,44 @@ class _PeriodPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return SizedBox(
       width: double.infinity,
-      child: SegmentedButton<WeightPeriod>(
-        segments: [
-          for (final option in WeightPeriod.values)
-            ButtonSegment(value: option, label: Text(option.label)),
-        ],
-        selected: {period},
-        showSelectedIcon: false,
-        onSelectionChanged: (selection) => onChanged(selection.first),
+      child: OutlinedButton(
+        onPressed: () => _pick(context),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: theme.colorScheme.onSurface,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        ),
+        child: Row(
+          children: [
+            Expanded(child: Text(period.label)),
+            const Icon(Icons.arrow_drop_down),
+          ],
+        ),
       ),
     );
+  }
+
+  /// Opens the choice sheet the settings rows use, rather than a dropdown
+  /// menu: it is the shape every other picking in the app already has, and
+  /// seven options read better as a list that is confirmed than as a menu
+  /// that commits on the way past.
+  Future<void> _pick(BuildContext context) async {
+    final chosen = await showChoiceEditor<WeightPeriod>(
+      context,
+      title: 'Zeitraum',
+      value: period,
+      options: WeightPeriod.values,
+      labelOf: (option) => option.label,
+    );
+    // Nothing stands in for "no period", so an empty choice only comes back
+    // from a dropped sheet.
+    final next = chosen?.value;
+    if (next == null) return;
+
+    onChanged(next);
   }
 }
 
@@ -279,10 +306,14 @@ class _Message extends StatelessWidget {
 }
 
 extension WeightPeriodLabel on WeightPeriod {
-  /// The form the picker shows, short enough for three of them on one line.
+  /// The form the dropdown shows.
   String get label => switch (this) {
-    WeightPeriod.month => '1 Monat',
-    WeightPeriod.threeMonths => '3 Monate',
+    WeightPeriod.allTime => 'Seit Beginn',
     WeightPeriod.year => '1 Jahr',
+    WeightPeriod.sixMonths => '1/2 Jahr',
+    WeightPeriod.threeMonths => '3 Monate',
+    WeightPeriod.twoMonths => '2 Monate',
+    WeightPeriod.month => '1 Monat',
+    WeightPeriod.week => '1 Woche',
   };
 }

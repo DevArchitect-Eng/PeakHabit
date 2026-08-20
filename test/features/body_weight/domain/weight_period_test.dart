@@ -3,6 +3,20 @@ import 'package:peakhabit/features/body_weight/domain/weight_period.dart';
 
 void main() {
   group('startFrom', () {
+    test('a week back counts seven days', () {
+      expect(
+        WeightPeriod.week.startFrom(DateTime(2026, 8, 20)),
+        DateTime(2026, 8, 13),
+      );
+    });
+
+    test('a week back reaches into the previous month', () {
+      expect(
+        WeightPeriod.week.startFrom(DateTime(2026, 8, 3)),
+        DateTime(2026, 7, 27),
+      );
+    });
+
     test('a month back keeps the day of the month', () {
       expect(
         WeightPeriod.month.startFrom(DateTime(2026, 8, 20)),
@@ -10,10 +24,24 @@ void main() {
       );
     });
 
+    test('two months back keeps the day of the month', () {
+      expect(
+        WeightPeriod.twoMonths.startFrom(DateTime(2026, 8, 20)),
+        DateTime(2026, 6, 20),
+      );
+    });
+
     test('three months back keeps the day of the month', () {
       expect(
         WeightPeriod.threeMonths.startFrom(DateTime(2026, 8, 20)),
         DateTime(2026, 5, 20),
+      );
+    });
+
+    test('six months back keeps the day of the month', () {
+      expect(
+        WeightPeriod.sixMonths.startFrom(DateTime(2026, 8, 20)),
+        DateTime(2026, 2, 20),
       );
     });
 
@@ -51,6 +79,13 @@ void main() {
       expect(
         WeightPeriod.month.startFrom(DateTime(2026, 8, 20, 22, 45)),
         DateTime(2026, 7, 20),
+      );
+    });
+
+    test('all time has no fixed start of its own', () {
+      expect(
+        () => WeightPeriod.allTime.startFrom(DateTime(2026, 8, 20)),
+        throwsUnsupportedError,
       );
     });
   });
