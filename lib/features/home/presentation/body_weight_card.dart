@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../body_weight/data/body_weight_providers.dart';
@@ -26,10 +27,7 @@ class BodyWeightCard extends ConsumerStatefulWidget {
 }
 
 class _BodyWeightCardState extends ConsumerState<BodyWeightCard> {
-  /// Three months to start with: long enough that a week of water weight does
-  /// not look like a trend, short enough that a few weeks of tracking already
-  /// fill it.
-  WeightPeriod _period = WeightPeriod.threeMonths;
+  WeightPeriod _period = defaultWeightPeriod;
 
   @override
   Widget build(BuildContext context) {
@@ -41,14 +39,20 @@ class _BodyWeightCardState extends ConsumerState<BodyWeightCard> {
     final unreadable = latest.hasError || series.hasError;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _Header(onAdd: unreadable ? null : _enterWeight),
-            _body(latest, series, unreadable: unreadable),
-          ],
+      // The whole card is the way to the detail screen — including the error
+      // state, where what there is to see about a series that will not load
+      // is the same there and worth reaching.
+      child: InkWell(
+        onTap: _openDetail,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Header(onAdd: unreadable ? null : _enterWeight),
+              _body(latest, series, unreadable: unreadable),
+            ],
+          ),
         ),
       ),
     );
@@ -100,6 +104,11 @@ class _BodyWeightCardState extends ConsumerState<BodyWeightCard> {
 
     return WeightChart(entries: value.entries, from: value.from, to: value.to);
   }
+
+  /// Opens the weight history, on the period the card is showing — switching
+  /// to a year and then tapping through should not land on three months
+  /// again.
+  void _openDetail() => context.go('/home/weight?period=${_period.name}');
 
   Future<void> _enterWeight() async {
     final result = await showWeightEditor(
