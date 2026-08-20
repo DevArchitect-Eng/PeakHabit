@@ -34,6 +34,10 @@ class _BodyWeightCardState extends ConsumerState<BodyWeightCard> {
   Widget build(BuildContext context) {
     final latest = ref.watch(latestBodyWeightProvider);
     final series = ref.watch(bodyWeightSeriesProvider(_period));
+    // A failed read is told apart from an empty series: stepping on the scale
+    // fixes the one and not the other. It also takes the way in with it — a
+    // weighing entered here would land where nobody can see it.
+    final unreadable = latest.hasError || series.hasError;
 
     return Card(
       child: Padding(
@@ -41,8 +45,8 @@ class _BodyWeightCardState extends ConsumerState<BodyWeightCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _Header(onAdd: latest.hasError ? null : _enterWeight),
-            _body(latest, series),
+            _Header(onAdd: unreadable ? null : _enterWeight),
+            _body(latest, series, unreadable: unreadable),
           ],
         ),
       ),
@@ -51,11 +55,10 @@ class _BodyWeightCardState extends ConsumerState<BodyWeightCard> {
 
   Widget _body(
     AsyncValue<BodyWeightEntry?> latest,
-    AsyncValue<BodyWeightSeries> series,
-  ) {
-    // A failed read is told apart from an empty series: stepping on the scale
-    // fixes the one and not the other.
-    if (latest.hasError || series.hasError) {
+    AsyncValue<BodyWeightSeries> series, {
+    required bool unreadable,
+  }) {
+    if (unreadable) {
       return const _Message('Der Gewichtsverlauf konnte nicht geladen werden.');
     }
     // Reading from a local database takes about a frame, so there is nothing
