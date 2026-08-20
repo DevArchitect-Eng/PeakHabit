@@ -28,11 +28,17 @@ Future<double?> showWeightEditor(
 /// Takes the comma German keyboards produce as readily as the point, and
 /// rejects what the entry itself would refuse — a weight of zero or less, or
 /// one so far off that it can only be a typo.
+///
+/// Rounded to the one decimal the app shows everywhere. Without that, typing
+/// 82,55 would store a number no screen ever prints: the card would show
+/// 82,5 kg, the editor would open on 82,5 the next time, and confirming that
+/// unchanged would quietly write a different weighing than the one on record.
+/// A scale reading past the first decimal is noise anyway.
 double? parseWeightKg(String text) {
   final number = double.tryParse(text.trim().replaceAll(',', '.'));
   if (number == null || !number.isFinite) return null;
   if (number <= 0 || number > _maxWeightKg) return null;
-  return number;
+  return (number * 10).roundToDouble() / 10;
 }
 
 /// The heaviest weight the field takes. Above the heaviest person on record,
