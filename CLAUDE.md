@@ -18,7 +18,12 @@ Fünf Tabs in der Bottom-Navigation:
 | Optionen | `/settings` | Darstellung, Zugang zum Profil |
 
 Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens für Ernährung, Training und
-Statistik. Der Start-Tab zeigt eine Begrüßung mit dem im Profil hinterlegten Benutzernamen.
+Statistik. Der Start-Tab zeigt eine Begrüßung mit dem im Profil hinterlegten Benutzernamen
+und darunter die Gewichtskarte: aktueller Wert, Zeitraum-Auswahl und Verlaufsgraph. Ein Tippen
+darauf führt auf `/home/weight` — Eckwerte des Zeitraums (Start, Aktuell, Unterschied mit
+Trend-Icon), derselbe Graph und darunter die Wiegungen des Zeitraums als Liste, Zeile antippen
+zum Korrigieren, wegwischen zum Löschen.
+
 Der Einstellungen-Tab ist ausgebaut: Theme-Auswahl (Dark/Light/System, gespeichert) und drei
 Unterseiten fürs Nutzerprofil — `/settings/profile` (Benutzername als Pflichtfeld, Größe,
 Geschlecht, Geburtsdatum), `/settings/goals` (Start- und aktuelles Gewicht, Ziel,
@@ -27,9 +32,9 @@ samt Gramm-Werten). Ändert sich Ziel oder Aktivität, wird das Kalorienziel neu
 mitgespeichert. Alle drei Seiten sind Listen aus Zeilen **ohne Speichern-Knopf**: Zeile
 antippen, im Editor mit dem Haken bestätigen oder mit dem Kreuz verwerfen. Die Drift-Datenbank
 hält dafür die Tabellen `user_profiles` und `app_settings`. Dazu kommt `body_weight_entries`
-samt Repository und Providern unter `lib/features/body_weight/` — eigene Screens dafür stehen
-noch aus, gefüllt wird die Tabelle bisher nur vom Onboarding, gelesen wird sie von der
-Ziele-Seite.
+samt Repository und Providern unter `lib/features/body_weight/`; die Oberfläche dazu liegt im
+Start-Tab (`lib/features/home/presentation/`), gelesen wird die Tabelle außerdem vom
+Onboarding und von der Ziele-Seite.
 
 Beim allerersten Start läuft ein Onboarding unter `lib/features/onboarding/`: Begrüßung,
 Benutzername, Ziel, Größe, Gewicht und Kalorienziel (eingeben oder berechnen lassen). Es ist

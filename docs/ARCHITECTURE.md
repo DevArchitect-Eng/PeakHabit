@@ -380,7 +380,22 @@ Fünf Tabs in der Bottom-Navigation:
 | Optionen | `/settings` | Darstellung, Zugang zum Profil |
 
 Unterseiten eines Tabs sind verschachtelte Routen seines Branches, damit die Bottom-Navigation
-stehen bleibt und der Tab seine Position behält. Der Optionen-Tab hat davon bisher drei:
+stehen bleibt und der Tab seine Position behält. Der Optionen-Tab hat davon drei:
 `/settings/profile`, `/settings/goals` und darunter `/settings/goals/nutrition` — die
 Verschachtelung bildet ab, dass die Ernährungsziele von der Ziele-Seite aus erreicht werden
-und der Zurück-Weg über sie führt.
+und der Zurück-Weg über sie führt. Der Start-Tab hat eine: `/home/weight`, der
+Gewichtsverlauf hinter der Gewichtskarte.
+
+Der gewählte Zeitraum reist als Query-Parameter mit (`/home/weight?period=threeMonths`), nicht
+in `extra`: Es ist ein einfacher Enum-Name, und einer, der eine wiederhergestellte Route
+übersteht, statt danach als `null` zurückzukommen. Ein unbekannter Name fällt auf den
+Standardzeitraum zurück, statt zu werfen — die URL ist von Hand tippbar.
+
+Alle Zahlen auf `/home/weight` beziehen sich auf den **gewählten Zeitraum**: Das Startgewicht
+dort ist die erste Wiegung im Fenster, nicht die allererste überhaupt. Das allzeit-Startgewicht
+steht weiter auf der Ziele-Seite (`readFirst`). Grün und Rot am Trend-Icon stehen für die
+Richtung, nicht für gut oder schlecht — das Ziel aus dem Profil geht dort bewusst nicht ein —,
+und sie sind nie das einzige Unterscheidungsmerkmal: Icon und Vorzeichen tragen dieselbe
+Aussage. Die beiden Farbpaare stehen in `weight_detail_screen.dart` statt im `ColorScheme`:
+Ein hellblauer Seed liefert kein Grün, und `error` ist das Rot für einen Fehler, nicht für
+eine Richtung.
