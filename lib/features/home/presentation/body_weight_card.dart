@@ -101,18 +101,19 @@ class _BodyWeightCardState extends ConsumerState<BodyWeightCard> {
   }
 
   Future<void> _enterWeight() async {
-    final weightKg = await showWeightEditor(
+    final result = await showWeightEditor(
       context,
       initialWeightKg: ref.read(latestBodyWeightProvider).value?.weightKg,
     );
-    if (weightKg == null || !mounted) return;
+    if (result == null || !mounted) return;
 
     try {
-      // Today's entry, replacing an earlier one from the same day: weighing
-      // again corrects the day rather than adding a second value to it.
+      // The chosen date, replacing an earlier entry from the same day:
+      // weighing again corrects the day rather than adding a second value to
+      // it.
       await ref
           .read(bodyWeightRepositoryProvider)
-          .save(BodyWeightEntry(date: DateTime.now(), weightKg: weightKg));
+          .save(BodyWeightEntry(date: result.date, weightKg: result.weightKg));
     } catch (error, stackTrace) {
       // Without this the write fails silently: the card would look exactly as
       // it does after a successful one, only without the new value in it.
