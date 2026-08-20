@@ -22,12 +22,16 @@ Vorhanden:
   Wiegungen als Liste, unabhängig vom Zeitraum — Zeile antippen zum Korrigieren, wegwischen
   zum Löschen.
 
-Platzhalter-Screens sind noch Ernährung, Training und Statistik.
+Platzhalter-Screens sind noch Ernährung, Training und Statistik. Hinter dem Ernährungs-Tab
+steht allerdings schon das Datenmodell: eigene Lebensmittel mit Nährwerten je 100 g,
+zusammengesetzte Lebensmittel (Rezepte) samt Zubereitungsgewicht, Mahlzeiteneinträge auf
+Frühstück, Mittag, Abend oder Snacks und die Tagessummen dazu.
 
-Die lokale Datenbank (Drift) hält die Tabellen `user_profiles`, `app_settings` und
-`body_weight_entries`, dazu Repository und Provider für Gewichtseinträge. Gefüllt wird
-`body_weight_entries` vom Onboarding und von der Gewichtskarte im Start-Tab; gelesen wird sie
-außerdem von der Ziele-Seite.
+Die lokale Datenbank (Drift) hält die Tabellen `user_profiles`, `app_settings`,
+`body_weight_entries`, `foods`, `composite_foods`, `composite_food_ingredients` und
+`meal_entries`, dazu Repositories und Provider für Gewichtseinträge und für die Ernährung.
+Gefüllt wird `body_weight_entries` vom Onboarding und von der Gewichtskarte im Start-Tab;
+gelesen wird sie außerdem von der Ziele-Seite.
 
 ## Ordnerstruktur
 

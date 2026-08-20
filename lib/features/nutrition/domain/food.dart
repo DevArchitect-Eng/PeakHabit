@@ -211,7 +211,11 @@ class CompositeFoodIngredient {
 /// typing a second set of numbers for it.
 ///
 /// Ingredients are plain [Food]s, never other dishes: a dish of dishes would
-/// need a cycle check for something nobody has asked for.
+/// need a cycle check for something nobody has asked for. They are kept by
+/// name rather than in the order they were listed in: a dish is a set of
+/// foods and amounts, not a sequence of cooking steps, and one order means
+/// the same dish is the same value however it was put together — including
+/// after a round trip through the database.
 class CompositeFood extends FoodItem {
   const CompositeFood._({
     required this.id,
@@ -256,10 +260,20 @@ class CompositeFood extends FoodItem {
       );
     }
 
+    final byName = [...ingredients]
+      ..sort((a, b) {
+        final byName = a.food.name.compareTo(b.food.name);
+        // Two foods may share a name; the id then decides, so the order does
+        // not depend on which of them the list happened to hold first.
+        return byName != 0
+            ? byName
+            : (a.food.id ?? 0).compareTo(b.food.id ?? 0);
+      });
+
     return CompositeFood._(
       id: id,
       name: trimmedName,
-      ingredients: List.unmodifiable(ingredients),
+      ingredients: List.unmodifiable(byName),
       preparedGrams: preparedGrams,
     );
   }

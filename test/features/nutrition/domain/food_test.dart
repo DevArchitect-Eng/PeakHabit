@@ -238,6 +238,29 @@ void main() {
       expect(dish().withId(7).ingredients, dish().ingredients);
     });
 
+    test('keeps its ingredients by name, whatever order they came in', () {
+      final asListed = CompositeFood(
+        name: 'Reis mit Öl',
+        ingredients: [
+          CompositeFoodIngredient(food: rawRice, grams: 100),
+          CompositeFoodIngredient(food: oil, grams: 10),
+        ],
+      );
+      final theOtherWayRound = CompositeFood(
+        name: 'Reis mit Öl',
+        ingredients: [
+          CompositeFoodIngredient(food: oil, grams: 10),
+          CompositeFoodIngredient(food: rawRice, grams: 100),
+        ],
+      );
+
+      expect(asListed.ingredients.map((it) => it.food.name), [
+        'Rapsöl',
+        'Reis, roh',
+      ]);
+      expect(asListed, theOtherWayRound);
+    });
+
     test('two equal dishes are the same value', () {
       expect(dish(), dish());
       expect(dish().hashCode, dish().hashCode);
