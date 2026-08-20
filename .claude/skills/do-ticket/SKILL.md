@@ -58,7 +58,13 @@ git checkout -b <nummer>-<inhaltlicher-slug>
 Konventionen aus `docs/ARCHITECTURE.md` einhalten (feature-first, Riverpod, go_router).
 Keine Scope-Ausweitung.
 
-### 6. Lokale Verifikation
+### 6. Dokumentation aktuell halten
+
+Prüfen, ob README.md, CLAUDE.md oder `docs/ARCHITECTURE.md` durch dieses Ticket veraltet
+werden, und sie bei Bedarf im selben Commit mitziehen — siehe `conventions.md` §
+„Dokumentation aktuell halten". Kein eigener Schritt für später, kein eigenes Ticket dafür.
+
+### 7. Lokale Verifikation
 
 ```bash
 dart format .
@@ -68,26 +74,26 @@ flutter test
 
 Bei UI-Änderungen zusätzlich auf Simulator/Emulator prüfen (siehe `conventions.md`).
 
-### 7. Review
+### 8. Review
 
 Code Review durchführen — verpflichtend. Bei sicherheits- oder datenrelevanten Änderungen
-(Liste in `conventions.md`) zusätzlich Security Review. Findings beheben, danach Schritt 6
+(Liste in `conventions.md`) zusätzlich Security Review. Findings beheben, danach Schritt 7
 erneut ausführen.
 
 Kostenpflichtige oder nutzergetriggerte Review-Modi nie selbst auslösen.
 
-### 8. Akzeptanzkriterien abhaken
+### 9. Akzeptanzkriterien abhaken
 
 Jedes Akzeptanzkriterium einzeln gegen das tatsächliche Ergebnis prüfen und nachweislich
 erfüllte im Issue-Body abhaken. **Selbständig, ohne nachzufragen** — Details und der
 `gh issue edit`-Befehl stehen in `conventions.md`. Nicht erfüllte bleiben unverändert und
 werden im PR-Body unter „Offene Risiken / Annahmen" genannt.
 
-### 9. PR öffnen
+### 10. PR öffnen
 
 Push, dann PR mit der Body-Struktur aus `conventions.md`. Board auf „In Review".
 
-### 10. CI
+### 11. CI
 
 ```bash
 gh pr checks --watch
@@ -95,15 +101,15 @@ gh pr checks --watch
 
 Bei Rot gezielt reparieren, maximal 3 Versuche. Danach anhalten, PR offen lassen, als
 blockiert melden. Hat eine Reparatur den Code verändert, betroffene Akzeptanzkriterien aus
-Schritt 8 erneut prüfen.
+Schritt 9 erneut prüfen.
 
-### 11. Merge-Gate
+### 12. Merge-Gate
 
 Policy ist konservativ: **niemals selbst mergen.** Bei grüner CI und sauberem Review den PR
 zur Freigabe vorlegen und anhalten. Board bleibt auf „In Review", bis der Nutzer gemergt hat;
 danach auf „Done" setzen.
 
-### 12. Nebenbefunde
+### 13. Nebenbefunde
 
 Funde außerhalb des Scopes sind zu diesem Zeitpunkt bereits vorgelegt — in Schritt 3 oder,
 wenn sie erst beim Umsetzen auffielen, sofort danach. Was der Nutzer freigegeben hat, wird

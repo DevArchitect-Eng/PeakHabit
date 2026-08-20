@@ -7,7 +7,7 @@ description: Setzt ein GitHub-Issue lokal um und stoppt nach Review und Verifika
 
 Aufruf: `/do-ticket-prepare <nummer>`
 
-Identisch zu `/do-ticket`, **Schritte 1 bis 8**. Danach ist Schluss.
+Identisch zu `/do-ticket`, **Schritte 1 bis 9**. Danach ist Schluss.
 
 Lies zuerst `../ticket-workflow-shared/references/conventions.md` und
 `../ticket-workflow-shared/references/board.md`.
@@ -21,11 +21,13 @@ Lies zuerst `../ticket-workflow-shared/references/conventions.md` und
    Code vorher ansehen
 4. Branch `<nummer>-<slug>` von aktuellem `main`
 5. Umsetzen
-6. `dart format .`, `flutter analyze`, `flutter test`; bei UI zusätzlich Simulator/Emulator
-7. Code Review, bei Bedarf Security Review; Findings beheben und erneut verifizieren
-8. Lokal committen
-9. Akzeptanzkriterien einzeln gegen das Ergebnis prüfen und nachweislich erfüllte im
-   Issue-Body abhaken — selbständig, ohne nachzufragen (Details in `conventions.md`)
+6. README.md, CLAUDE.md und `docs/ARCHITECTURE.md` bei Bedarf mitziehen
+   (`conventions.md` § „Dokumentation aktuell halten")
+7. `dart format .`, `flutter analyze`, `flutter test`; bei UI zusätzlich Simulator/Emulator
+8. Code Review, bei Bedarf Security Review; Findings beheben und erneut verifizieren
+9. Lokal committen
+10. Akzeptanzkriterien einzeln gegen das Ergebnis prüfen und nachweislich erfüllte im
+    Issue-Body abhaken — selbständig, ohne nachzufragen (Details in `conventions.md`)
 
 ## Was ausdrücklich NICHT gemacht wird
 

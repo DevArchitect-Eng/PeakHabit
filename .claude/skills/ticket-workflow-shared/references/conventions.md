@@ -43,6 +43,32 @@ Hinweis: Die native Simulator-Integration setzt voraus, dass der Nutzer einmalig
 fehl, ersatzweise über `xcrun simctl` bauen/installieren/screenshotten und das im Bericht
 offenlegen.
 
+## Dokumentation aktuell halten
+
+Nach dem Umsetzen, **vor** der lokalen Verifikation: prüfen, ob das Ticket etwas verändert, das
+in README.md, CLAUDE.md oder `docs/ARCHITECTURE.md` beschrieben ist, und die Beschreibung bei
+Bedarf im selben Commit mitziehen — nicht als Nachtrag und nicht als eigenes Ticket. Das gilt in
+`/do-ticket` und `/do-ticket-prepare` gleichermaßen.
+
+Konkret zu prüfen:
+
+- **README.md § Stand:** neue oder veränderte Features, neue Tabs, neue Screens, neue
+  Datenbank-Tabellen.
+- **CLAUDE.md § Produkt:** dieselbe Art von Änderung, dazu die Liste der Datenbank-Tabellen im
+  Abschnitt „Technisches".
+- **`docs/ARCHITECTURE.md`:** neue Tabellen in „Vorhandene Tabellen" samt Migration, neue
+  Ordner unter `lib/features/`, neue Architekturentscheidungen oder Begründungen, die das
+  Ticket tatsächlich trifft.
+
+Nicht jedes Ticket berührt alle drei Dateien — ein reiner Bugfix oder ein Refactoring ohne
+sichtbare Verhaltensänderung meist keine. Maßstab: Stimmt die Beschreibung nach der Änderung
+noch? Wenn nein, aktualisieren; wenn ja, nichts anfassen. Kein pauschales Update „zur
+Sicherheit".
+
+Deckt das Ticket selbst schon eine Doku-Aktualisierung ab (z.B. ein `doc`-Ticket wie #54), gilt
+dieser Schritt trotzdem — er verhindert, dass README.md & Co. beim *nächsten* Feature wieder
+zurückfallen.
+
 ## Akzeptanzkriterien abhaken
 
 Sobald Umsetzung, lokale Verifikation und Review abgeschlossen sind — in `/do-ticket` und
