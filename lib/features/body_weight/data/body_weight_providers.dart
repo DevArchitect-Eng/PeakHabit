@@ -41,12 +41,14 @@ typedef BodyWeightSeries = ({
 /// One query per period the screen offers, so switching between them is a new
 /// window rather than a re-read of the whole series.
 ///
-/// `DateTime.now()` is taken when the provider is first built. An app left
-/// open across midnight therefore keeps yesterday's window until something
-/// invalidates it — a day off at the far end of a month or a year is not worth
-/// a timer that fires while nobody is looking.
-final bodyWeightSeriesProvider =
-    StreamProvider.family<BodyWeightSeries, WeightPeriod>((ref, period) {
+/// Dropped again once nothing watches it, so a period the user has switched
+/// away from does not keep a query open — and so coming back to it reads a
+/// window built from the current day rather than the one it was first opened
+/// on. An app left sitting on one period across midnight still keeps
+/// yesterday's window: a day off at the far end of a month or a year is not
+/// worth a timer that fires while nobody is looking.
+final bodyWeightSeriesProvider = StreamProvider.autoDispose
+    .family<BodyWeightSeries, WeightPeriod>((ref, period) {
       final today = DateTime.now();
       final from = period.startFrom(today);
       return ref
