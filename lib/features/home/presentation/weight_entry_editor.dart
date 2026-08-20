@@ -60,6 +60,9 @@ class _WeightEditorSheet extends StatefulWidget {
     required this.fixedDate,
   });
 
+  /// The weight the field starts on, for correcting one already on record.
+  /// A new weighing starts empty — it is a number read off a scale, and a
+  /// prefilled field is one that can be confirmed without ever looking.
   final double? initialWeightKg;
 
   /// The day this weighing belongs to, where it is not up for choosing.
@@ -71,8 +74,8 @@ class _WeightEditorSheet extends StatefulWidget {
 
 class _WeightEditorSheetState extends State<_WeightEditorSheet> {
   late final _controller = TextEditingController(
-    // The last weighing, so a correction of half a kilo is a keystroke rather
-    // than a number typed out again. Selected, so typing replaces it.
+    // The weighing being corrected, so a change of half a kilo is a keystroke
+    // rather than a number typed out again. Selected, so typing replaces it.
     text: widget.initialWeightKg == null
         ? ''
         : formatDecimal(widget.initialWeightKg!, 1),

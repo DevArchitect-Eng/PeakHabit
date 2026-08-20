@@ -111,10 +111,10 @@ class _BodyWeightCardState extends ConsumerState<BodyWeightCard> {
   void _openDetail() => context.go('/home/weight?period=${_period.name}');
 
   Future<void> _enterWeight() async {
-    final result = await showWeightEditor(
-      context,
-      initialWeightKg: ref.read(latestBodyWeightProvider).value?.weightKg,
-    );
+    // No weight filled in: an empty field is a weighing typed out, while a
+    // prefilled one is a weighing that can be confirmed without ever being
+    // read off a scale — and today's would then be yesterday's number.
+    final result = await showWeightEditor(context);
     if (result == null || !mounted) return;
 
     try {
