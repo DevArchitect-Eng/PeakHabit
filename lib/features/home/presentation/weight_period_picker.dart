@@ -19,31 +19,47 @@ class WeightPeriodPicker extends StatelessWidget {
     super.key,
     required this.period,
     required this.onChanged,
+    this.expand = true,
   });
 
   final WeightPeriod period;
   final ValueChanged<WeightPeriod> onChanged;
 
+  /// Whether the control fills the width it is offered.
+  ///
+  /// The home card leaves it on: there the picker spans the card, and the card
+  /// is exactly what it changes. The detail screen turns it off and sets it
+  /// beside the heading of the block it belongs to — a control spanning the
+  /// top of a screen reads as though it filtered the whole screen, and this
+  /// one only frames the figures and the chart.
+  final bool expand;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: () => _pick(context),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: theme.colorScheme.onSurface,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        ),
-        child: Row(
-          children: [
-            Expanded(child: Text(period.label)),
-            const Icon(Icons.arrow_drop_down),
-          ],
-        ),
+    final button = OutlinedButton(
+      onPressed: () => _pick(context),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: theme.colorScheme.onSurface,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      ),
+      child: Row(
+        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          // Tight fills the button, loose lets it shrink to the label — the
+          // label still gives way rather than overflowing when a large system
+          // text size makes it wider than the room beside the heading.
+          Flexible(
+            fit: expand ? FlexFit.tight : FlexFit.loose,
+            child: Text(period.label),
+          ),
+          const Icon(Icons.arrow_drop_down),
+        ],
       ),
     );
+
+    return expand ? SizedBox(width: double.infinity, child: button) : button;
   }
 
   /// Opens the choice sheet the settings rows use, rather than a dropdown

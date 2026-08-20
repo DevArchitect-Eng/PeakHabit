@@ -5,6 +5,7 @@ import 'package:peakhabit/features/body_weight/domain/weight_period.dart';
 import 'package:peakhabit/features/home/presentation/body_weight_card.dart';
 import 'package:peakhabit/features/home/presentation/weight_chart.dart';
 import 'package:peakhabit/features/home/presentation/weight_detail_screen.dart';
+import 'package:peakhabit/features/home/presentation/weight_period_picker.dart';
 import 'package:peakhabit/features/profile/presentation/profile_formatting.dart';
 import 'package:peakhabit/features/settings/domain/app_theme_mode.dart';
 
@@ -230,6 +231,83 @@ void main() {
     });
   });
 
+  group('the head', () {
+    testWidgets('the picker sits beside the heading on the chart card', (
+      tester,
+    ) async {
+      await pumpApp(tester, on: storesWith(weightEntries: [weighing(1, 82.5)]));
+
+      await openDetail(tester);
+
+      // Inside the card, next to what it changes — not spanning the top of the
+      // screen, where it would read as a filter for everything below it.
+      final card = find.ancestor(
+        of: find.byType(WeightPeriodPicker),
+        matching: find.byType(Card),
+      );
+      expect(card, findsOneWidget);
+      expect(
+        find.descendant(of: card, matching: find.text('Verlauf')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: card, matching: find.byType(WeightChart)),
+        findsOneWidget,
+      );
+      // The weighings below are outside it: the card is what separates them.
+      expect(
+        find.descendant(of: card, matching: find.byType(Dismissible)),
+        findsNothing,
+      );
+    });
+
+    testWidgets('the head survives the largest system text size', (
+      tester,
+    ) async {
+      // A control laid out with no width limit cannot give way, and the period
+      // labels are long. An overflow here fails the test on its own — the
+      // framework reports it as an exception.
+      tester.platformDispatcher.textScaleFactorTestValue = 3;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+      await pumpApp(
+        tester,
+        on: storesWith(weightEntries: [weighing(30, 84), weighing(1, 82.5)]),
+      );
+
+      await openDetail(tester);
+      await selectPeriod(tester, 'Seit Beginn');
+
+      // Narrowed to a phone only now: `pumpApp` runs on a window wide enough
+      // that nothing here could overflow, which would leave this test passing
+      // on a layout that breaks on every real device.
+      tester.view.physicalSize = const Size(393, 852);
+      // A single frame rather than `pumpAndSettle`, so a broken layout throws
+      // once instead of once per frame.
+      //
+      // Green, this test costs a second. **Red, it takes minutes to report**:
+      // a `RenderFlex` overflow carries a full widget-tree dump, and the test
+      // harness is slow to push one of that size. Measured at ~6 minutes with
+      // the guard removed — slow, but it does finish, which is the line
+      // `CLAUDE.md` draws around hanging tests. If this one ever goes red,
+      // wait for it rather than assuming it hung.
+      await tester.pump();
+
+      // Asserted on the geometry rather than left to the overflow error alone,
+      // so a regression fails on a measurement instead of on a framework
+      // exception — the two agree, but only one of them says by how much.
+      final card = tester.getRect(
+        find.ancestor(
+          of: find.byType(WeightPeriodPicker),
+          matching: find.byType(Card),
+        ),
+      );
+      final picker = tester.getRect(find.byType(WeightPeriodPicker));
+      expect(picker.left, greaterThanOrEqualTo(card.left));
+      expect(picker.right, lessThanOrEqualTo(card.right));
+    });
+  });
+
   group('the list of weighings', () {
     testWidgets('every weighing on record stands there, newest first', (
       tester,
@@ -322,6 +400,11 @@ void main() {
 
       await tester.tap(addButton);
       await tester.pumpAndSettle();
+
+      // Empty, unlike the editor a row opens: adding is a new reading, not a
+      // correction of the one before it.
+      expect(tester.widget<TextField>(weightField).controller?.text, '');
+
       await tester.enterText(weightField, '82,5');
       await tester.pumpAndSettle();
       await confirmEditor(tester);

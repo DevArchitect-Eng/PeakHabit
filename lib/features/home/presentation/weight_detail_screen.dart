@@ -130,23 +130,57 @@ class _WeightDetailScreenState extends ConsumerState<WeightDetailScreen> {
     );
   }
 
+  /// The figures and the chart, set on a card of their own.
+  ///
+  /// The card is what draws the line between the two halves of the screen: the
+  /// period, the figures and the chart belong together and change together,
+  /// while the weighings underneath sit on the plain background and do not
+  /// answer to the picker at all. It is also what scopes the picker — inside
+  /// the card, beside the heading, it plainly changes the card rather than the
+  /// screen.
   Widget _head(BodyWeightSeries? series, List<BodyWeightEntry> entries) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          WeightPeriodPicker(
-            period: _period,
-            onChanged: (period) => setState(() => _period = period),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('Verlauf', style: theme.textTheme.titleMedium),
+                  ),
+                  const SizedBox(width: 8),
+                  // Half the row, with the picker set against its right edge.
+                  // Bounded rather than left to its own width on purpose: a
+                  // control laid out with no width limit cannot give way, and
+                  // at the largest system text sizes the label would run past
+                  // the card instead of wrapping inside the button.
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: WeightPeriodPicker(
+                        period: _period,
+                        expand: false,
+                        onChanged: (period) => setState(() => _period = period),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (entries.isNotEmpty) ...[
+                PeriodSummary(entries: entries),
+                const SizedBox(height: 16),
+              ],
+              _plot(series, entries),
+            ],
           ),
-          const SizedBox(height: 16),
-          if (entries.isNotEmpty) ...[
-            PeriodSummary(entries: entries),
-            const SizedBox(height: 16),
-          ],
-          _plot(series, entries),
-        ],
+        ),
       ),
     );
   }
@@ -167,11 +201,10 @@ class _WeightDetailScreenState extends ConsumerState<WeightDetailScreen> {
   }
 
   /// Adds a weighing, on a day of the user's choosing.
+  ///
+  /// The field starts empty — see the card, which enters one the same way.
   Future<void> _enterWeight() async {
-    final result = await showWeightEditor(
-      context,
-      initialWeightKg: ref.read(latestBodyWeightProvider).value?.weightKg,
-    );
+    final result = await showWeightEditor(context);
     // The screen may be gone by the time the sheet is: `ref` does not outlive
     // it, and reading through it after that throws rather than dropping the
     // write.
@@ -434,7 +467,8 @@ class _DismissBackground extends StatelessWidget {
   }
 }
 
-/// The heading over the entry list.
+/// The heading over the entry list — the counterpart to the "Verlauf" heading
+/// on the card above, at the same level so the screen reads as two blocks.
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.text);
 
@@ -445,13 +479,8 @@ class _SectionLabel extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: Text(
-        text,
-        style: theme.textTheme.titleSmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Text(text, style: theme.textTheme.titleMedium),
     );
   }
 }
