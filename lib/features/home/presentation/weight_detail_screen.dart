@@ -148,7 +148,10 @@ class _WeightDetailScreenState extends ConsumerState<WeightDetailScreen> {
       context,
       initialWeightKg: ref.read(latestBodyWeightProvider).value?.weightKg,
     );
-    if (result == null) return;
+    // The screen may be gone by the time the sheet is: `ref` does not outlive
+    // it, and reading through it after that throws rather than dropping the
+    // write.
+    if (result == null || !mounted) return;
 
     await _save(BodyWeightEntry(date: result.date, weightKg: result.weightKg));
   }
@@ -161,7 +164,7 @@ class _WeightDetailScreenState extends ConsumerState<WeightDetailScreen> {
       initialWeightKg: entry.weightKg,
       fixedDate: entry.date,
     );
-    if (result == null) return;
+    if (result == null || !mounted) return;
 
     await _save(BodyWeightEntry(date: entry.date, weightKg: result.weightKg));
   }
