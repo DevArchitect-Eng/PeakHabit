@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peakhabit/features/body_weight/domain/body_weight_entry.dart';
+import 'package:peakhabit/features/body_weight/domain/weight_period.dart';
 import 'package:peakhabit/features/home/presentation/weight_chart.dart';
 import 'package:peakhabit/features/profile/presentation/profile_formatting.dart';
 import 'package:peakhabit/features/settings/domain/app_theme_mode.dart';
@@ -42,6 +43,18 @@ void main() {
   /// Opens the date picker from the editor's date row.
   Future<void> openDatePicker(WidgetTester tester) async {
     await tester.tap(dateRow);
+    await tester.pumpAndSettle();
+  }
+
+  /// Opens the period dropdown and picks the entry labelled [label].
+  ///
+  /// The label appears twice once the menu is open — once as the closed
+  /// field's current value, once as the menu item — so the item is found by
+  /// its position in the opened menu rather than by text alone.
+  Future<void> selectPeriod(WidgetTester tester, String label) async {
+    await tester.tap(find.byType(DropdownButtonFormField<WeightPeriod>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(label).last);
     await tester.pumpAndSettle();
   }
 
@@ -292,8 +305,7 @@ void main() {
       // The weight itself is still the latest one on record.
       expect(find.text('84 kg'), findsOneWidget);
 
-      await tester.tap(find.text('1 Jahr'));
-      await tester.pumpAndSettle();
+      await selectPeriod(tester, '1 Jahr');
 
       expect(find.byType(WeightChart), findsOneWidget);
       expect(find.text('Im gewählten Zeitraum keine Wiegung.'), findsNothing);
@@ -315,8 +327,7 @@ void main() {
 
       expect(find.text('−2,5 kg seit ${dateOf(60)}'), findsOneWidget);
 
-      await tester.tap(find.text('1 Monat'));
-      await tester.pumpAndSettle();
+      await selectPeriod(tester, '1 Monat');
 
       // Only the last two weighings are inside a month, so the change is
       // measured — and dated — from the older of those.

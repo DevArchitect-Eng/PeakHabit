@@ -224,14 +224,20 @@ class _PeriodPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: SegmentedButton<WeightPeriod>(
-        segments: [
+      child: DropdownButtonFormField<WeightPeriod>(
+        initialValue: period,
+        isDense: true,
+        decoration: const InputDecoration(
+          border: OutlineInputBorder(),
+          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        ),
+        items: [
           for (final option in WeightPeriod.values)
-            ButtonSegment(value: option, label: Text(option.label)),
+            DropdownMenuItem(value: option, child: Text(option.label)),
         ],
-        selected: {period},
-        showSelectedIcon: false,
-        onSelectionChanged: (selection) => onChanged(selection.first),
+        onChanged: (option) {
+          if (option != null) onChanged(option);
+        },
       ),
     );
   }
@@ -279,10 +285,14 @@ class _Message extends StatelessWidget {
 }
 
 extension WeightPeriodLabel on WeightPeriod {
-  /// The form the picker shows, short enough for three of them on one line.
+  /// The form the dropdown shows.
   String get label => switch (this) {
-    WeightPeriod.month => '1 Monat',
-    WeightPeriod.threeMonths => '3 Monate',
+    WeightPeriod.allTime => 'Seit Beginn',
     WeightPeriod.year => '1 Jahr',
+    WeightPeriod.sixMonths => '1/2 Jahr',
+    WeightPeriod.threeMonths => '3 Monate',
+    WeightPeriod.twoMonths => '2 Monate',
+    WeightPeriod.month => '1 Monat',
+    WeightPeriod.week => '1 Woche',
   };
 }
