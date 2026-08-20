@@ -3,6 +3,12 @@ import 'package:flutter/material.dart';
 import '../../body_weight/domain/weight_period.dart';
 import '../../profile/presentation/value_editor.dart';
 
+/// The period a weight screen starts on, before the user picks another.
+///
+/// Three months: long enough that a week of water weight does not look like a
+/// trend, short enough that a few weeks of tracking already fill it.
+const defaultWeightPeriod = WeightPeriod.threeMonths;
+
 /// The control that picks how far back a look at the weight series reaches.
 ///
 /// Shared by the home card and the weight detail screen: both offer the same
@@ -73,3 +79,12 @@ extension WeightPeriodLabel on WeightPeriod {
     WeightPeriod.week => '1 Woche',
   };
 }
+
+/// The period [name] stands for, falling back to [defaultWeightPeriod].
+///
+/// Lenient on purpose: the name travels in the URL, where a hand-typed or
+/// outdated one has to land on a screen rather than on an exception.
+WeightPeriod weightPeriodByName(String? name) => WeightPeriod.values.firstWhere(
+  (period) => period.name == name,
+  orElse: () => defaultWeightPeriod,
+);
