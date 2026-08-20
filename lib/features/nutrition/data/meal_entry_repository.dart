@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
@@ -35,22 +37,31 @@ class MealEntryRepository {
   /// the point of pointing at the food instead of copying its nutrients. A
   /// plain `watch()` on the entries would not see it, so the day is read
   /// again whenever any of the four tables it draws from is written to.
-  /// Delegated with `yield*` rather than looped over with `await for`: an
-  /// `await for` inside a generator only notices a cancelled subscription at
-  /// its next event, and the stream of writes has no last one — closing the
-  /// day would then wait forever.
-  Stream<DayNutrition> watchDay(DateTime day) async* {
-    yield await readDay(day);
-    yield* _database
-        .tableUpdates(
-          TableUpdateQuery.onAllTables([
-            _database.mealEntries,
-            _database.foods,
-            _database.compositeFoods,
-            _database.compositeFoodIngredients,
-          ]),
-        )
-        .asyncMap((_) => readDay(day));
+  ///
+  /// Built around [Stream.multi] rather than as a generator that reads first
+  /// and listens afterwards: the listener on the writes is in place **before**
+  /// the first read starts, so a write landing while that read is running
+  /// cannot slip through the gap and leave the day standing on numbers that
+  /// are already stale.
+  ///
+  /// `asyncMap` then keeps the reads one after another instead of letting two
+  /// of them overlap and arrive out of order.
+  Stream<DayNutrition> watchDay(DateTime day) {
+    final writes = _database.tableUpdates(
+      TableUpdateQuery.onAllTables([
+        _database.mealEntries,
+        _database.foods,
+        _database.compositeFoods,
+        _database.compositeFoodIngredients,
+      ]),
+    );
+
+    return Stream<void>.multi((controller) {
+      final subscription = writes.listen((_) => controller.add(null));
+      controller.onCancel = subscription.cancel;
+      // The first read, now that nothing can be missed while it runs.
+      controller.add(null);
+    }).asyncMap((_) => readDay(day));
   }
 
   /// Writes [entry] — adding it when it has no id yet, updating it otherwise —
