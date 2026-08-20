@@ -4,19 +4,19 @@ import 'package:flutter/services.dart';
 import '../../profile/presentation/profile_formatting.dart';
 import '../../profile/presentation/value_editor.dart';
 
-/// Asks for a weighing, and hands back the kilograms that were confirmed — or
-/// `null` when the editor was dropped.
+/// Asks for a weighing, and hands back the kilograms and the date confirmed —
+/// or `null` when the editor was dropped.
 ///
 /// Built on the same [EditorSheet] and [EditorHeader] the settings rows use, so
 /// entering a weight is confirmed with the check and dropped with the cross
 /// like every other value in the app. It brings its own field rather than
 /// going through `showTextEditor`, which types whole numbers only: a weight is
 /// the one value in the app with a decimal place.
-Future<double?> showWeightEditor(
+Future<({double weightKg, DateTime date})?> showWeightEditor(
   BuildContext context, {
   double? initialWeightKg,
 }) {
-  return showModalBottomSheet<double>(
+  return showModalBottomSheet<({double weightKg, DateTime date})>(
     context: context,
     isScrollControlled: true,
     builder: (context) => _WeightEditorSheet(initialWeightKg: initialWeightKg),
@@ -63,6 +63,10 @@ class _WeightEditorSheetState extends State<_WeightEditorSheet> {
         : formatDecimal(widget.initialWeightKg!, 1),
   );
 
+  // Today by default — the usual case, entering the day's own weighing, stays
+  // a single tap on the check.
+  DateTime _date = DateUtils.dateOnly(DateTime.now());
+
   @override
   void initState() {
     super.initState();
@@ -96,7 +100,9 @@ class _WeightEditorSheetState extends State<_WeightEditorSheet> {
             title: 'Gewicht eintragen',
             onConfirm: weightKg == null
                 ? null
-                : () => Navigator.of(context).pop(weightKg),
+                : () => Navigator.of(
+                    context,
+                  ).pop((weightKg: weightKg, date: _date)),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -117,11 +123,31 @@ class _WeightEditorSheetState extends State<_WeightEditorSheet> {
               onChanged: (_) => setState(() {}),
               onSubmitted: weightKg == null
                   ? null
-                  : (_) => Navigator.of(context).pop(weightKg),
+                  : (_) => Navigator.of(
+                      context,
+                    ).pop((weightKg: weightKg, date: _date)),
             ),
+          ),
+          ListTile(
+            contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            leading: const Icon(Icons.calendar_today),
+            title: const Text('Datum'),
+            trailing: Text(formatDate(_date)),
+            onTap: _pickDate,
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(1900),
+      lastDate: DateUtils.dateOnly(DateTime.now()),
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _date = picked);
   }
 }

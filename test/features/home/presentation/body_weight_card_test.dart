@@ -29,12 +29,42 @@ void main() {
   // screen at the moment it is used.
   final addButton = find.widgetWithIcon(IconButton, Icons.add);
   final weightField = find.widgetWithText(TextField, 'Gewicht');
+  final dateRow = find.widgetWithText(ListTile, 'Datum');
 
   /// Opens the editor and types [text] into it, without confirming yet.
   Future<void> typeWeight(WidgetTester tester, String text) async {
     await tester.tap(addButton);
     await tester.pumpAndSettle();
     await tester.enterText(weightField, text);
+    await tester.pumpAndSettle();
+  }
+
+  /// Opens the date picker from the editor's date row.
+  Future<void> openDatePicker(WidgetTester tester) async {
+    await tester.tap(dateRow);
+    await tester.pumpAndSettle();
+  }
+
+  /// Switches the open date picker to its text-entry mode, where a date is
+  /// typed rather than tapped on a calendar grid — the only way a widget
+  /// test can name a specific day without depending on which month it opens
+  /// on.
+  Future<void> switchToDateInput(WidgetTester tester) async {
+    await tester.tap(find.byTooltip('Zur Texteingabe wechseln'));
+    await tester.pumpAndSettle();
+  }
+
+  /// Types [date] into the picker's input field, in the form it reads back:
+  /// day and month without a leading zero.
+  Future<void> typeDate(WidgetTester tester, DateTime date) async {
+    await tester.enterText(
+      find.byType(TextFormField),
+      '${date.day}.${date.month}.${date.year}',
+    );
+  }
+
+  Future<void> confirmDatePicker(WidgetTester tester) async {
+    await tester.tap(find.widgetWithText(TextButton, 'OK'));
     await tester.pumpAndSettle();
   }
 
@@ -120,6 +150,49 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.widget<TextField>(weightField).controller?.text, '82,5');
+    });
+
+    testWidgets('the editor starts on today', (tester) async {
+      await pumpApp(tester);
+
+      await tester.tap(addButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text(formatDate(DateTime.now())), findsOneWidget);
+    });
+
+    testWidgets('a chosen date is used when the weighing is saved', (
+      tester,
+    ) async {
+      final stores = await pumpApp(tester);
+      final chosen = DateTime.now().subtract(const Duration(days: 3));
+
+      await typeWeight(tester, '80,4');
+      await openDatePicker(tester);
+      await switchToDateInput(tester);
+      await typeDate(tester, chosen);
+      await confirmDatePicker(tester);
+      await confirmEditor(tester);
+
+      expect(
+        stores.bodyWeight.entries.single.date,
+        DateTime(chosen.year, chosen.month, chosen.day),
+      );
+    });
+
+    testWidgets('the date picker refuses a date in the future', (tester) async {
+      await pumpApp(tester);
+      final tomorrow = DateTime.now().add(const Duration(days: 1));
+
+      await tester.tap(addButton);
+      await tester.pumpAndSettle();
+      await openDatePicker(tester);
+      await switchToDateInput(tester);
+      await typeDate(tester, tomorrow);
+      await confirmDatePicker(tester);
+
+      // The dialog refused the date and stayed open instead of closing on it.
+      expect(find.text('Außerhalb des Zeitraums.'), findsOneWidget);
     });
 
     testWidgets('a weight that cannot be meant is not confirmable', (
