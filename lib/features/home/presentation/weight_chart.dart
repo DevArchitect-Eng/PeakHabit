@@ -20,7 +20,7 @@ class WeightChart extends StatelessWidget {
     required this.to,
   });
 
-  /// The weighings to draw, oldest first. Must not be empty.
+  /// The weighings to draw, oldest first. An empty series draws nothing.
   final List<BodyWeightEntry> entries;
 
   /// First and last day of the period — the horizontal bounds. They come from
@@ -67,18 +67,23 @@ class WeightChart extends StatelessWidget {
   }
 
   /// What a screen reader gets instead of the drawing.
+  ///
+  /// Empty is answered rather than thrown on, the way the painter draws
+  /// nothing for it: the two have to agree, or a caller that hands over an
+  /// empty series gets a blank chart from one and a crash from the other.
   String get _semanticsLabel {
-    final first = entries.first;
+    if (entries.isEmpty) return 'Gewichtsverlauf: keine Wiegung';
+
     final last = entries.last;
-    final range =
-        'vom ${formatShortDate(first.date)} '
-        'bis ${formatShortDate(last.date)}';
     if (entries.length == 1) {
       return 'Gewichtsverlauf: eine Wiegung, '
           '${formatDecimal(last.weightKg, 1)} kg '
           'am ${formatShortDate(last.date)}';
     }
-    return 'Gewichtsverlauf $range: '
+
+    final first = entries.first;
+    return 'Gewichtsverlauf vom ${formatShortDate(first.date)} '
+        'bis ${formatShortDate(last.date)}: '
         'von ${formatDecimal(first.weightKg, 1)} kg '
         'auf ${formatDecimal(last.weightKg, 1)} kg, '
         '${entries.length} Wiegungen';
