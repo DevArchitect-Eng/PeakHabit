@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/logging/app_lifecycle_logger.dart';
@@ -47,6 +48,8 @@ class PeakHabitApp extends ConsumerWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: _materialThemeMode(themeMode),
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        supportedLocales: const [Locale('de')],
         home: const OnboardingScreen(),
         builder: (context, child) =>
             AppLifecycleLogger(child: child ?? const SizedBox.shrink()),
@@ -58,6 +61,8 @@ class PeakHabitApp extends ConsumerWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: _materialThemeMode(themeMode),
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      supportedLocales: const [Locale('de')],
       routerConfig: appRouter,
       builder: (context, child) =>
           AppLifecycleLogger(child: child ?? const SizedBox.shrink()),
