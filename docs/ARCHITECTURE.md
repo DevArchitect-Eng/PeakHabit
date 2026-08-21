@@ -188,7 +188,7 @@ Sinn. Sechs Entscheidungen hängen daran:
   jemand meint, der seinen eigenen Katalog korrigiert. Der Preis ist, dass ein Lebensmittel
   nicht mehr gelöscht werden kann, sobald es in einem Eintrag oder einem Gericht steckt: die
   Fremdschlüssel stehen auf `RESTRICT`, und das Repository prüft vorher und wirft
-  `FoodInUseException` statt eines SQLite-Fehlers. Ein Gericht zu löschen nimmt seine
+  `FoodItemInUseException` statt eines SQLite-Fehlers. Ein Gericht zu löschen nimmt seine
   Zutatenzeilen mit (`CASCADE`) — die gehören ihm und bedeuten allein nichts.
 - **Zwei nullbare Fremdschlüssel statt einer Id mit Typspalte.** Ein Eintrag zeigt entweder auf
   ein Lebensmittel oder auf ein Gericht; `CHECK ((food_id IS NULL) <> (composite_food_id IS
@@ -434,7 +434,30 @@ stehen bleibt und der Tab seine Position behält. Der Optionen-Tab hat davon dre
 `/settings/profile`, `/settings/goals` und darunter `/settings/goals/nutrition` — die
 Verschachtelung bildet ab, dass die Ernährungsziele von der Ziele-Seite aus erreicht werden
 und der Zurück-Weg über sie führt. Der Start-Tab hat eine: `/home/weight`, der
-Gewichtsverlauf hinter der Gewichtskarte.
+Gewichtsverlauf hinter der Gewichtskarte. Der Ernährungs-Tab hat zwei:
+`/nutrition/meal?type=…&date=…` und darunter `/nutrition/meal/food`.
+
+`/nutrition/meal/food` ist die erste Route, die **für ein Ergebnis** geschoben wird: Der
+Mahlzeiten-Screen ruft sie über `context.push<FoodItem>` auf, die Auswahl beendet sich mit
+`context.pop(item)`, und die Menge wird danach in einem Sheet erfragt. Eine Route statt eines
+Sheets, weil eine Suche über den Katalog eine ganze Bildschirmhöhe braucht und ein Sheet über
+der Tastatur davon wenig übrig lässt.
+
+**Der gewählte Tag ist State des Ernährungs-Screens, nicht Teil seiner Route.** Er ist die
+Wurzel des Tabs, und der Tag zu wechseln ist eine Bedienung darauf, keine Navigation — ein
+History-Eintrag je Tag machte aus der Zurück-Geste ein Rückgängig für die Datumsauswahl,
+statt den Tab zu verlassen. Die Mahlzeiten-Route darunter trägt ihren Tag sehr wohl, weil ein
+von dort geöffneter Screen wissen muss, auf welchem er geöffnet wurde; wie beim Zeitraum auf
+`/home/weight` fällt ein unbekannter Wert auf einen Standard zurück, statt zu werfen.
+
+Der Vortags-Vorschlag steht **unter der Mahlzeit-Zeile im Tab**, nicht auf der Detailseite:
+Der Sinn des Übernehmens ist, den Umweg zu sparen. Er erscheint nur, solange die Mahlzeit
+heute leer ist — auf eine befüllte kopiert, legte der Wisch die Portionen des Vortags obendrauf.
+Der Wisch **verwirft die Zeile nicht**: Er bestätigt einen Vorschlag, statt einen Eintrag zu
+entfernen, also antwortet ein erfolgreiches Kopieren mit `false` und die Zeile federt zurück.
+Sie verschwindet gleich darauf ohnehin, weil die Mahlzeit nicht mehr leer ist. Sie stattdessen
+wegzuanimieren ließe ein verworfenes `Dismissible` so lange im Baum stehen, wie der Schreibvorgang
+braucht, um über den Stream des Tages zurückzukommen — und genau das ist ein Framework-Fehler.
 
 Der gewählte Zeitraum reist als Query-Parameter mit (`/home/weight?period=threeMonths`), nicht
 in `extra`: Es ist ein einfacher Enum-Name, und einer, der eine wiederhergestellte Route

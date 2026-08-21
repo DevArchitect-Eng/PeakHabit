@@ -21,17 +21,25 @@ Vorhanden:
   führt auf `/home/weight`: Eckwerte des Zeitraums, derselbe Graph und darunter alle
   Wiegungen als Liste, unabhängig vom Zeitraum — Zeile antippen zum Korrigieren, wegwischen
   zum Löschen.
+- **Ernährung** als Tagesansicht: Tagessumme oben, darunter Frühstück, Mittag, Abend und
+  Snacks mit ihren Kalorien und Makros. Der Tag lässt sich vor- und zurückschalten, höchstens
+  bis heute. Eine Mahlzeit antippen öffnet `/nutrition/meal` mit ihren Einträgen — Zeile
+  antippen ändert die Menge, wegwischen löscht. Hinzugefügt wird über `/nutrition/meal/food`:
+  im Katalog suchen oder ein Lebensmittel direkt anlegen. Steht unter einer Mahlzeit heute
+  noch nichts und am Vortag schon, wird der Vortag vorgeschlagen; ein Wisch nach rechts
+  übernimmt ihn. **Kein Kalorienziel je Mahlzeit** — die Zeilen zeigen, was gegessen wurde,
+  nicht den Rest eines Teilziels.
 
-Platzhalter-Screens sind noch Ernährung, Training und Statistik. Hinter dem Ernährungs-Tab
-steht allerdings schon das Datenmodell: eigene Lebensmittel mit Nährwerten je 100 g,
-zusammengesetzte Lebensmittel (Rezepte) samt Zubereitungsgewicht, Mahlzeiteneinträge auf
-Frühstück, Mittag, Abend oder Snacks und die Tagessummen dazu.
+Platzhalter-Screens sind noch Training und Statistik. Der Ernährungs-Tab kennt bislang nur
+Lebensmittel; zusammengesetzte Lebensmittel (Rezepte) stehen im Datenmodell und in der
+Auswahl, angelegt werden können sie noch nicht.
 
 Die lokale Datenbank (Drift) hält die Tabellen `user_profiles`, `app_settings`,
 `body_weight_entries`, `foods`, `composite_foods`, `composite_food_ingredients` und
 `meal_entries`, dazu Repositories und Provider für Gewichtseinträge und für die Ernährung.
 Gefüllt wird `body_weight_entries` vom Onboarding und von der Gewichtskarte im Start-Tab;
-gelesen wird sie außerdem von der Ziele-Seite.
+gelesen wird sie außerdem von der Ziele-Seite. `foods` und `meal_entries` füllt der
+Ernährungs-Tab.
 
 ## Ordnerstruktur
 
