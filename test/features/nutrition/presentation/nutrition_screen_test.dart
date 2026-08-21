@@ -362,6 +362,32 @@ void main() {
       expect(find.text('1630 kcal übrig'), findsNothing);
     });
 
+    testWidgets('keeps the three macro columns in step on a huge day', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          profile: withTarget,
+          foods: [oats],
+          // 5100 g of a 370 kcal food: 18870 kcal, and 3009 g of
+          // carbohydrates — wide enough that "3009 / 200 g" used to break
+          // over two lines and drop that column below the other two.
+          mealEntries: [ate(oats, daysAgo: 0, grams: 5100)],
+        ),
+      );
+      await openTab(tester);
+
+      final rows = [
+        find.text('513 g zu viel'),
+        find.text('2809 g zu viel'),
+        find.text('290 g zu viel'),
+      ];
+      final tops = [for (final row in rows) tester.getTopLeft(row).dy];
+      expect(tops[1], tops[0]);
+      expect(tops[2], tops[0]);
+    });
+
     testWidgets('without a target it shows the bare sums and says where the '
         'target is set', (tester) async {
       await pumpApp(

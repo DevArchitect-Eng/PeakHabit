@@ -56,22 +56,24 @@ class NutritionSummary extends StatelessWidget {
           // The eaten figure keeps the headline size and the target rides
           // along smaller: the question is how much has been eaten, and the
           // target is what makes that number mean something.
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                '${nutrients.kcal.round()}',
-                style: theme.textTheme.headlineSmall,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '/ ${targets.kcal} kcal',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+          _NoWrap(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  '${nutrients.kcal.round()}',
+                  style: theme.textTheme.headlineSmall,
                 ),
-              ),
-            ],
+                const SizedBox(width: 4),
+                Text(
+                  '/ ${targets.kcal} kcal',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
           _Bar(value: nutrients.kcal, target: targets.kcal.toDouble()),
@@ -144,11 +146,13 @@ class _Macro extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
-          Text(
-            target == null
-                ? formatGrams(grams)
-                : '${grams.round()} / ${formatGrams(target)}',
-            style: theme.textTheme.titleMedium,
+          _NoWrap(
+            child: Text(
+              target == null
+                  ? formatGrams(grams)
+                  : '${grams.round()} / ${formatGrams(target)}',
+              style: theme.textTheme.titleMedium,
+            ),
           ),
           if (target != null) ...[
             const SizedBox(height: 6),
@@ -224,14 +228,40 @@ class _Remaining extends StatelessWidget {
     final over = remaining < -0.5;
     final amount = remaining.abs().round();
 
-    return Text(
-      over
-          ? '$amount $unit zu viel'
-          : '${compact ? 'noch ' : ''}$amount $unit${compact ? '' : ' übrig'}',
-      style: (compact ? theme.textTheme.bodySmall : theme.textTheme.bodyMedium)
-          ?.copyWith(color: over ? scheme.tertiary : scheme.onSurfaceVariant),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+    return _NoWrap(
+      child: Text(
+        over
+            ? '$amount $unit zu viel'
+            : '${compact ? 'noch ' : ''}$amount $unit${compact ? '' : ' übrig'}',
+        style:
+            (compact ? theme.textTheme.bodySmall : theme.textTheme.bodyMedium)
+                ?.copyWith(
+                  color: over ? scheme.tertiary : scheme.onSurfaceVariant,
+                ),
+      ),
+    );
+  }
+}
+
+/// A line that never breaks: too long for its column, it shrinks rather than
+/// wraps.
+///
+/// The three macro columns only read as one row while value, bar and remainder
+/// sit at the same height in each of them. A day big enough to break
+/// "3009 / 326 g" over two lines pushes that column's bar and remainder below
+/// its neighbours' — so the text gives way instead of the layout. Ellipsis
+/// would not do here: cutting a figure short is worse than printing it small.
+class _NoWrap extends StatelessWidget {
+  const _NoWrap({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: child,
     );
   }
 }
