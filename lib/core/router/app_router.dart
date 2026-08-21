@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/home/presentation/weight_detail_screen.dart';
 import '../../features/home/presentation/weight_period_picker.dart';
+import '../../features/nutrition/presentation/food_picker_screen.dart';
+import '../../features/nutrition/presentation/meal_detail_screen.dart';
+import '../../features/nutrition/presentation/nutrition_formatting.dart';
 import '../../features/nutrition/presentation/nutrition_screen.dart';
 import '../../features/profile/presentation/goals_screen.dart';
 import '../../features/profile/presentation/nutrition_targets_screen.dart';
@@ -41,7 +44,33 @@ final appRouter = GoRouter(
             ),
           ],
         ),
-        _branch('/nutrition', const NutritionScreen()),
+        _branch(
+          '/nutrition',
+          const NutritionScreen(),
+          // Inside the nutrition branch, so the bottom navigation keeps its
+          // place and the tab remembers where it was.
+          routes: [
+            GoRoute(
+              path: 'meal',
+              // Both parameters ride along in the URL rather than in `extra`:
+              // they are a plain enum name and a date, and they survive a
+              // restored route instead of coming back as null. An unknown
+              // value falls back rather than throwing — the URL is typable.
+              builder: (context, state) => MealDetailScreen(
+                mealType: mealTypeByName(state.uri.queryParameters['type']),
+                day: dayByName(state.uri.queryParameters['date']),
+              ),
+              routes: [
+                // Pushed for a result: it hands the chosen food back to the
+                // meal that asked for it.
+                GoRoute(
+                  path: 'food',
+                  builder: (context, state) => const FoodPickerScreen(),
+                ),
+              ],
+            ),
+          ],
+        ),
         _branch('/training', const TrainingScreen()),
         _branch('/stats', const StatsScreen()),
         _branch(
