@@ -27,9 +27,9 @@ lib/
   features/
     onboarding/                 Erststart-Ablauf, läuft vor der Bottom-Navigation
     shell/                      Bottom-Navigation-Gerüst
-    home/                       Startseite (u.a. Körpergewicht-Widget)
+    home/                       Startseite (Ernährungs- und Körpergewicht-Widget)
     body_weight/                Gewichtseinträge, von Startseite und Statistik genutzt
-    nutrition/                  Ernährungstracking
+    nutrition/                  Ernährungstracking, Tagessumme auch von der Startseite genutzt
     training/                   Trainingspläne und Workouts
     stats/                      Auswertungen und Diagramme
     profile/                    Nutzerprofil, Kalorien- und Makroziele

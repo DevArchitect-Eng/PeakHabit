@@ -18,8 +18,20 @@ Fünf Tabs in der Bottom-Navigation:
 | Optionen | `/settings` | Darstellung, Zugang zum Profil |
 
 Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens für Training und
-Statistik. Der Start-Tab zeigt eine Begrüßung mit dem im Profil hinterlegten Benutzernamen
-und darunter die Gewichtskarte: aktueller Wert, Zeitraum-Auswahl und Verlaufsgraph. Ein Tippen
+Statistik. Der Start-Tab zeigt eine Begrüßung mit dem im Profil hinterlegten Benutzernamen,
+darunter die Ernährungskarte und darunter die Gewichtskarte.
+
+Die Ernährungskarte (`lib/features/home/presentation/nutrition_card.dart`) steht **über** der
+Gewichtskarte und zeigt immer **heute**, nie den im Ernährungs-Tab gewählten Tag: ein großer
+Ring mit den verzehrten Kalorien und dem Tagesziel darunter, dazu drei kompakte Ringe für
+Protein, Kohlenhydrate und Fett gegen ihr Gramm-Ziel. Unter jedem Ring steht, wie viel noch
+offen ist (bei Überschreitung „… zu viel", in `tertiary` **und** im Text — nie nur über die
+Farbe). Ohne hinterlegtes Kalorienziel erscheinen die blanken Summen und ein Hinweis auf die
+Ziele-Seite. **Ringe statt der Balken des Ernährungs-Tabs**: die Karte ist ein Blick auf den
+Stand, der Tab die Arbeitsansicht. Die Karte ist **nicht antippbar** — der Ernährungs-Tab
+liegt einen Tap entfernt in der Navigationsleiste.
+
+Die Gewichtskarte zeigt aktuellen Wert, Zeitraum-Auswahl und Verlaufsgraph. Ein Tippen
 darauf führt auf `/home/weight` — Eckwerte des Zeitraums (Start, Aktuell, Unterschied mit
 Trend-Icon) und derselbe Graph auf einer eigenen Karte, darunter **alle** Wiegungen als Liste,
 unabhängig vom Zeitraum; Zeile antippen zum Korrigieren, wegwischen zum Löschen. Ein neuer
@@ -72,6 +84,7 @@ Korrektur zieht damit jeden Tag mit, an dem es gegessen wurde, und ein Lebensmit
 einem Eintrag oder einem Rezept steckt, lässt sich nicht mehr löschen. Begründung in
 `docs/ARCHITECTURE.md`. Der Vortag wird deshalb auch nicht als Kopie der Nährwerte
 übernommen: `copyMeal` legt neue Einträge an, die auf dieselben Lebensmittel zeigen.
+Gelesen wird `dayNutritionProvider` außerdem von der Ernährungskarte im Start-Tab.
 Ansonsten noch keine Features.
 
 ## Technisches
