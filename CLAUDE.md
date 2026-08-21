@@ -44,9 +44,15 @@ Benutzername, Ziel, Größe, Gewicht und Kalorienziel (eingeben oder berechnen l
 `app_settings.onboarding_completed` vermerkt; `PeakHabitApp` zeigt anhand dieses Flags
 entweder das Onboarding oder die geroutete App.
 
-Der Ernährungs-Tab ist eine Tagesansicht: Tagessumme oben, darunter die vier Mahlzeiten
-Frühstück, Mittag, Abend und Snacks mit ihren Kalorien und Makros — **ohne Kalorienziel je
-Mahlzeit**, weil es dafür keine Aufteilung des Tagesziels gibt. Der Tag lässt sich
+Der Ernährungs-Tab ist eine Tagesansicht. Oben steht die Tagessumme **gegen die Ziele aus dem
+Profil**: verzehrte gegen geplante Kalorien, dazu jedes Makro gegen sein Gramm-Ziel, je mit
+Fortschrittsbalken und der Angabe, wie viel noch offen ist (bei Überschreitung „… zu viel").
+Ohne hinterlegtes Kalorienziel erscheinen die blanken Summen und ein Hinweis auf die
+Ziele-Seite. Darunter die vier Mahlzeiten Frühstück, Mittag, Abend und Snacks mit ihren
+Kalorien und Makros und **den Lebensmitteln, die dort gegessen wurden** — die Zeile beantwortet
+also selbst, was es zum Frühstück gab. **Ein Kalorienziel je Mahlzeit gibt es weiterhin
+nicht**, weil das Tagesziel dafür auf die vier Mahlzeiten aufgeteilt werden müsste. Der Tag
+lässt sich
 vor- und zurückschalten, höchstens bis heute; der gewählte Tag ist State des Screens, nicht
 Teil der Route. Eine Mahlzeit antippen führt auf `/nutrition/meal?type=…&date=…` mit ihren
 Einträgen — antippen ändert die Menge, wegwischen löscht. Das „+" der Zeile führt mit `&add=1`

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/logging/app_logger.dart';
+import '../../profile/data/user_profile_providers.dart';
+import '../../profile/domain/user_profile.dart';
 import '../data/nutrition_providers.dart';
 import '../domain/day_nutrition.dart';
 import '../domain/meal_entry.dart';
@@ -42,6 +44,10 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
   Widget build(BuildContext context) {
     final day = ref.watch(dayNutritionProvider(_day));
     final previous = ref.watch(dayNutritionProvider(_previousDay));
+    // The targets come from the profile rather than from anything this tab
+    // stores: the calorie target and the macro split are set on the goals
+    // screen, and the gram targets follow from the two.
+    final profile = ref.watch(userProfileProvider).value;
 
     return Scaffold(
       appBar: AppBar(
@@ -54,13 +60,14 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           ),
         ),
       ),
-      body: _body(day, previous),
+      body: _body(day, previous, profile),
     );
   }
 
   Widget _body(
     AsyncValue<DayNutrition> day,
     AsyncValue<DayNutrition> previous,
+    UserProfile? profile,
   ) {
     if (day.hasError) {
       return const Padding(
@@ -74,6 +81,11 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     if (!day.hasValue) return const SizedBox.shrink();
 
     final today = day.value!;
+    final calorieTarget = profile?.calorieTarget;
+    final macroTargets = profile?.macroTargets;
+    final targets = calorieTarget == null || macroTargets == null
+        ? null
+        : (kcal: calorieTarget, macros: macroTargets);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -81,9 +93,25 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         Card(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: NutritionSummary(
-              label: 'Tagessumme',
-              nutrients: today.total,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                NutritionSummary(
+                  label: 'Tagessumme',
+                  nutrients: today.total,
+                  targets: targets,
+                ),
+                // A sum without anything to measure it against is not a
+                // mistake to hide — it says where the target is set instead
+                // of quietly printing figures that stand for nothing.
+                if (targets == null) ...[
+                  const SizedBox(height: 12),
+                  const _Message(
+                    'Noch kein Kalorienziel hinterlegt. Unter Optionen › Ziele '
+                    'lässt es sich setzen.',
+                  ),
+                ],
+              ],
             ),
           ),
         ),
@@ -91,6 +119,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           _MealCard(
             mealType: mealType,
             nutrients: today.totalOf(mealType),
+            entries: today.entriesOf(mealType),
             // Only where nothing stands under the meal yet: copying onto a
             // meal that is already filled would add yesterday's portions on
             // top of today's rather than repeat the day.
@@ -211,6 +240,7 @@ class _MealCard extends StatelessWidget {
   const _MealCard({
     required this.mealType,
     required this.nutrients,
+    required this.entries,
     required this.suggestion,
     required this.onOpen,
     required this.onAdd,
@@ -222,6 +252,10 @@ class _MealCard extends StatelessWidget {
   /// What the meal came to — zero on a day nothing was logged, where the row
   /// still shows rather than disappearing.
   final Nutrients nutrients;
+
+  /// What was eaten at this meal, listed under the row so the tab answers
+  /// "what did I have for breakfast" without being opened.
+  final List<MealEntry> entries;
 
   /// What stood under the same meal the day before, offered for copying.
   /// `null` or empty where there is nothing to offer.
@@ -270,6 +304,37 @@ class _MealCard extends StatelessWidget {
             ),
             onTap: onOpen,
           ),
+          // Tapping a line opens the meal, the same as tapping the row above:
+          // the line is a glance at what is there, and changing it is what the
+          // meal screen is for.
+          for (final entry in entries)
+            InkWell(
+              onTap: onOpen,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        entry.item.name,
+                        style: theme.textTheme.bodyMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${formatGrams(entry.grams)} · '
+                      '${formatKcal(entry.nutrients.kcal)}',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (entries.isNotEmpty) const SizedBox(height: 4),
           if (suggestion != null && suggestion.isNotEmpty)
             _CopySuggestion(entries: suggestion, onCopy: onCopyPreviousDay),
         ],

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:peakhabit/features/nutrition/domain/food.dart';
 import 'package:peakhabit/features/nutrition/domain/meal_entry.dart';
 import 'package:peakhabit/features/nutrition/domain/nutrients.dart';
+import 'package:peakhabit/features/profile/domain/user_profile.dart';
 
 import '../../../support/pump_app.dart';
 
@@ -297,6 +298,165 @@ void main() {
 
       expect(stores.mealEntries.entries, isEmpty);
       expect(find.text('Haferflocken'), findsNothing);
+    });
+  });
+
+  group('the day against its target', () {
+    /// A profile carrying a calorie target, which the standard 30/40/30 split
+    /// turns into 150 g protein, 200 g carbohydrates and 66,7 g fat.
+    final withTarget = UserProfile(username: 'Max', calorieTarget: 2000);
+
+    testWidgets('puts the day total and every macro against its target', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          profile: withTarget,
+          foods: [oats],
+          mealEntries: [ate(oats, daysAgo: 0, grams: 100)],
+        ),
+      );
+      await openTab(tester);
+
+      // 370 kcal of a 2000 kcal day.
+      expect(find.text('370'), findsOneWidget);
+      expect(find.text('/ 2000 kcal'), findsOneWidget);
+      expect(find.text('13 / 150 g'), findsOneWidget);
+      expect(find.text('59 / 200 g'), findsOneWidget);
+      expect(find.text('7 / 67 g'), findsOneWidget);
+    });
+
+    testWidgets('says how much of each is still open', (tester) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          profile: withTarget,
+          foods: [oats],
+          mealEntries: [ate(oats, daysAgo: 0, grams: 100)],
+        ),
+      );
+      await openTab(tester);
+
+      expect(find.text('1630 kcal übrig'), findsOneWidget);
+      expect(find.text('noch 137 g'), findsOneWidget);
+      expect(find.text('noch 141 g'), findsOneWidget);
+      expect(find.text('noch 60 g'), findsOneWidget);
+    });
+
+    testWidgets('names the overrun instead of a negative remainder', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          profile: withTarget,
+          foods: [oats],
+          // 1000 g of a 370 kcal food: 3700 against a target of 2000.
+          mealEntries: [ate(oats, daysAgo: 0, grams: 1000)],
+        ),
+      );
+      await openTab(tester);
+
+      expect(find.text('1700 kcal zu viel'), findsOneWidget);
+      expect(find.text('1630 kcal übrig'), findsNothing);
+    });
+
+    testWidgets('without a target it shows the bare sums and says where the '
+        'target is set', (tester) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          foods: [oats],
+          mealEntries: [ate(oats, daysAgo: 0, grams: 100)],
+        ),
+      );
+      await openTab(tester);
+
+      expect(find.textContaining('Noch kein Kalorienziel'), findsOneWidget);
+      expect(find.text('/ 2000 kcal'), findsNothing);
+      expect(find.textContaining('übrig'), findsNothing);
+      // The sums themselves are still there — the day's and the meal's.
+      expect(find.text('370 kcal'), findsWidgets);
+    });
+
+    testWidgets('a meal keeps its bare sums even where the day has a target', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          profile: withTarget,
+          foods: [oats],
+          mealEntries: [ate(oats, daysAgo: 0, grams: 100)],
+        ),
+      );
+      await openTab(tester);
+      await openMeal(tester, 'Frühstück');
+
+      // No share of the daily target is invented for a single meal.
+      expect(find.textContaining('/ 2000 kcal'), findsNothing);
+      expect(find.textContaining('übrig'), findsNothing);
+      expect(find.text('370 kcal'), findsWidgets);
+    });
+  });
+
+  group('what was eaten, without opening the meal', () {
+    testWidgets('lists the foods under their meal row', (tester) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          foods: [oats, banana],
+          mealEntries: [
+            ate(oats, daysAgo: 0, grams: 50),
+            ate(banana, daysAgo: 0, mealType: MealType.snacks, grams: 120),
+          ],
+        ),
+      );
+      await openTab(tester);
+
+      // Still on the tab — nothing was tapped.
+      expect(find.text('Tagessumme'), findsOneWidget);
+      expect(find.text('Haferflocken'), findsOneWidget);
+      expect(find.text('50 g · 185 kcal'), findsOneWidget);
+      expect(find.text('Banane'), findsOneWidget);
+      expect(find.text('120 g · 107 kcal'), findsOneWidget);
+    });
+
+    testWidgets('lists nothing under a meal nothing was logged at', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          foods: [oats],
+          mealEntries: [ate(oats, daysAgo: 0, grams: 50)],
+        ),
+      );
+      await openTab(tester);
+
+      expect(find.text('Haferflocken'), findsOneWidget);
+      expect(find.textContaining('· 0 kcal'), findsNothing);
+    });
+
+    testWidgets('a line leads into the meal, like the row above it', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          foods: [oats],
+          mealEntries: [ate(oats, daysAgo: 0, grams: 50)],
+        ),
+      );
+      await openTab(tester);
+
+      await tester.tap(find.text('50 g · 185 kcal'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Lebensmittel hinzufügen'), findsNothing);
+      expect(find.byTooltip('Lebensmittel hinzufügen'), findsOneWidget);
+      expect(find.text('Frühstück'), findsWidgets);
     });
   });
 

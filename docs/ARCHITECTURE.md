@@ -455,6 +455,24 @@ statt den Tab zu verlassen. Die Mahlzeiten-Route darunter trägt ihren Tag sehr 
 von dort geöffneter Screen wissen muss, auf welchem er geöffnet wurde; wie beim Zeitraum auf
 `/home/weight` fällt ein unbekannter Wert auf einen Standard zurück, statt zu werfen.
 
+**Das Ziel steht am Tag, nicht an der Mahlzeit.** Die Tagessumme oben im Ernährungs-Tab stellt
+Kalorien und jedes Makro gegen die Ziele aus dem Profil (`UserProfile.calorieTarget` und
+`macroTargets`) und sagt, wie viel noch offen ist. Eine einzelne Mahlzeit bekommt bewusst
+keins: Dafür müsste das Tagesziel auf die vier Mahlzeiten aufgeteilt werden, und diese
+Aufteilung gibt es nirgends — sie wäre eine erfundene Konstante. `NutritionSummary` bildet das
+ab, indem `targets` optional ist: gesetzt für den Tag, weggelassen für die Mahlzeit. Fehlt im
+Profil ein Kalorienziel, zeigt die Karte die blanken Summen und einen Hinweis auf die
+Ziele-Seite, statt gegen eine Null zu rechnen.
+
+Überschreitungen werden nicht mit `error` eingefärbt, sondern mit `tertiary`: Derselbe Balken
+trägt Kalorien und Makros, und über das Protein-Ziel zu kommen ist kein Fehler. Die Farbe ist
+außerdem nie das einzige Signal — die Zeile darunter schreibt „… zu viel" aus.
+
+Die Mahlzeit-Zeilen listen zusätzlich die dort gegessenen Lebensmittel, damit der Tab die
+Frage „was gab es zum Frühstück" selbst beantwortet, statt sie an die Detailseite
+weiterzureichen. Die Zeilen sind Anzeige, kein Editor: Ein Tipp darauf öffnet die Mahlzeit,
+genau wie ein Tipp auf die Zeile darüber.
+
 Der Vortags-Vorschlag steht **unter der Mahlzeit-Zeile im Tab**, nicht auf der Detailseite:
 Der Sinn des Übernehmens ist, den Umweg zu sparen. Er erscheint nur, solange die Mahlzeit
 heute leer ist — auf eine befüllte kopiert, legte der Wisch die Portionen des Vortags obendrauf.

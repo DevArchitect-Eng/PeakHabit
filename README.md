@@ -21,15 +21,18 @@ Vorhanden:
   führt auf `/home/weight`: Eckwerte des Zeitraums, derselbe Graph und darunter alle
   Wiegungen als Liste, unabhängig vom Zeitraum — Zeile antippen zum Korrigieren, wegwischen
   zum Löschen.
-- **Ernährung** als Tagesansicht: Tagessumme oben, darunter Frühstück, Mittag, Abend und
-  Snacks mit ihren Kalorien und Makros. Der Tag lässt sich vor- und zurückschalten, höchstens
+- **Ernährung** als Tagesansicht: oben die Tagessumme gegen die Ziele aus dem Profil —
+  verzehrte gegen geplante Kalorien und jedes Makro gegen sein Gramm-Ziel, mit
+  Fortschrittsbalken und der Angabe, wie viel noch offen ist. Darunter Frühstück, Mittag,
+  Abend und Snacks mit ihren Kalorien, Makros und den dort gegessenen Lebensmitteln. Der Tag
+  lässt sich vor- und zurückschalten, höchstens
   bis heute. Eine Mahlzeit antippen öffnet `/nutrition/meal` mit ihren Einträgen — Zeile
   antippen ändert die Menge, wegwischen löscht. Das „+" der Zeile führt direkt auf
   `/nutrition/meal/food`: im Katalog suchen oder ein Lebensmittel direkt anlegen, wobei leer
   gelassene Nährwerte als 0 zählen. Steht unter einer Mahlzeit heute
   noch nichts und am Vortag schon, wird der Vortag vorgeschlagen; ein Wisch nach rechts
-  übernimmt ihn. **Kein Kalorienziel je Mahlzeit** — die Zeilen zeigen, was gegessen wurde,
-  nicht den Rest eines Teilziels.
+  übernimmt ihn. **Kein Kalorienziel je Mahlzeit** — das Ziel steht am Tag, nicht an der
+  einzelnen Mahlzeit.
 
 Platzhalter-Screens sind noch Training und Statistik. Der Ernährungs-Tab kennt bislang nur
 Lebensmittel; zusammengesetzte Lebensmittel (Rezepte) stehen im Datenmodell und in der
