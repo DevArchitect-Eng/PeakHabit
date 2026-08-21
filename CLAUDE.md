@@ -17,7 +17,7 @@ Fünf Tabs in der Bottom-Navigation:
 | Statistik | `/stats` | Trainingsfortschritt, Gewichtsverlauf |
 | Optionen | `/settings` | Darstellung, Zugang zum Profil |
 
-Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens für Ernährung, Training und
+Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens für Training und
 Statistik. Der Start-Tab zeigt eine Begrüßung mit dem im Profil hinterlegten Benutzernamen
 und darunter die Gewichtskarte: aktueller Wert, Zeitraum-Auswahl und Verlaufsgraph. Ein Tippen
 darauf führt auf `/home/weight` — Eckwerte des Zeitraums (Start, Aktuell, Unterschied mit
@@ -44,15 +44,35 @@ Benutzername, Ziel, Größe, Gewicht und Kalorienziel (eingeben oder berechnen l
 `app_settings.onboarding_completed` vermerkt; `PeakHabitApp` zeigt anhand dieses Flags
 entweder das Onboarding oder die geroutete App.
 
-Der Ernährungs-Tab ist noch ein Platzhalter, das Datenmodell dahinter steht aber. Unter
-`lib/features/nutrition/` liegen die Tabellen `foods`, `composite_foods`,
+Der Ernährungs-Tab ist eine Tagesansicht. Oben steht die Tagessumme **gegen die Ziele aus dem
+Profil**: verzehrte gegen geplante Kalorien, dazu jedes Makro gegen sein Gramm-Ziel, je mit
+Fortschrittsbalken und der Angabe, wie viel noch offen ist (bei Überschreitung „… zu viel").
+Ohne hinterlegtes Kalorienziel erscheinen die blanken Summen und ein Hinweis auf die
+Ziele-Seite. Darunter die vier Mahlzeiten Frühstück, Mittag, Abend und Snacks mit ihren
+Kalorien und Makros und **den Lebensmitteln, die dort gegessen wurden** — die Zeile beantwortet
+also selbst, was es zum Frühstück gab. **Ein Kalorienziel je Mahlzeit gibt es weiterhin
+nicht**, weil das Tagesziel dafür auf die vier Mahlzeiten aufgeteilt werden müsste. Der Tag
+lässt sich
+vor- und zurückschalten, höchstens bis heute; der gewählte Tag ist State des Screens, nicht
+Teil der Route. Eine Mahlzeit antippen führt auf `/nutrition/meal?type=…&date=…` mit ihren
+Einträgen — antippen ändert die Menge, wegwischen löscht. Das „+" der Zeile führt mit `&add=1`
+direkt weiter auf `/nutrition/meal/food`, das nach Auswahl das Lebensmittel zurückgibt: im
+Katalog suchen oder eines direkt anlegen. Leer gelassene Nährwerte zählen dort als 0.
+Rezepte stehen in der Auswahl, angelegt werden können sie noch nicht.
+Ist eine Mahlzeit heute leer und war sie am Vortag befüllt, steht unter der Zeile ein
+Vorschlag; **ein Wisch nach rechts übernimmt den Vortag** (`MealEntryRepository.copyMeal`).
+Bei bereits befüllter Mahlzeit erscheint er nicht, sonst verdoppelte der Wisch die Portionen.
+
+Unter `lib/features/nutrition/` liegen die Tabellen `foods`, `composite_foods`,
 `composite_food_ingredients` und `meal_entries`, dazu das Domain-Modell (Nährwerte je 100 g,
 zusammengesetzte Lebensmittel mit Zubereitungsgewicht, Mahlzeiteneinträge auf Frühstück,
 Mittag, Abend oder Snacks, Tagessummen je Mahlzeit), zwei Repositories und die Provider. Ein
 Mahlzeiteneintrag **verweist** auf sein Lebensmittel, statt dessen Nährwerte zu kopieren: Eine
 Korrektur zieht damit jeden Tag mit, an dem es gegessen wurde, und ein Lebensmittel, das in
 einem Eintrag oder einem Rezept steckt, lässt sich nicht mehr löschen. Begründung in
-`docs/ARCHITECTURE.md`. Ansonsten noch keine Features.
+`docs/ARCHITECTURE.md`. Der Vortag wird deshalb auch nicht als Kopie der Nährwerte
+übernommen: `copyMeal` legt neue Einträge an, die auf dieselben Lebensmittel zeigen.
+Ansonsten noch keine Features.
 
 ## Technisches
 

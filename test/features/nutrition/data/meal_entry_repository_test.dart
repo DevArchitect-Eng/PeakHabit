@@ -277,6 +277,151 @@ void main() {
     });
   });
 
+  group('copying a meal onto another day', () {
+    final nextDay = DateTime(2026, 8, 21);
+
+    test('brings the meal across, entry by entry', () async {
+      await log(mealType: MealType.breakfast, grams: 60);
+      await log(mealType: MealType.breakfast, grams: 40);
+
+      final copied = await repository.copyMeal(
+        mealType: MealType.breakfast,
+        from: day,
+        to: nextDay,
+      );
+
+      expect(copied, 2);
+      final target = await repository.readDay(nextDay);
+      expect(target.entriesOf(MealType.breakfast).map((entry) => entry.grams), [
+        60,
+        40,
+      ]);
+      expect(target.entriesOf(MealType.breakfast).first.item, rice);
+    });
+
+    test('leaves the day it copied from alone', () async {
+      await log(mealType: MealType.breakfast, grams: 60);
+
+      await repository.copyMeal(
+        mealType: MealType.breakfast,
+        from: day,
+        to: nextDay,
+      );
+
+      expect((await repository.readDay(day)).entries, hasLength(1));
+    });
+
+    test('the copies are entries of their own, not the same rows', () async {
+      final original = await log(mealType: MealType.breakfast, grams: 60);
+
+      await repository.copyMeal(
+        mealType: MealType.breakfast,
+        from: day,
+        to: nextDay,
+      );
+
+      final copy = (await repository.readDay(
+        nextDay,
+      )).entriesOf(MealType.breakfast).single;
+      expect(copy.id, isNot(original.id));
+      // Correcting the copy has to leave the original where it was, or
+      // repeating a day would tie the two together forever.
+      await repository.save(
+        MealEntry(
+          id: copy.id,
+          date: nextDay,
+          mealType: MealType.breakfast,
+          item: rice,
+          grams: 200,
+        ),
+      );
+      expect(
+        (await repository.readDay(
+          day,
+        )).entriesOf(MealType.breakfast).single.grams,
+        60,
+      );
+    });
+
+    test('takes only the meal it was asked for', () async {
+      await log(mealType: MealType.breakfast, grams: 60);
+      await log(mealType: MealType.dinner, grams: 90);
+
+      await repository.copyMeal(
+        mealType: MealType.breakfast,
+        from: day,
+        to: nextDay,
+      );
+
+      final target = await repository.readDay(nextDay);
+      expect(target.entriesOf(MealType.breakfast), hasLength(1));
+      expect(target.entriesOf(MealType.dinner), isEmpty);
+    });
+
+    test('an empty meal copies nothing and says so', () async {
+      final copied = await repository.copyMeal(
+        mealType: MealType.breakfast,
+        from: day,
+        to: nextDay,
+      );
+
+      expect(copied, 0);
+      expect((await repository.readDay(nextDay)).isEmpty, isTrue);
+    });
+
+    test('appends rather than replacing what is already there', () async {
+      await log(mealType: MealType.breakfast, grams: 60);
+      await log(date: nextDay, mealType: MealType.breakfast, grams: 25);
+
+      await repository.copyMeal(
+        mealType: MealType.breakfast,
+        from: day,
+        to: nextDay,
+      );
+
+      expect(
+        (await repository.readDay(
+          nextDay,
+        )).entriesOf(MealType.breakfast).map((entry) => entry.grams),
+        [25, 60],
+      );
+    });
+
+    test('ignores the time of day it is asked with', () async {
+      await log(mealType: MealType.breakfast, grams: 60);
+
+      final copied = await repository.copyMeal(
+        mealType: MealType.breakfast,
+        from: DateTime(2026, 8, 20, 23, 15),
+        to: DateTime(2026, 8, 21, 6, 5),
+      );
+
+      expect(copied, 1);
+      expect((await repository.readDay(nextDay)).entries, hasLength(1));
+    });
+
+    test('carries a dish across as the dish, not as its ingredients', () async {
+      final dish = await catalogue.saveCompositeFood(
+        CompositeFood(
+          name: 'Reispfanne',
+          ingredients: [CompositeFoodIngredient(food: rice, grams: 120)],
+        ),
+      );
+      await log(item: dish, mealType: MealType.dinner, grams: 200);
+
+      await repository.copyMeal(
+        mealType: MealType.dinner,
+        from: day,
+        to: nextDay,
+      );
+
+      final copy = (await repository.readDay(
+        nextDay,
+      )).entriesOf(MealType.dinner).single;
+      expect(copy.item, dish);
+    });
+  });
+
   group('watching a day', () {
     test('emits the day and then every change to its entries', () async {
       final seen = <double>[];

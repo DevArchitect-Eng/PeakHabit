@@ -5,12 +5,17 @@ import 'package:peakhabit/app.dart';
 import 'package:peakhabit/core/router/app_router.dart';
 import 'package:peakhabit/features/body_weight/data/body_weight_providers.dart';
 import 'package:peakhabit/features/body_weight/domain/body_weight_entry.dart';
+import 'package:peakhabit/features/nutrition/data/nutrition_providers.dart';
+import 'package:peakhabit/features/nutrition/domain/food.dart';
+import 'package:peakhabit/features/nutrition/domain/meal_entry.dart';
 import 'package:peakhabit/features/profile/data/user_profile_providers.dart';
 import 'package:peakhabit/features/profile/domain/user_profile.dart';
 import 'package:peakhabit/features/settings/data/settings_providers.dart';
 import 'package:peakhabit/features/settings/domain/app_theme_mode.dart';
 
 import 'in_memory_body_weight_repository.dart';
+import 'in_memory_food_repository.dart';
+import 'in_memory_meal_entry_repository.dart';
 import 'in_memory_settings_repository.dart';
 import 'in_memory_user_profile_repository.dart';
 
@@ -20,6 +25,8 @@ typedef AppStores = ({
   InMemorySettingsRepository settings,
   InMemoryUserProfileRepository profile,
   InMemoryBodyWeightRepository bodyWeight,
+  InMemoryFoodRepository foods,
+  InMemoryMealEntryRepository mealEntries,
 });
 
 /// Stores holding what a test wants to find there, closed again when the test
@@ -31,6 +38,11 @@ AppStores storesWith({
   bool profileUnwritable = false,
   List<BodyWeightEntry> weightEntries = const [],
   bool weightEntriesUnreadable = false,
+  List<Food> foods = const [],
+  List<CompositeFood> dishes = const [],
+  bool foodsUnreadable = false,
+  List<MealEntry> mealEntries = const [],
+  bool mealEntriesUnreadable = false,
 }) {
   final stores = (
     settings: InMemorySettingsRepository(
@@ -45,10 +57,21 @@ AppStores storesWith({
       entries: weightEntries,
       failing: weightEntriesUnreadable,
     ),
+    foods: InMemoryFoodRepository(
+      foods: foods,
+      dishes: dishes,
+      failing: foodsUnreadable,
+    ),
+    mealEntries: InMemoryMealEntryRepository(
+      entries: mealEntries,
+      failing: mealEntriesUnreadable,
+    ),
   );
   addTearDown(stores.settings.dispose);
   addTearDown(stores.profile.dispose);
   addTearDown(stores.bodyWeight.dispose);
+  addTearDown(stores.foods.dispose);
+  addTearDown(stores.mealEntries.dispose);
   return stores;
 }
 
@@ -77,6 +100,8 @@ Future<AppStores> pumpApp(WidgetTester tester, {AppStores? on}) async {
         settingsRepositoryProvider.overrideWithValue(stores.settings),
         userProfileRepositoryProvider.overrideWithValue(stores.profile),
         bodyWeightRepositoryProvider.overrideWithValue(stores.bodyWeight),
+        foodRepositoryProvider.overrideWithValue(stores.foods),
+        mealEntryRepositoryProvider.overrideWithValue(stores.mealEntries),
       ],
       child: const PeakHabitApp(),
     ),

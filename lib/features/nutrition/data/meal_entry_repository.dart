@@ -124,6 +124,61 @@ class MealEntryRepository {
     return entry;
   }
 
+  /// Copies everything logged under [mealType] on [from] onto [to], and
+  /// answers how many entries that was.
+  ///
+  /// The copies point at the same foods rather than at copies of them — the
+  /// whole reason an entry refers to its food instead of carrying its numbers.
+  /// They are new entries all the same, so correcting one of them afterwards
+  /// leaves the day it was copied from alone.
+  ///
+  /// **Appends**, it does not replace: a meal that already holds something
+  /// ends up with both. The screen only offers the copy on an empty meal, but
+  /// the repository does not decide that for its caller.
+  ///
+  /// One transaction, so a half-copied meal cannot be left behind.
+  Future<int> copyMeal({
+    required MealType mealType,
+    required DateTime from,
+    required DateTime to,
+  }) {
+    final source = _dayOf(from);
+    final target = _dayOf(to);
+
+    return _database.transaction(() async {
+      final rows =
+          await (_database.select(_database.mealEntries)
+                ..where(
+                  (row) =>
+                      row.date.equalsValue(source) &
+                      row.mealType.equalsValue(mealType),
+                )
+                // By id, so the copies land in the order the originals were
+                // logged in.
+                ..orderBy([(row) => OrderingTerm.asc(row.id)]))
+              .get();
+      if (rows.isEmpty) return 0;
+
+      final now = DateTime.now();
+      await _database.batch((batch) {
+        batch.insertAll(_database.mealEntries, [
+          for (final row in rows)
+            MealEntriesCompanion.insert(
+              date: target,
+              mealType: mealType,
+              foodId: Value(row.foodId),
+              compositeFoodId: Value(row.compositeFoodId),
+              grams: row.grams,
+              createdAt: now,
+              updatedAt: now,
+            ),
+        ]);
+      });
+
+      return rows.length;
+    });
+  }
+
   /// Removes the entry of [id]. Doing so twice is not an error — it is gone
   /// either way.
   Future<void> delete(int id) async {
