@@ -49,9 +49,10 @@ Frühstück, Mittag, Abend und Snacks mit ihren Kalorien und Makros — **ohne K
 Mahlzeit**, weil es dafür keine Aufteilung des Tagesziels gibt. Der Tag lässt sich
 vor- und zurückschalten, höchstens bis heute; der gewählte Tag ist State des Screens, nicht
 Teil der Route. Eine Mahlzeit antippen führt auf `/nutrition/meal?type=…&date=…` mit ihren
-Einträgen — antippen ändert die Menge, wegwischen löscht. Hinzugefügt wird über
-`/nutrition/meal/food`, das nach Auswahl das Lebensmittel zurückgibt: im Katalog suchen oder
-eines direkt anlegen. Rezepte stehen in der Auswahl, angelegt werden können sie noch nicht.
+Einträgen — antippen ändert die Menge, wegwischen löscht. Das „+" der Zeile führt mit `&add=1`
+direkt weiter auf `/nutrition/meal/food`, das nach Auswahl das Lebensmittel zurückgibt: im
+Katalog suchen oder eines direkt anlegen. Leer gelassene Nährwerte zählen dort als 0.
+Rezepte stehen in der Auswahl, angelegt werden können sie noch nicht.
 Ist eine Mahlzeit heute leer und war sie am Vortag befüllt, steht unter der Zeile ein
 Vorschlag; **ein Wisch nach rechts übernimmt den Vortag** (`MealEntryRepository.copyMeal`).
 Bei bereits befüllter Mahlzeit erscheint er nicht, sonst verdoppelte der Wisch die Portionen.

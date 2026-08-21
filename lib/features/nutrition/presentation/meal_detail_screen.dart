@@ -24,6 +24,7 @@ class MealDetailScreen extends ConsumerStatefulWidget {
     super.key,
     required this.mealType,
     required this.day,
+    this.addOnOpen = false,
   });
 
   final MealType mealType;
@@ -31,11 +32,28 @@ class MealDetailScreen extends ConsumerStatefulWidget {
   /// The day being logged, at local midnight.
   final DateTime day;
 
+  /// Whether to go straight on to picking a food — what the "+" of a meal row
+  /// in the tab means. The screen underneath is built either way, so dropping
+  /// the picker lands on the meal rather than back where the "+" was.
+  final bool addOnOpen;
+
   @override
   ConsumerState<MealDetailScreen> createState() => _MealDetailScreenState();
 }
 
 class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // After the first frame: pushing a route from initState would run while
+    // this one is still being built.
+    if (widget.addOnOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _addEntry();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final day = ref.watch(dayNutritionProvider(widget.day));

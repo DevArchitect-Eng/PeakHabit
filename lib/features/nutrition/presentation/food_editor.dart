@@ -105,10 +105,31 @@ class _FoodEditorSheetState extends State<_FoodEditorSheet> {
           ),
           _field(controller: _brand, label: 'Marke (optional)'),
           const _SectionLabel('Nährwerte je 100 g'),
-          _amountField(controller: _kcal, label: 'Kalorien', suffix: 'kcal'),
-          _amountField(controller: _protein, label: 'Protein', suffix: 'g'),
-          _amountField(controller: _carbs, label: 'Kohlenhydrate', suffix: 'g'),
-          _amountField(controller: _fat, label: 'Fett', suffix: 'g'),
+          _amountField(
+            controller: _kcal,
+            label: 'Kalorien',
+            suffix: 'kcal',
+            error: _amountError(_kcal),
+          ),
+          _amountField(
+            controller: _protein,
+            label: 'Protein',
+            suffix: 'g',
+            error: _amountError(_protein),
+          ),
+          _amountField(
+            controller: _carbs,
+            label: 'Kohlenhydrate',
+            suffix: 'g',
+            error: _amountError(_carbs),
+          ),
+          _amountField(
+            controller: _fat,
+            label: 'Fett',
+            suffix: 'g',
+            error: _amountError(_fat),
+          ),
+          const _Hint('Leer gelassene Nährwerte zählen als 0.'),
           _amountField(
             controller: _portion,
             label: 'Portion (optional)',
@@ -132,12 +153,8 @@ class _FoodEditorSheetState extends State<_FoodEditorSheet> {
     final name = _name.text.trim();
     if (name.isEmpty) return null;
 
-    final kcal = parseAmount(_kcal.text);
-    final protein = parseAmount(_protein.text);
-    final carbs = parseAmount(_carbs.text);
-    final fat = parseAmount(_fat.text);
-    if (kcal == null || protein == null || carbs == null || fat == null) {
-      return null;
+    for (final field in [_kcal, _protein, _carbs, _fat]) {
+      if (_amountError(field) != null) return null;
     }
     if (_portion.text.trim().isNotEmpty && _portionGrams() == null) return null;
 
@@ -146,10 +163,10 @@ class _FoodEditorSheetState extends State<_FoodEditorSheet> {
       name: name,
       brand: _brand.text,
       nutrientsPer100g: Nutrients(
-        kcal: kcal,
-        proteinGrams: protein,
-        carbGrams: carbs,
-        fatGrams: fat,
+        kcal: _amount(_kcal),
+        proteinGrams: _amount(_protein),
+        carbGrams: _amount(_carbs),
+        fatGrams: _amount(_fat),
       ),
       portionGrams: _portionGrams(),
       // Typed by hand, whatever the food started as: a scanned record whose
@@ -158,6 +175,25 @@ class _FoodEditorSheetState extends State<_FoodEditorSheet> {
       source: FoodSource.manual,
       barcode: widget.initial?.barcode,
     );
+  }
+
+  /// What a nutrient field is worth: what it states, and zero where it states
+  /// nothing.
+  ///
+  /// A blank field counts as none of that nutrient rather than blocking the
+  /// sheet. Most packets leave at least one of the four at zero, and a check
+  /// that stays grey until every field has a `0` typed into it would be one
+  /// nothing on screen explains.
+  double _amount(TextEditingController field) =>
+      field.text.trim().isEmpty ? 0 : parseAmount(field.text) ?? 0;
+
+  /// Why a nutrient field cannot be taken, or `null` while it can.
+  String? _amountError(TextEditingController field) {
+    final text = field.text.trim();
+    if (text.isEmpty) return null;
+    return parseAmount(text) == null
+        ? 'Bitte eine Zahl wie 12,5 eintragen.'
+        : null;
   }
 
   /// The portion the field states, `null` when it states none or states one
@@ -217,6 +253,31 @@ class _FoodEditorSheetState extends State<_FoodEditorSheet> {
   /// value instead of a longer one nobody typed.
   TextEditingController _amountController(double? value) =>
       TextEditingController(text: value == null ? '' : formatDecimal(value, 1));
+}
+
+/// The line under the nutrient fields, saying what an empty one means.
+class _Hint extends StatelessWidget {
+  const _Hint(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: Text(
+          text,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// The heading that separates the food's name from its numbers.

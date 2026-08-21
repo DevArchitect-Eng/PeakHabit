@@ -174,6 +174,53 @@ void main() {
       expect(find.text('185 kcal'), findsNWidgets(2));
     });
 
+    testWidgets('the "+" of a meal row goes straight to the food picker', (
+      tester,
+    ) async {
+      await pumpApp(tester, on: storesWith(foods: [oats]));
+      await openTab(tester);
+
+      await tester.tap(find.byTooltip('Snacks ergänzen'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Lebensmittel wählen'), findsOneWidget);
+
+      // Dropping the picker lands on the meal it was opened for, not back on
+      // the tab — the entry would have gone there.
+      await goBack(tester);
+
+      expect(find.text('Snacks'), findsOneWidget);
+      expect(
+        find.text('Für diese Mahlzeit ist noch nichts eingetragen.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a blank nutrient field counts as none of it', (tester) async {
+      final stores = await pumpApp(tester);
+      await openTab(tester);
+      await openMeal(tester, 'Snacks');
+
+      await tester.tap(find.byTooltip('Lebensmittel hinzufügen'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Lebensmittel anlegen'));
+      await tester.pumpAndSettle();
+
+      // Only the name and the energy, the way a drink off a bottle reads.
+      await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Cola');
+      await tester.enterText(find.widgetWithText(TextField, 'Kalorien'), '42');
+      await tester.pump();
+      await tester.tap(find.byTooltip('Bestätigen'));
+      await tester.pumpAndSettle();
+
+      final saved = stores.foods.foods.single;
+      expect(saved.name, 'Cola');
+      expect(saved.nutrientsPer100g.kcal, 42);
+      expect(saved.nutrientsPer100g.proteinGrams, 0);
+      expect(saved.nutrientsPer100g.carbGrams, 0);
+      expect(saved.nutrientsPer100g.fatGrams, 0);
+    });
+
     testWidgets('a food typed in while logging is saved and picked at once', (
       tester,
     ) async {

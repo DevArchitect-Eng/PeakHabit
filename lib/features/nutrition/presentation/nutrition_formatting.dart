@@ -59,7 +59,14 @@ DateTime dayByName(String? text) {
 /// out.
 String formatDayLabel(DateTime day, {DateTime? today}) {
   final reference = DateUtils.dateOnly(today ?? DateTime.now());
-  final difference = DateUtils.dateOnly(day).difference(reference).inDays;
+  final date = DateUtils.dateOnly(day);
+  // Compared as calendar days rather than by subtracting the two local
+  // values: on the day the clocks move forward the gap between two
+  // neighbouring midnights is 23 hours, and `inDays` would round that to
+  // zero — labelling yesterday "Heute".
+  final difference = DateTime.utc(date.year, date.month, date.day)
+      .difference(DateTime.utc(reference.year, reference.month, reference.day))
+      .inDays;
 
   return switch (difference) {
     0 => 'Heute',

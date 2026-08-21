@@ -437,6 +437,11 @@ und der Zurück-Weg über sie führt. Der Start-Tab hat eine: `/home/weight`, de
 Gewichtsverlauf hinter der Gewichtskarte. Der Ernährungs-Tab hat zwei:
 `/nutrition/meal?type=…&date=…` und darunter `/nutrition/meal/food`.
 
+Das „+" einer Mahlzeit-Zeile hängt `&add=1` an und lässt den Mahlzeiten-Screen die Auswahl
+gleich selbst öffnen, statt sie vom Tab aus aufzurufen. Der Ablauf steht damit an einer
+Stelle, und wer die Auswahl verwirft, landet auf der Mahlzeit — dort, wo der Eintrag
+hingegangen wäre — statt zurück auf dem Tab.
+
 `/nutrition/meal/food` ist die erste Route, die **für ein Ergebnis** geschoben wird: Der
 Mahlzeiten-Screen ruft sie über `context.push<FoodItem>` auf, die Auswahl beendet sich mit
 `context.pop(item)`, und die Menge wird danach in einem Sheet erfragt. Eine Route statt eines

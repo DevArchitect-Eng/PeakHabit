@@ -98,35 +98,43 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                 ? previous.value?.entriesOf(mealType)
                 : null,
             onOpen: () => _openMeal(mealType),
+            onAdd: () => _openMeal(mealType, adding: true),
             onCopyPreviousDay: () => _copyPreviousDay(mealType),
           ),
       ],
     );
   }
 
-  void _openMeal(MealType mealType) => context.push(
-    '/nutrition/meal?type=${mealType.name}&date=${dayParameter(_day)}',
+  /// Opens the meal, either on its entries or straight on the food picker.
+  ///
+  /// The "+" goes through the meal screen rather than opening the picker from
+  /// here: adding is the same three steps either way, and doing it in one
+  /// place means the screen the entry lands on is the one that shows it.
+  void _openMeal(MealType mealType, {bool adding = false}) => context.push(
+    '/nutrition/meal?type=${mealType.name}&date=${dayParameter(_day)}'
+    '${adding ? '&add=1' : ''}',
   );
 
-  /// Copies the previous day's [mealType] onto the day on screen, answering
-  /// whether anything was written.
+  /// Copies the previous day's [mealType] onto the day on screen.
+  ///
+  /// Always answers `false`, so the swipe never actually dismisses the row —
+  /// see [_CopySuggestion] for why the suggestion springs back instead of
+  /// animating away.
   Future<bool> _copyPreviousDay(MealType mealType) async {
-    final int copied;
     try {
-      copied = await ref
+      await ref
           .read(mealEntryRepositoryProvider)
           .copyMeal(mealType: mealType, from: _previousDay, to: _day);
     } catch (error, stackTrace) {
       // Without this the write fails silently: the suggestion would spring
-      // back exactly as it does when there was nothing to copy.
+      // back exactly as it does after a copy that worked.
       _logger.error('Copying the meal failed', error, stackTrace);
       _report('Die Mahlzeit konnte nicht übernommen werden.');
       return false;
     }
-    if (copied == 0) return false;
 
     _report('${mealType.label} vom Vortag übernommen.');
-    return true;
+    return false;
   }
 
   void _report(String message) {
@@ -205,6 +213,7 @@ class _MealCard extends StatelessWidget {
     required this.nutrients,
     required this.suggestion,
     required this.onOpen,
+    required this.onAdd,
     required this.onCopyPreviousDay,
   });
 
@@ -218,7 +227,11 @@ class _MealCard extends StatelessWidget {
   /// `null` or empty where there is nothing to offer.
   final List<MealEntry>? suggestion;
 
+  /// Opens the meal on its entries — what tapping the row does.
   final VoidCallback onOpen;
+
+  /// Opens the meal straight on the food picker — what the "+" does.
+  final VoidCallback onAdd;
 
   /// Copies the previous day's meal, answering whether anything was written.
   final Future<bool> Function() onCopyPreviousDay;
@@ -251,7 +264,7 @@ class _MealCard extends StatelessWidget {
             ),
             subtitle: Text(formatMacros(nutrients)),
             trailing: IconButton(
-              onPressed: onOpen,
+              onPressed: onAdd,
               icon: const Icon(Icons.add),
               tooltip: '${mealType.label} ergänzen',
             ),

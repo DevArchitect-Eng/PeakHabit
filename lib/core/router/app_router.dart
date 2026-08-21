@@ -59,6 +59,7 @@ final appRouter = GoRouter(
               builder: (context, state) => MealDetailScreen(
                 mealType: mealTypeByName(state.uri.queryParameters['type']),
                 day: dayByName(state.uri.queryParameters['date']),
+                addOnOpen: state.uri.queryParameters['add'] == '1',
               ),
               routes: [
                 // Pushed for a result: it hands the chosen food back to the
