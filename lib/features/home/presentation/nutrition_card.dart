@@ -129,7 +129,17 @@ class _CalorieRing extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              _Ring(value: kcal, target: target.toDouble(), strokeWidth: 10),
+              // Positioned.fill, not a bare child: a Stack hands its
+              // non-positioned children loose constraints, and a
+              // CircularProgressIndicator given room rather than a size draws
+              // itself at its 36-pixel minimum instead of filling the box.
+              Positioned.fill(
+                child: _Ring(
+                  value: kcal,
+                  target: target.toDouble(),
+                  strokeWidth: 10,
+                ),
+              ),
               // The eaten figure sits in the ring and the target rides along
               // under it: the question is how much has been eaten, and the
               // target is what makes that number mean something.
@@ -187,7 +197,10 @@ class _MacroRing extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              _Ring(value: grams, target: target, strokeWidth: 6),
+              // Filled rather than merely offered the box — see [_CalorieRing].
+              Positioned.fill(
+                child: _Ring(value: grams, target: target, strokeWidth: 6),
+              ),
               _RingLabel(
                 inset: 10,
                 child: Text(

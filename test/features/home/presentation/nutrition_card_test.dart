@@ -168,6 +168,29 @@ void main() {
       expect(find.text('0'), findsOneWidget);
       expect(find.text('2000 kcal übrig'), findsOneWidget);
     });
+
+    testWidgets('draws the rings at the size they are given', (tester) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          profile: withTarget,
+          foods: [oats],
+          mealEntries: [ate(oats, daysAgo: 0)],
+        ),
+      );
+
+      // A Stack hands its non-positioned children loose constraints, and a
+      // CircularProgressIndicator offered room rather than given a size falls
+      // back to its 36-pixel minimum — small enough that the figure inside it
+      // paints straight over the stroke. Every text assertion above still
+      // passed while that was happening, so the size is checked here.
+      final rings = find.byType(CircularProgressIndicator);
+      expect(rings, findsNWidgets(4));
+      expect(tester.getSize(rings.at(0)), const Size(132, 132));
+      for (final macro in [1, 2, 3]) {
+        expect(tester.getSize(rings.at(macro)), const Size(64, 64));
+      }
+    });
   });
 
   group('without a calorie target', () {
