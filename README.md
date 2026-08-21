@@ -16,9 +16,13 @@ Vorhanden:
   Geburtsdatum), `/settings/goals` (Start- und aktuelles Gewicht, Ziel, Aktivitätslevel) und
   `/settings/goals/nutrition` (Kalorienziel, Makroverteilung). Ändert sich Ziel oder
   Aktivität, wird das Kalorienziel neu berechnet und mitgespeichert.
-- **Start** mit einer Begrüßung, die den hinterlegten Benutzernamen verwendet, darunter die
-  Gewichtskarte mit aktuellem Wert, Zeitraum-Auswahl und Verlaufsgraph. Ein Tippen darauf
-  führt auf `/home/weight`: Eckwerte des Zeitraums, derselbe Graph und darunter alle
+- **Start** mit einer Begrüßung, die den hinterlegten Benutzernamen verwendet. Darunter die
+  Ernährungskarte für **heute**: ein Ring mit den verzehrten Kalorien gegen das Tagesziel
+  und drei kompakte Ringe für Protein, Kohlenhydrate und Fett gegen ihr Gramm-Ziel, je mit
+  der Angabe, wie viel noch offen ist (bei Überschreitung „… zu viel"). Ohne hinterlegtes
+  Kalorienziel stehen dort die blanken Summen und ein Hinweis auf die Ziele-Seite. Darunter
+  die Gewichtskarte mit aktuellem Wert, Zeitraum-Auswahl und Verlaufsgraph. Ein Tippen
+  darauf führt auf `/home/weight`: Eckwerte des Zeitraums, derselbe Graph und darunter alle
   Wiegungen als Liste, unabhängig vom Zeitraum — Zeile antippen zum Korrigieren, wegwischen
   zum Löschen.
 - **Ernährung** als Tagesansicht: oben die Tagessumme gegen die Ziele aus dem Profil —
@@ -43,7 +47,7 @@ Die lokale Datenbank (Drift) hält die Tabellen `user_profiles`, `app_settings`,
 `meal_entries`, dazu Repositories und Provider für Gewichtseinträge und für die Ernährung.
 Gefüllt wird `body_weight_entries` vom Onboarding und von der Gewichtskarte im Start-Tab;
 gelesen wird sie außerdem von der Ziele-Seite. `foods` und `meal_entries` füllt der
-Ernährungs-Tab.
+Ernährungs-Tab; `meal_entries` liest zusätzlich die Ernährungskarte im Start-Tab.
 
 ## Ordnerstruktur
 
