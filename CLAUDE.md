@@ -42,7 +42,17 @@ Benutzername, Ziel, Größe, Gewicht und Kalorienziel (eingeben oder berechnen l
 **vollständig verpflichtend** — weder einzelne Schritte noch der Ablauf als Ganzes lassen sich
 überspringen, weil die App auf diesen Werten aufbaut. Abgeschlossen wird es in der Spalte
 `app_settings.onboarding_completed` vermerkt; `PeakHabitApp` zeigt anhand dieses Flags
-entweder das Onboarding oder die geroutete App. Ansonsten noch keine Features.
+entweder das Onboarding oder die geroutete App.
+
+Der Ernährungs-Tab ist noch ein Platzhalter, das Datenmodell dahinter steht aber. Unter
+`lib/features/nutrition/` liegen die Tabellen `foods`, `composite_foods`,
+`composite_food_ingredients` und `meal_entries`, dazu das Domain-Modell (Nährwerte je 100 g,
+zusammengesetzte Lebensmittel mit Zubereitungsgewicht, Mahlzeiteneinträge auf Frühstück,
+Mittag, Abend oder Snacks, Tagessummen je Mahlzeit), zwei Repositories und die Provider. Ein
+Mahlzeiteneintrag **verweist** auf sein Lebensmittel, statt dessen Nährwerte zu kopieren: Eine
+Korrektur zieht damit jeden Tag mit, an dem es gegessen wurde, und ein Lebensmittel, das in
+einem Eintrag oder einem Rezept steckt, lässt sich nicht mehr löschen. Begründung in
+`docs/ARCHITECTURE.md`. Ansonsten noch keine Features.
 
 ## Technisches
 

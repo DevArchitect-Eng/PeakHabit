@@ -2,10 +2,16 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 
+// Next to the tables themselves, these import the enums and converters the
+// tables use: the generated part file names them, so the library that owns it
+// has to import them too.
 import '../../features/body_weight/data/body_weight_table.dart';
+import '../../features/nutrition/data/composite_food_tables.dart';
+import '../../features/nutrition/data/food_table.dart';
+import '../../features/nutrition/data/meal_entry_table.dart';
+import '../../features/nutrition/domain/food.dart';
+import '../../features/nutrition/domain/meal_entry.dart';
 import '../../features/profile/data/user_profile_table.dart';
-// The generated part file names the enums and converters used by the tables
-// below, so the library that owns it has to import them too.
 import '../../features/profile/domain/user_profile.dart';
 import '../../features/settings/data/app_settings_table.dart';
 import '../../features/settings/domain/app_theme_mode.dart';
@@ -20,7 +26,17 @@ part 'app_database.g.dart';
 /// Every table is added by the feature that needs it, together with the
 /// migration step that creates it — see `docs/ARCHITECTURE.md` for how to do
 /// that.
-@DriftDatabase(tables: [UserProfiles, AppSettings, BodyWeightEntries])
+@DriftDatabase(
+  tables: [
+    UserProfiles,
+    AppSettings,
+    BodyWeightEntries,
+    Foods,
+    CompositeFoods,
+    CompositeFoodIngredients,
+    MealEntries,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openDatabaseFile());
 
@@ -32,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.atFile(File file) : super(openDatabaseAtFile(file));
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -87,6 +103,12 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           "UPDATE user_profiles SET goal = 'gain200' WHERE goal = 'gain'",
         );
+      }
+      if (from < 9) {
+        await m.createTable(foods);
+        await m.createTable(compositeFoods);
+        await m.createTable(compositeFoodIngredients);
+        await m.createTable(mealEntries);
       }
       AppLogger.database.info('Migration to $to complete');
     },

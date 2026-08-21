@@ -125,6 +125,10 @@ Vorhandene Tabellen:
 | `user_profiles` | 2 | `lib/features/profile/data/user_profile_table.dart` |
 | `app_settings` | 3 | `lib/features/settings/data/app_settings_table.dart` |
 | `body_weight_entries` | 4 | `lib/features/body_weight/data/body_weight_table.dart` |
+| `foods` | 9 | `lib/features/nutrition/data/food_table.dart` |
+| `composite_foods` | 9 | `lib/features/nutrition/data/composite_food_tables.dart` |
+| `composite_food_ingredients` | 9 | `lib/features/nutrition/data/composite_food_tables.dart` |
+| `meal_entries` | 9 | `lib/features/nutrition/data/meal_entry_table.dart` |
 
 Schema-Version 5 bringt keine neue Tabelle, sondern räumt Daten auf: `BiologicalSex` hat
 seine Option `diverse` verloren (#4), und eine Migration setzt ein gespeichertes `diverse`
@@ -162,6 +166,46 @@ eingetragen wurde.
 als weitere Spalten dazu, nicht als eigene Tabellen. Bewusst hier statt in
 `shared_preferences`: Der Theme-Modus wäre der einzige Wert dort, und ein zweiter
 Speicherort kostet mehr als die Spalte einspart.
+
+Die vier Ernährungstabellen entstehen zusammen in Version 9 (#8) — sie ergeben einzeln keinen
+Sinn. Sechs Entscheidungen hängen daran:
+
+- **Nährwerte liegen immer je 100 g.** Ein Etikett, das seine Zahlen je Portion nennt, wird
+  beim Anlegen umgerechnet; `portion_grams` hält fest, was eine Portion wiegt, damit der Weg
+  zurück offen bleibt. Die Alternative wäre eine Spalte für die Bezugsgröße — dann müsste
+  jede Summe jedes Lebensmittel erst fragen, worauf sich seine Zahlen beziehen.
+- **Ein Gericht rechnet, statt zu speichern.** `composite_foods` hat keine Nährwertspalten;
+  sie ergeben sich aus `composite_food_ingredients`. Genau deshalb baut man ein Gericht aus
+  Lebensmitteln, statt einen zweiten Satz Zahlen dafür einzutippen: Eine Korrektur an einer
+  Zutat erreicht jedes Gericht, in dem sie steckt.
+- **`prepared_grams` ist das Gewicht der fertigen Zubereitung.** Kochen ändert das Gewicht,
+  nicht die Nährwerte — 100 g roher Reis verlassen den Topf als rund 260 g. Ohne diese Spalte
+  verteilte das Gericht die Nährwerte der rohen Zutaten auf das rohe Gewicht, und 200 g vom
+  Teller zählten mehr als das Zweieinhalbfache dessen, was gegessen wurde. `NULL` heißt: nichts
+  gewogen, die Zutaten addieren sich.
+- **Der Mahlzeiteneintrag verweist auf das Lebensmittel, statt dessen Nährwerte zu kopieren.**
+  Eine Korrektur zieht damit jeden Tag mit, an dem das Lebensmittel gegessen wurde — was
+  jemand meint, der seinen eigenen Katalog korrigiert. Der Preis ist, dass ein Lebensmittel
+  nicht mehr gelöscht werden kann, sobald es in einem Eintrag oder einem Gericht steckt: die
+  Fremdschlüssel stehen auf `RESTRICT`, und das Repository prüft vorher und wirft
+  `FoodInUseException` statt eines SQLite-Fehlers. Ein Gericht zu löschen nimmt seine
+  Zutatenzeilen mit (`CASCADE`) — die gehören ihm und bedeuten allein nichts.
+- **Zwei nullbare Fremdschlüssel statt einer Id mit Typspalte.** Ein Eintrag zeigt entweder auf
+  ein Lebensmittel oder auf ein Gericht; `CHECK ((food_id IS NULL) <> (composite_food_id IS
+  NULL))` setzt „genau eines von beiden" durch. Eine einzelne Id, die je nach Typspalte in die
+  eine oder andere Tabelle zeigt, könnte keinen Fremdschlüssel tragen — nichts hielte einen
+  Eintrag davon ab, das zu überleben, worauf er zeigt.
+- **`barcode` und `source` stehen von Anfang an in `foods`.** Geschrieben wird heute nur
+  `manual`. Die Spalten gibt es trotzdem, weil ein späterer Barcode-Scan gegen eine externe
+  Lebensmitteldatenbank in **dieselbe** Tabelle schreiben soll statt in einen zweiten Katalog
+  daneben; das Anlegen von Hand ist dann der Weg für alles, was dort fehlt. Nachgerüstet wäre
+  die Herkunft eine Migration über Zeilen, deren Ursprung niemand mehr rekonstruieren kann.
+  `barcode` ist `UNIQUE`, damit ein zweimal gescanntes Produkt den vorhandenen Datensatz
+  findet.
+
+Mengen sind durchgehend Gramm. Getränke je 100 ml sind damit noch nicht abgebildet; das wäre
+eine zusätzliche Spalte für die Einheit und keine Umstellung des Schemas, und es wartet auf
+das Ticket, das Getränke tatsächlich braucht.
 
 Der Grund: Ein vorab entworfenes Gesamtschema müsste beim Anbinden der einzelnen Features
 ohnehin wieder geändert werden, und ungenutzte Tabellen lassen sich nicht sinnvoll testen.
