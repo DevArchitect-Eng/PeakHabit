@@ -222,8 +222,10 @@ davor neu bewerten. Vier Punkte dazu:
   Onboarding; ein Tag davor wurde trotzdem mit einem Ziel im Kopf gegessen, und das älteste
   bekannte ist die beste Schätzung dafür.
 - **Die Migration legt eine Startzeile an** — das aktuelle Ziel aus `user_profiles`, datiert auf
-  den Tag der Migration. Ohne sie stünde eine bestehende Installation danach mit leerem
-  Verlauf da, und jeder vergangene Tag bis zur nächsten Änderung ohne Ziel.
+  den **Vortag** der Migration. Ohne sie stünde eine bestehende Installation danach mit leerem
+  Verlauf da, und jeder vergangene Tag bis zur nächsten Änderung ohne Ziel. Der Vortag, nicht
+  der Tag selbst: Eine Änderung noch am Tag des Updates würde die Startzeile sonst ersetzen
+  statt ihr zu folgen, und das alte Ziel wäre aus dem Verlauf verschwunden.
 
 Nur das Kalorienziel hat einen Verlauf, die Makroverteilung nicht: Die Gramm-Ziele eines
 vergangenen Tages ergeben sich aus seinem Kalorienziel und der **heutigen** Verteilung.

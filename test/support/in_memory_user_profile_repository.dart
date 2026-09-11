@@ -12,8 +12,8 @@ import 'package:peakhabit/features/profile/domain/user_profile.dart';
 class InMemoryUserProfileRepository implements UserProfileRepository {
   ///
   /// Without [targetChanges] the record of calorie targets starts on the
-  /// target of [_profile], dated today — what the migration leaves behind on
-  /// an installation that already has one.
+  /// target of [_profile], dated the day before today — what the migration
+  /// leaves behind on an installation that already has one.
   InMemoryUserProfileRepository([
     this._profile = UserProfile.empty,
     this.failingWrites = false,
@@ -22,7 +22,7 @@ class InMemoryUserProfileRepository implements UserProfileRepository {
          ...?targetChanges ??
              (_profile.calorieTarget == null
                  ? null
-                 : [(validFrom: _today(), kcal: _profile.calorieTarget)]),
+                 : [(validFrom: _yesterday(), kcal: _profile.calorieTarget)]),
        ];
 
   /// Lets every write fail, for the case a screen has to react to a save it
@@ -78,6 +78,11 @@ class InMemoryUserProfileRepository implements UserProfileRepository {
   Future<void> dispose() async {
     await _changes.close();
     await _historyChanges.close();
+  }
+
+  static DateTime _yesterday() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day - 1);
   }
 
   static DateTime _today() {

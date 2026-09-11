@@ -234,6 +234,27 @@ void main() {
         expect(history.targetOn(DateTime(2020)), 2100);
       });
 
+      test(
+        'keeps the past on the old target through a change the same day',
+        () async {
+          final migrated = await migrateProfileWith('2100');
+          final repository = UserProfileRepository(migrated);
+
+          // The goals screen, later on the day of the update.
+          final profile = await repository.read();
+          await repository.save(profile.copyWith(calorieTarget: 2500));
+
+          final now = DateTime.now();
+          final history = await repository.readCalorieTargetHistory();
+          expect(history.targetOn(now), 2500);
+          expect(
+            history.targetOn(DateTime(now.year, now.month, now.day - 1)),
+            2100,
+          );
+          expect(history.targetOn(DateTime(2020)), 2100);
+        },
+      );
+
       test('leaves the record empty on a profile without a target', () async {
         final migrated = await migrateProfileWith('NULL');
 

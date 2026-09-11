@@ -128,8 +128,13 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// Without it an existing installation would come out of the migration with
   /// an empty record, and every past day would stand without a target until
-  /// the next change on the goals screen. Dated today, the day the record
-  /// begins — a day before it falls back to the earliest change anyway (see
+  /// the next change on the goals screen.
+  ///
+  /// Dated **the day before** the migration, not the day of it: a change on
+  /// the goals screen later that same day is written for today, and on the
+  /// same day it would replace this row rather than follow it — taking the
+  /// only record of the old target with it and re-marking every past day
+  /// against the new one. A day before this one falls back to it anyway (see
   /// `CalorieTargetHistory.targetOn`).
   ///
   /// Nothing to write on a profile without a target, or before there is a
@@ -141,11 +146,14 @@ class AppDatabase extends _$AppDatabase {
     ).getSingleOrNull();
     if (row == null) return;
 
+    final now = DateTime.now();
     await into(calorieTargetChanges).insert(
       CalorieTargetChangesCompanion.insert(
-        validFrom: DateTime.now(),
+        // Counted in day numbers — see `docs/ARCHITECTURE.md` on why not
+        // subtracting 24 hours.
+        validFrom: DateTime(now.year, now.month, now.day - 1),
         kcal: Value(row.read<int>('calorie_target')),
-        updatedAt: DateTime.now(),
+        updatedAt: now,
       ),
     );
   }
