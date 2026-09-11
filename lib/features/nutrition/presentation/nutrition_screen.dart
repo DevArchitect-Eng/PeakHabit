@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../profile/data/user_profile_providers.dart';
+import '../../profile/domain/calorie_target_history.dart';
 import '../../profile/domain/user_profile.dart';
 import '../data/nutrition_providers.dart';
 import '../domain/day_nutrition.dart';
@@ -48,6 +49,9 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     // stores: the calorie target and the macro split are set on the goals
     // screen, and the gram targets follow from the two.
     final profile = ref.watch(userProfileProvider).value;
+    // A past day is measured against the target it had, not the one that
+    // stands today — the same the week on the home screen marks it with.
+    final history = ref.watch(calorieTargetHistoryProvider).value;
 
     return Scaffold(
       appBar: AppBar(
@@ -60,7 +64,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           ),
         ),
       ),
-      body: _body(day, previous, profile),
+      body: _body(day, previous, profile, history),
     );
   }
 
@@ -68,6 +72,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     AsyncValue<DayNutrition> day,
     AsyncValue<DayNutrition> previous,
     UserProfile? profile,
+    CalorieTargetHistory? history,
   ) {
     if (day.hasError) {
       return const Padding(
@@ -81,11 +86,17 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     if (!day.hasValue) return const SizedBox.shrink();
 
     final today = day.value!;
-    final calorieTarget = profile?.calorieTarget;
-    final macroTargets = profile?.macroTargets;
-    final targets = calorieTarget == null || macroTargets == null
+    // Until the record has come in, today's target stands in for it: it is
+    // the right one for today, and for a moment on another day it beats
+    // flashing the "no target" hint.
+    final calorieTarget = history == null
+        ? profile?.calorieTarget
+        : history.targetOn(_day);
+    // Only the calorie target has a record. The split has none, so a past
+    // day's grams are its own target split the way the profile splits now.
+    final targets = calorieTarget == null || profile == null
         ? null
-        : (kcal: calorieTarget, macros: macroTargets);
+        : (kcal: calorieTarget, macros: profile.macros.gramsFor(calorieTarget));
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),

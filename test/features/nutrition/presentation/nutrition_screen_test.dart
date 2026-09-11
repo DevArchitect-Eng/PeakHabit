@@ -406,6 +406,58 @@ void main() {
       expect(find.text('370 kcal'), findsWidgets);
     });
 
+    testWidgets('measures a past day against the target it had', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          // 2000 now, but only since today — yesterday was on 2500.
+          profile: withTarget,
+          calorieTargetChanges: [
+            (validFrom: dayBefore(30), kcal: 2500),
+            (validFrom: dayBefore(0), kcal: 2000),
+          ],
+          foods: [oats],
+          mealEntries: [ate(oats, daysAgo: 1, grams: 100)],
+        ),
+      );
+      await openTab(tester);
+      await tester.tap(find.byTooltip('Vorheriger Tag'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('/ 2500 kcal'), findsOneWidget);
+      expect(find.text('2130 kcal übrig'), findsOneWidget);
+      // The grams follow that day's target, split 30/40/30 as the profile
+      // splits now: 30 % of 2500 kcal is 187,5 g protein.
+      expect(find.text('13 / 188 g'), findsOneWidget);
+    });
+
+    testWidgets('a past day without a target of its own says so', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        on: storesWith(
+          profile: withTarget,
+          // Cleared two days ago, set again today.
+          calorieTargetChanges: [
+            (validFrom: dayBefore(30), kcal: 2500),
+            (validFrom: dayBefore(2), kcal: null),
+            (validFrom: dayBefore(0), kcal: 2000),
+          ],
+          foods: [oats],
+          mealEntries: [ate(oats, daysAgo: 1, grams: 100)],
+        ),
+      );
+      await openTab(tester);
+      await tester.tap(find.byTooltip('Vorheriger Tag'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Noch kein Kalorienziel'), findsOneWidget);
+      expect(find.textContaining('übrig'), findsNothing);
+    });
+
     testWidgets('a meal keeps its bare sums even where the day has a target', (
       tester,
     ) async {

@@ -481,8 +481,10 @@ von dort geöffneter Screen wissen muss, auf welchem er geöffnet wurde; wie bei
 `/home/weight` fällt ein unbekannter Wert auf einen Standard zurück, statt zu werfen.
 
 **Das Ziel steht am Tag, nicht an der Mahlzeit.** Die Tagessumme oben im Ernährungs-Tab stellt
-Kalorien und jedes Makro gegen die Ziele aus dem Profil (`UserProfile.calorieTarget` und
-`macroTargets`) und sagt, wie viel noch offen ist. Eine einzelne Mahlzeit bekommt bewusst
+Kalorien und jedes Makro gegen die Ziele aus dem Profil und sagt, wie viel noch offen ist. Das
+Kalorienziel ist dabei das, **das an diesem Tag galt** (`CalorieTargetHistory.targetOn`, siehe
+`calorie_target_changes`), die Gramm-Ziele folgen daraus mit der heutigen Makroverteilung —
+für heute ist das genau `UserProfile.calorieTarget` und `macroTargets`. Eine einzelne Mahlzeit bekommt bewusst
 keins: Dafür müsste das Tagesziel auf die vier Mahlzeiten aufgeteilt werden, und diese
 Aufteilung gibt es nirgends — sie wäre eine erfundene Konstante. `NutritionSummary` bildet das
 ab, indem `targets` optional ist: gesetzt für den Tag, weggelassen für die Mahlzeit. Fehlt im

@@ -58,7 +58,8 @@ Benutzername, Ziel, Größe, Gewicht und Kalorienziel (eingeben oder berechnen l
 entweder das Onboarding oder die geroutete App.
 
 Der Ernährungs-Tab ist eine Tagesansicht. Oben steht die Tagessumme **gegen die Ziele aus dem
-Profil**: verzehrte gegen geplante Kalorien, dazu jedes Makro gegen sein Gramm-Ziel, je mit
+Profil** — bei einem vergangenen Tag gegen das Kalorienziel, das an ihm galt
+(`calorie_target_changes`): verzehrte gegen geplante Kalorien, dazu jedes Makro gegen sein Gramm-Ziel, je mit
 Fortschrittsbalken und der Angabe, wie viel noch offen ist (bei Überschreitung „… zu viel").
 Ohne hinterlegtes Kalorienziel erscheinen die blanken Summen und ein Hinweis auf die
 Ziele-Seite. Darunter die vier Mahlzeiten Frühstück, Mittag, Abend und Snacks mit ihren

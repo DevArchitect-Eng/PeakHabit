@@ -25,7 +25,8 @@ Vorhanden:
   darauf führt auf `/home/weight`: Eckwerte des Zeitraums, derselbe Graph und darunter alle
   Wiegungen als Liste, unabhängig vom Zeitraum — Zeile antippen zum Korrigieren, wegwischen
   zum Löschen.
-- **Ernährung** als Tagesansicht: oben die Tagessumme gegen die Ziele aus dem Profil —
+- **Ernährung** als Tagesansicht: oben die Tagessumme gegen die Ziele aus dem Profil, bei
+  einem vergangenen Tag gegen das Kalorienziel, das an ihm galt —
   verzehrte gegen geplante Kalorien und jedes Makro gegen sein Gramm-Ziel, mit
   Fortschrittsbalken und der Angabe, wie viel noch offen ist. Darunter Frühstück, Mittag,
   Abend und Snacks mit ihren Kalorien, Makros und den dort gegessenen Lebensmitteln. Der Tag
