@@ -67,8 +67,8 @@ Kalorien und Makros und **den Lebensmitteln, die dort gegessen wurden** — die 
 also selbst, was es zum Frühstück gab. **Ein Kalorienziel je Mahlzeit gibt es weiterhin
 nicht**, weil das Tagesziel dafür auf die vier Mahlzeiten aufgeteilt werden müsste. Der Tag
 lässt sich
-vor- und zurückschalten, höchstens bis heute; der gewählte Tag ist State des Screens, nicht
-Teil der Route. Eine Mahlzeit antippen führt auf `/nutrition/meal?type=…&date=…` mit ihren
+vor- und zurückschalten, höchstens bis heute; der gewählte Tag ist State (`nutritionDayProvider`),
+nicht Teil der Route. Eine Mahlzeit antippen führt auf `/nutrition/meal?type=…&date=…` mit ihren
 Einträgen — antippen ändert die Menge, wegwischen löscht. Das „+" der Zeile führt mit `&add=1`
 direkt weiter auf `/nutrition/meal/food`, das nach Auswahl das Lebensmittel zurückgibt: im
 Katalog suchen oder eines direkt anlegen. Leer gelassene Nährwerte zählen dort als 0.

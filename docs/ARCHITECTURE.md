@@ -473,10 +473,11 @@ Mahlzeiten-Screen ruft sie über `context.push<FoodItem>` auf, die Auswahl beend
 Sheets, weil eine Suche über den Katalog eine ganze Bildschirmhöhe braucht und ein Sheet über
 der Tastatur davon wenig übrig lässt.
 
-**Der gewählte Tag ist State des Ernährungs-Screens, nicht Teil seiner Route.** Er ist die
+**Der gewählte Tag ist State, nicht Teil der Route.** Der Ernährungs-Screen ist die
 Wurzel des Tabs, und der Tag zu wechseln ist eine Bedienung darauf, keine Navigation — ein
 History-Eintrag je Tag machte aus der Zurück-Geste ein Rückgängig für die Datumsauswahl,
-statt den Tab zu verlassen. Die Mahlzeiten-Route darunter trägt ihren Tag sehr wohl, weil ein
+statt den Tab zu verlassen. Er liegt in `nutritionDayProvider` statt im Screen selbst, weil
+auch die Wochenübersicht der Startseite einen Tag im Tab öffnet. Die Mahlzeiten-Route darunter trägt ihren Tag sehr wohl, weil ein
 von dort geöffneter Screen wissen muss, auf welchem er geöffnet wurde; wie beim Zeitraum auf
 `/home/weight` fällt ein unbekannter Wert auf einen Standard zurück, statt zu werfen.
 
