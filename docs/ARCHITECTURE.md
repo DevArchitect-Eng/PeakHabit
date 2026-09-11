@@ -27,7 +27,7 @@ lib/
   features/
     onboarding/                 Erststart-Ablauf, läuft vor der Bottom-Navigation
     shell/                      Bottom-Navigation-Gerüst
-    home/                       Startseite (Ernährungs- und Körpergewicht-Widget)
+    home/                       Startseite (Woche, Ernährung heute, Körpergewicht)
     body_weight/                Gewichtseinträge, von Startseite und Statistik genutzt
     nutrition/                  Ernährungstracking, Tagessumme auch von der Startseite genutzt
     training/                   Trainingspläne und Workouts
@@ -129,6 +129,7 @@ Vorhandene Tabellen:
 | `composite_foods` | 9 | `lib/features/nutrition/data/composite_food_tables.dart` |
 | `composite_food_ingredients` | 9 | `lib/features/nutrition/data/composite_food_tables.dart` |
 | `meal_entries` | 9 | `lib/features/nutrition/data/meal_entry_table.dart` |
+| `calorie_target_changes` | 10 | `lib/features/profile/data/calorie_target_change_table.dart` |
 
 Schema-Version 5 bringt keine neue Tabelle, sondern räumt Daten auf: `BiologicalSex` hat
 seine Option `diverse` verloren (#4), und eine Migration setzt ein gespeichertes `diverse`
@@ -202,6 +203,32 @@ Sinn. Sechs Entscheidungen hängen daran:
   die Herkunft eine Migration über Zeilen, deren Ursprung niemand mehr rekonstruieren kann.
   `barcode` ist `UNIQUE`, damit ein zweimal gescanntes Produkt den vorhandenen Datensatz
   findet.
+
+`calorie_target_changes` entsteht in Version 10 (#57) und hält **jede Änderung des
+Kalorienziels mit dem Tag, ab dem sie gilt** — eine Zeile je Änderung, nicht je Tag. Das Profil
+kennt nur das Ziel, wie es heute steht; ein zurückliegender Tag wird aber gegen das Ziel
+gemessen, unter dem er gelebt wurde, und eine Änderung auf der Ziele-Seite soll nicht jeden Tag
+davor neu bewerten. Vier Punkte dazu:
+
+- **Geschrieben wird in `UserProfileRepository.save`**, in derselben Transaktion wie das
+  Profil. Onboarding, Neuberechnung auf der Ziele-Seite und Ernährungsziele-Seite schreiben
+  alle über diesen einen Weg, der Verlauf kann also nicht an einer Stelle vergessen werden.
+  Eine Zeile entsteht nur, wenn das Ziel von dem abweicht, auf dem der heutige Tag schon
+  steht; eine zweite Änderung am selben Tag ersetzt die erste (der Tag ist Primärschlüssel).
+- **Ein gelöschtes Ziel ist eine Zeile mit `kcal = NULL`**, kein Löschen: Ab diesem Tag gibt
+  es keins, davor galt das alte weiter.
+- **Ein Tag vor der ersten Zeile fällt auf die erste Zeile zurück**
+  (`CalorieTargetHistory.targetOn`). Der Verlauf beginnt erst mit der Migration bzw. mit dem
+  Onboarding; ein Tag davor wurde trotzdem mit einem Ziel im Kopf gegessen, und das älteste
+  bekannte ist die beste Schätzung dafür.
+- **Die Migration legt eine Startzeile an** — das aktuelle Ziel aus `user_profiles`, datiert auf
+  den **Vortag** der Migration. Ohne sie stünde eine bestehende Installation danach mit leerem
+  Verlauf da, und jeder vergangene Tag bis zur nächsten Änderung ohne Ziel. Der Vortag, nicht
+  der Tag selbst: Eine Änderung noch am Tag des Updates würde die Startzeile sonst ersetzen
+  statt ihr zu folgen, und das alte Ziel wäre aus dem Verlauf verschwunden.
+
+Nur das Kalorienziel hat einen Verlauf, die Makroverteilung nicht: Die Gramm-Ziele eines
+vergangenen Tages ergeben sich aus seinem Kalorienziel und der **heutigen** Verteilung.
 
 Mengen sind durchgehend Gramm. Getränke je 100 ml sind damit noch nicht abgebildet; das wäre
 eine zusätzliche Spalte für die Einheit und keine Umstellung des Schemas, und es wartet auf
@@ -448,21 +475,34 @@ Mahlzeiten-Screen ruft sie über `context.push<FoodItem>` auf, die Auswahl beend
 Sheets, weil eine Suche über den Katalog eine ganze Bildschirmhöhe braucht und ein Sheet über
 der Tastatur davon wenig übrig lässt.
 
-**Der gewählte Tag ist State des Ernährungs-Screens, nicht Teil seiner Route.** Er ist die
+**Der gewählte Tag ist State, nicht Teil der Route.** Der Ernährungs-Screen ist die
 Wurzel des Tabs, und der Tag zu wechseln ist eine Bedienung darauf, keine Navigation — ein
 History-Eintrag je Tag machte aus der Zurück-Geste ein Rückgängig für die Datumsauswahl,
-statt den Tab zu verlassen. Die Mahlzeiten-Route darunter trägt ihren Tag sehr wohl, weil ein
+statt den Tab zu verlassen. Er liegt in `nutritionDayProvider` statt im Screen selbst, weil
+auch die Wochenübersicht der Startseite einen Tag im Tab öffnet. Die Mahlzeiten-Route darunter trägt ihren Tag sehr wohl, weil ein
 von dort geöffneter Screen wissen muss, auf welchem er geöffnet wurde; wie beim Zeitraum auf
 `/home/weight` fällt ein unbekannter Wert auf einen Standard zurück, statt zu werfen.
 
 **Das Ziel steht am Tag, nicht an der Mahlzeit.** Die Tagessumme oben im Ernährungs-Tab stellt
-Kalorien und jedes Makro gegen die Ziele aus dem Profil (`UserProfile.calorieTarget` und
-`macroTargets`) und sagt, wie viel noch offen ist. Eine einzelne Mahlzeit bekommt bewusst
+Kalorien und jedes Makro gegen die Ziele aus dem Profil und sagt, wie viel noch offen ist. Das
+Kalorienziel ist dabei das, **das an diesem Tag galt** (`CalorieTargetHistory.targetOn`, siehe
+`calorie_target_changes`), die Gramm-Ziele folgen daraus mit der heutigen Makroverteilung —
+für heute ist das genau `UserProfile.calorieTarget` und `macroTargets`. Eine einzelne Mahlzeit bekommt bewusst
 keins: Dafür müsste das Tagesziel auf die vier Mahlzeiten aufgeteilt werden, und diese
 Aufteilung gibt es nirgends — sie wäre eine erfundene Konstante. `NutritionSummary` bildet das
 ab, indem `targets` optional ist: gesetzt für den Tag, weggelassen für die Mahlzeit. Fehlt im
 Profil ein Kalorienziel, zeigt die Karte die blanken Summen und einen Hinweis auf die
 Ziele-Seite, statt gegen eine Null zu rechnen.
+
+**Die Wochenübersicht der Startseite ist die Kalenderwoche, nicht die letzten sieben Tage.**
+Sie läuft von Montag bis Sonntag und beginnt an einem Montag neu (#57) — so, wie eine Woche
+geplant wird; kommende Tage stehen mit leerem Ring da, damit heute seinen Platz in der Reihe
+behält. Ein Tag gilt als im Ziel, wenn er bis zu 50 kcal darüber oder darunter liegt
+(`calorieTolerance`), und wird dann grün; das Grün ist dasselbe Paar wie am Trend-Icon auf
+`/home/weight`, weil der Seed keins liefert. Anders als die Ernährungskarte darunter führt ein
+Tag in den Ernährungs-Tab: Die Navigationsleiste öffnet den Tab nur auf dem zuletzt gezeigten
+Tag, und bis zum Dienstag wäre es von dort ein Tag-für-Tag-Zurückblättern. Der Stack der
+Startseite bleibt dabei erhalten — jeder Tab hat seinen eigenen.
 
 Überschreitungen werden nicht mit `error` eingefärbt, sondern mit `tertiary`: Derselbe Balken
 trägt Kalorien und Makros, und über das Protein-Ziel zu kommen ist kein Fehler. Die Farbe ist

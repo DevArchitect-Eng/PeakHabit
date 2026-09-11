@@ -9,6 +9,7 @@ import 'package:peakhabit/features/nutrition/data/nutrition_providers.dart';
 import 'package:peakhabit/features/nutrition/domain/food.dart';
 import 'package:peakhabit/features/nutrition/domain/meal_entry.dart';
 import 'package:peakhabit/features/profile/data/user_profile_providers.dart';
+import 'package:peakhabit/features/profile/domain/calorie_target_history.dart';
 import 'package:peakhabit/features/profile/domain/user_profile.dart';
 import 'package:peakhabit/features/settings/data/settings_providers.dart';
 import 'package:peakhabit/features/settings/domain/app_theme_mode.dart';
@@ -36,6 +37,7 @@ AppStores storesWith({
   bool onboardingCompleted = true,
   UserProfile? profile,
   bool profileUnwritable = false,
+  List<CalorieTargetChange>? calorieTargetChanges,
   List<BodyWeightEntry> weightEntries = const [],
   bool weightEntriesUnreadable = false,
   List<Food> foods = const [],
@@ -52,6 +54,7 @@ AppStores storesWith({
     profile: InMemoryUserProfileRepository(
       profile ?? UserProfile.empty,
       profileUnwritable,
+      calorieTargetChanges,
     ),
     bodyWeight: InMemoryBodyWeightRepository(
       entries: weightEntries,

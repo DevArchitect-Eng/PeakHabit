@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../profile/data/user_profile_providers.dart';
+import '../../profile/domain/calorie_target_history.dart';
 import '../../profile/domain/user_profile.dart';
 import '../data/nutrition_providers.dart';
 import '../domain/day_nutrition.dart';
 import '../domain/meal_entry.dart';
 import '../domain/nutrients.dart';
+import 'nutrition_day_provider.dart';
 import 'nutrition_formatting.dart';
 import 'nutrition_summary.dart';
 
@@ -17,11 +19,13 @@ const _logger = AppLogger('nutrition');
 /// The nutrition tab: one day, split into the four meals, with what each of
 /// them came to.
 ///
-/// The day is state of this screen rather than part of the route. It is the
-/// tab's own root, and moving between days is a control on it, not navigation
-/// — a day per history entry would make the back gesture undo a date change
-/// instead of leaving the tab. The meal screen underneath does carry its day,
-/// because a screen reached from here has to know which one it was opened on.
+/// The day is not part of the route. It is the tab's own root, and moving
+/// between days is a control on it, not navigation — a day per history entry
+/// would make the back gesture undo a date change instead of leaving the tab.
+/// It lives in [nutritionDayProvider] rather than in this screen only so the
+/// week on the home screen can open a day here. The meal screen underneath
+/// does carry its day, because a screen reached from here has to know which
+/// one it was opened on.
 class NutritionScreen extends ConsumerStatefulWidget {
   const NutritionScreen({super.key});
 
@@ -30,7 +34,9 @@ class NutritionScreen extends ConsumerStatefulWidget {
 }
 
 class _NutritionScreenState extends ConsumerState<NutritionScreen> {
-  late DateTime _day = DateUtils.dateOnly(DateTime.now());
+  /// Read, not watched: [build] watches it, and everything else asks for it
+  /// from a callback, where watching is not allowed.
+  DateTime get _day => ref.read(nutritionDayProvider);
 
   /// The day before the one on screen — where the suggestion to copy a meal
   /// comes from.
@@ -42,12 +48,16 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(nutritionDayProvider);
     final day = ref.watch(dayNutritionProvider(_day));
     final previous = ref.watch(dayNutritionProvider(_previousDay));
     // The targets come from the profile rather than from anything this tab
     // stores: the calorie target and the macro split are set on the goals
     // screen, and the gram targets follow from the two.
     final profile = ref.watch(userProfileProvider).value;
+    // A past day is measured against the target it had, not the one that
+    // stands today — the same the week on the home screen marks it with.
+    final history = ref.watch(calorieTargetHistoryProvider).value;
 
     return Scaffold(
       appBar: AppBar(
@@ -56,11 +66,11 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           preferredSize: const Size.fromHeight(56),
           child: _DayPicker(
             day: _day,
-            onChanged: (day) => setState(() => _day = day),
+            onChanged: ref.read(nutritionDayProvider.notifier).show,
           ),
         ),
       ),
-      body: _body(day, previous, profile),
+      body: _body(day, previous, profile, history),
     );
   }
 
@@ -68,6 +78,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     AsyncValue<DayNutrition> day,
     AsyncValue<DayNutrition> previous,
     UserProfile? profile,
+    CalorieTargetHistory? history,
   ) {
     if (day.hasError) {
       return const Padding(
@@ -81,11 +92,17 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     if (!day.hasValue) return const SizedBox.shrink();
 
     final today = day.value!;
-    final calorieTarget = profile?.calorieTarget;
-    final macroTargets = profile?.macroTargets;
-    final targets = calorieTarget == null || macroTargets == null
+    // Until the record has come in, today's target stands in for it: it is
+    // the right one for today, and for a moment on another day it beats
+    // flashing the "no target" hint.
+    final calorieTarget = history == null
+        ? profile?.calorieTarget
+        : history.targetOn(_day);
+    // Only the calorie target has a record. The split has none, so a past
+    // day's grams are its own target split the way the profile splits now.
+    final targets = calorieTarget == null || profile == null
         ? null
-        : (kcal: calorieTarget, macros: macroTargets);
+        : (kcal: calorieTarget, macros: profile.macros.gramsFor(calorieTarget));
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),

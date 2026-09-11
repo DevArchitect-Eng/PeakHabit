@@ -11,6 +11,7 @@ import '../../features/nutrition/data/food_table.dart';
 import '../../features/nutrition/data/meal_entry_table.dart';
 import '../../features/nutrition/domain/food.dart';
 import '../../features/nutrition/domain/meal_entry.dart';
+import '../../features/profile/data/calorie_target_change_table.dart';
 import '../../features/profile/data/user_profile_table.dart';
 import '../../features/profile/domain/user_profile.dart';
 import '../../features/settings/data/app_settings_table.dart';
@@ -35,6 +36,7 @@ part 'app_database.g.dart';
     CompositeFoods,
     CompositeFoodIngredients,
     MealEntries,
+    CalorieTargetChanges,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -48,7 +50,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.atFile(File file) : super(openDatabaseAtFile(file));
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -110,6 +112,10 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(compositeFoodIngredients);
         await m.createTable(mealEntries);
       }
+      if (from < 10) {
+        await m.createTable(calorieTargetChanges);
+        await _recordCurrentCalorieTarget();
+      }
       AppLogger.database.info('Migration to $to complete');
     },
     beforeOpen: (details) async {
@@ -117,6 +123,40 @@ class AppDatabase extends _$AppDatabase {
       await customStatement('PRAGMA foreign_keys = ON');
     },
   );
+
+  /// Starts the record of calorie targets on the one the profile holds now.
+  ///
+  /// Without it an existing installation would come out of the migration with
+  /// an empty record, and every past day would stand without a target until
+  /// the next change on the goals screen.
+  ///
+  /// Dated **the day before** the migration, not the day of it: a change on
+  /// the goals screen later that same day is written for today, and on the
+  /// same day it would replace this row rather than follow it — taking the
+  /// only record of the old target with it and re-marking every past day
+  /// against the new one. A day before this one falls back to it anyway (see
+  /// `CalorieTargetHistory.targetOn`).
+  ///
+  /// Nothing to write on a profile without a target, or before there is a
+  /// profile at all: the first save writes the first change then.
+  Future<void> _recordCurrentCalorieTarget() async {
+    final row = await customSelect(
+      'SELECT calorie_target FROM user_profiles '
+      'WHERE calorie_target IS NOT NULL',
+    ).getSingleOrNull();
+    if (row == null) return;
+
+    final now = DateTime.now();
+    await into(calorieTargetChanges).insert(
+      CalorieTargetChangesCompanion.insert(
+        // Counted in day numbers — see `docs/ARCHITECTURE.md` on why not
+        // subtracting 24 hours.
+        validFrom: DateTime(now.year, now.month, now.day - 1),
+        kcal: Value(row.read<int>('calorie_target')),
+        updatedAt: now,
+      ),
+    );
+  }
 
   /// Opens the underlying database and runs pending migrations.
   ///

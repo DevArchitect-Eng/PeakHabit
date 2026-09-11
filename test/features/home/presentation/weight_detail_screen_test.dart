@@ -34,7 +34,16 @@ void main() {
   ///
   /// Tapped on its title rather than in the middle, where the period picker
   /// sits and would take the tap for itself.
+  ///
+  /// Scrolled to first: the nutrition cards stand above it, and at a large
+  /// system text size they push it past the fold, where the list has not
+  /// built it yet.
   Future<void> openDetail(WidgetTester tester) async {
+    await tester.scrollUntilVisible(
+      find.text('Körpergewicht'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.text('Körpergewicht'));
     await tester.pumpAndSettle();
   }

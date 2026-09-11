@@ -33,14 +33,14 @@ void main() {
     final messages = captured.map((entry) => entry.message).toList();
     expect(messages, [
       'Opening database',
-      'Creating schema at version 9',
+      'Creating schema at version 10',
       'Database opened',
       'Closing database',
       'Database closed',
     ]);
   });
 
-  test('creates a fresh database at schema version 9', () async {
+  test('creates a fresh database at schema version 10', () async {
     final database = AppDatabase.inMemory();
     addTearDown(database.close);
 
@@ -49,7 +49,7 @@ void main() {
     // Pinned to the literal version on purpose: raising `schemaVersion` should
     // force a look at this test, and with it at the matching migration step.
     final row = await database.customSelect('PRAGMA user_version').getSingle();
-    expect(row.read<int>('user_version'), 9);
+    expect(row.read<int>('user_version'), 10);
   });
 
   test('enforces foreign keys', () async {
@@ -76,6 +76,7 @@ void main() {
         'composite_foods',
         'composite_food_ingredients',
         'meal_entries',
+        'calorie_target_changes',
       ]),
     );
   });
@@ -105,6 +106,11 @@ void main() {
       await legacy.open();
       for (final table in droppedTables) {
         await legacy.customStatement('DROP TABLE $table');
+      }
+      if (version < 10) {
+        await legacy.customStatement(
+          'DROP TABLE IF EXISTS calorie_target_changes',
+        );
       }
       // The four nutrition tables arrived together in version 9. Dropped
       // child first: with foreign keys on, a parent cannot go while a table
@@ -187,6 +193,74 @@ void main() {
           'meal_entries',
         ]),
       );
+    });
+
+    group('adds the calorie target record to an installation on version 9', () {
+      /// Stores a profile the way version 9 held it and opens the database
+      /// again. Raw SQL so the save does not already write the record the
+      /// migration is supposed to start.
+      Future<AppDatabase> migrateProfileWith(String calorieTarget) async {
+        final legacy = AppDatabase.atFile(file);
+        await legacy.open();
+        await legacy.customStatement(
+          'INSERT INTO user_profiles (id, goal, calorie_target, '
+          'protein_percent, carb_percent, fat_percent, updated_at) '
+          "VALUES (1, 'maintain', $calorieTarget, 30, 40, 30, 0)",
+        );
+        await legacy.close();
+        await rewindTo(9);
+
+        final migrated = AppDatabase.atFile(file);
+        addTearDown(migrated.close);
+        await migrated.open();
+        return migrated;
+      }
+
+      test('creates the table', () async {
+        await rewindTo(9);
+
+        expect(await tablesAfterOpening(), contains('calorie_target_changes'));
+      });
+
+      test('starts the record on the target the profile holds', () async {
+        final migrated = await migrateProfileWith('2100');
+
+        final history = await UserProfileRepository(
+          migrated,
+        ).readCalorieTargetHistory();
+        expect(history.targetOn(DateTime.now()), 2100);
+        // A day long before the record began falls back to its first entry —
+        // the target that was there all along.
+        expect(history.targetOn(DateTime(2020)), 2100);
+      });
+
+      test(
+        'keeps the past on the old target through a change the same day',
+        () async {
+          final migrated = await migrateProfileWith('2100');
+          final repository = UserProfileRepository(migrated);
+
+          // The goals screen, later on the day of the update.
+          final profile = await repository.read();
+          await repository.save(profile.copyWith(calorieTarget: 2500));
+
+          final now = DateTime.now();
+          final history = await repository.readCalorieTargetHistory();
+          expect(history.targetOn(now), 2500);
+          expect(
+            history.targetOn(DateTime(now.year, now.month, now.day - 1)),
+            2100,
+          );
+          expect(history.targetOn(DateTime(2020)), 2100);
+        },
+      );
+
+      test('leaves the record empty on a profile without a target', () async {
+        final migrated = await migrateProfileWith('NULL');
+
+        final rows = await migrated.select(migrated.calorieTargetChanges).get();
+        expect(rows, isEmpty);
+      });
     });
 
     test('clears a stored sex the enum no longer has', () async {

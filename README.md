@@ -17,7 +17,10 @@ Vorhanden:
   `/settings/goals/nutrition` (Kalorienziel, Makroverteilung). Ändert sich Ziel oder
   Aktivität, wird das Kalorienziel neu berechnet und mitgespeichert.
 - **Start** mit einer Begrüßung, die den hinterlegten Benutzernamen verwendet. Darunter die
-  Ernährungskarte für **heute**: ein Ring mit den verzehrten Kalorien gegen das Tagesziel
+  Wochenübersicht: die Kalenderwoche von Montag bis Sonntag, jeder Tag ein Ring, gefüllt mit
+  den verzehrten Kalorien gegen das Ziel, das an dem Tag galt — grün mit Haken bis 50 kcal um
+  das Ziel, darüber in einer anderen Farbe mit Pfeil. Ein Tipp auf einen Tag öffnet ihn im
+  Ernährungs-Tab. Darunter die Ernährungskarte für **heute**: ein Ring mit den verzehrten Kalorien gegen das Tagesziel
   und drei kompakte Ringe für Protein, Kohlenhydrate und Fett gegen ihr Gramm-Ziel, je mit
   der Angabe, wie viel noch offen ist (bei Überschreitung „… zu viel"). Ohne hinterlegtes
   Kalorienziel stehen dort die blanken Summen und ein Hinweis auf die Ziele-Seite. Darunter
@@ -25,7 +28,8 @@ Vorhanden:
   darauf führt auf `/home/weight`: Eckwerte des Zeitraums, derselbe Graph und darunter alle
   Wiegungen als Liste, unabhängig vom Zeitraum — Zeile antippen zum Korrigieren, wegwischen
   zum Löschen.
-- **Ernährung** als Tagesansicht: oben die Tagessumme gegen die Ziele aus dem Profil —
+- **Ernährung** als Tagesansicht: oben die Tagessumme gegen die Ziele aus dem Profil, bei
+  einem vergangenen Tag gegen das Kalorienziel, das an ihm galt —
   verzehrte gegen geplante Kalorien und jedes Makro gegen sein Gramm-Ziel, mit
   Fortschrittsbalken und der Angabe, wie viel noch offen ist. Darunter Frühstück, Mittag,
   Abend und Snacks mit ihren Kalorien, Makros und den dort gegessenen Lebensmitteln. Der Tag
@@ -42,12 +46,14 @@ Platzhalter-Screens sind noch Training und Statistik. Der Ernährungs-Tab kennt 
 Lebensmittel; zusammengesetzte Lebensmittel (Rezepte) stehen im Datenmodell und in der
 Auswahl, angelegt werden können sie noch nicht.
 
-Die lokale Datenbank (Drift) hält die Tabellen `user_profiles`, `app_settings`,
-`body_weight_entries`, `foods`, `composite_foods`, `composite_food_ingredients` und
-`meal_entries`, dazu Repositories und Provider für Gewichtseinträge und für die Ernährung.
+Die lokale Datenbank (Drift) hält die Tabellen `user_profiles`, `calorie_target_changes`,
+`app_settings`, `body_weight_entries`, `foods`, `composite_foods`,
+`composite_food_ingredients` und `meal_entries`, dazu Repositories und Provider für Gewichtseinträge und für die Ernährung.
 Gefüllt wird `body_weight_entries` vom Onboarding und von der Gewichtskarte im Start-Tab;
 gelesen wird sie außerdem von der Ziele-Seite. `foods` und `meal_entries` füllt der
 Ernährungs-Tab; `meal_entries` liest zusätzlich die Ernährungskarte im Start-Tab.
+`calorie_target_changes` hält jede Änderung des Kalorienziels mit dem Tag, ab dem sie gilt,
+damit ein zurückliegender Tag gegen das Ziel gemessen wird, das damals galt.
 
 ## Ordnerstruktur
 

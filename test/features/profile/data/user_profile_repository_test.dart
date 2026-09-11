@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:peakhabit/core/database/app_database.dart';
@@ -111,6 +112,117 @@ void main() {
       await pumpEventQueue();
 
       expect(seen, [UserProfile.empty, filledProfile]);
+    });
+  });
+
+  group('calorie target record', () {
+    DateTime today() {
+      final now = DateTime.now();
+      return DateTime(now.year, now.month, now.day);
+    }
+
+    Future<List<CalorieTargetChangeRow>> rows() =>
+        database.select(database.calorieTargetChanges).get();
+
+    test('is empty before anything was saved', () async {
+      final history = await repository.readCalorieTargetHistory();
+
+      expect(history.targetOn(today()), isNull);
+    });
+
+    test('records the first target from today on', () async {
+      await repository.save(filledProfile);
+
+      final history = await repository.readCalorieTargetHistory();
+      expect(history.targetOn(today()), 2200);
+      final saved = await rows();
+      expect(saved, hasLength(1));
+      expect(saved.single.validFrom, today());
+    });
+
+    test('adds nothing for a save that leaves the target alone', () async {
+      await repository.save(filledProfile);
+
+      await repository.save(filledProfile.copyWith(username: 'ben'));
+
+      expect(await rows(), hasLength(1));
+    });
+
+    test('keeps one change per day, the last one', () async {
+      await repository.save(filledProfile);
+
+      await repository.save(filledProfile.copyWith(calorieTarget: 2400));
+      await repository.save(filledProfile.copyWith(calorieTarget: 2300));
+
+      expect(await rows(), hasLength(1));
+      final history = await repository.readCalorieTargetHistory();
+      expect(history.targetOn(today()), 2300);
+    });
+
+    test('leaves the days before a change on the earlier target', () async {
+      final lastWeek = DateTime(today().year, today().month, today().day - 7);
+      // Written straight into the table: the repository only ever records
+      // today, and the point here is a change on a later day than the first.
+      await database
+          .into(database.calorieTargetChanges)
+          .insert(
+            CalorieTargetChangesCompanion.insert(
+              validFrom: lastWeek,
+              kcal: const Value(2000),
+              updatedAt: lastWeek,
+            ),
+          );
+
+      await repository.save(filledProfile.copyWith(calorieTarget: 2500));
+
+      final history = await repository.readCalorieTargetHistory();
+      expect(history.targetOn(lastWeek), 2000);
+      expect(
+        history.targetOn(
+          DateTime(today().year, today().month, today().day - 1),
+        ),
+        2000,
+      );
+      expect(history.targetOn(today()), 2500);
+    });
+
+    test('records a cleared target as none from today on', () async {
+      await repository.save(filledProfile);
+
+      await repository.save(filledProfile.copyWith(calorieTarget: null));
+
+      final history = await repository.readCalorieTargetHistory();
+      expect(history.targetOn(today()), isNull);
+    });
+
+    test('is re-emitted on a change', () async {
+      final seen = <int?>[];
+      final subscription = repository.watchCalorieTargetHistory().listen(
+        (history) => seen.add(history.targetOn(today())),
+      );
+      addTearDown(subscription.cancel);
+
+      await pumpEventQueue();
+      await repository.save(filledProfile);
+      await pumpEventQueue();
+
+      expect(seen, [null, 2200]);
+    });
+
+    test('refuses a target of zero', () {
+      expect(
+        () => database.customStatement(
+          'INSERT INTO calorie_target_changes (valid_from, kcal, updated_at) '
+          "VALUES ('2026-09-01', 0, 0)",
+        ),
+        throwsA(
+          isA<Exception>().having(
+            (error) => error.toString(),
+            'message',
+            contains('CHECK constraint failed'),
+          ),
+        ),
+      );
     });
   });
 
