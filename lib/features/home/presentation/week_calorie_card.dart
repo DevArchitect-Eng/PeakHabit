@@ -229,6 +229,13 @@ class _DayRing extends StatelessWidget {
     return Semantics(
       label: _semanticLabel(mark),
       button: onTap != null,
+      // Handed on here as well: `excludeSemantics` drops the InkWell's own
+      // tap action with the rest of what is underneath, and a screen reader
+      // would announce a button it cannot press.
+      onTap: onTap,
+      // Each day a node of its own, even one to come that is no button —
+      // otherwise its label melts into the card's heading.
+      container: true,
       excludeSemantics: true,
       child: Material(
         type: MaterialType.transparency,

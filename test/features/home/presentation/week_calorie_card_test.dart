@@ -314,6 +314,31 @@ void main() {
       );
     });
 
+    testWidgets('lets a screen reader open a day, but not one to come', (
+      tester,
+    ) async {
+      await pumpCard(
+        tester,
+        stores: storesWith(
+          profile: withTarget,
+          calorieTargetChanges: steadyTarget,
+        ),
+      );
+
+      expect(
+        tester.getSemantics(dayOf(monday)),
+        matchesSemantics(
+          label: 'Montag, 7.9.: 0 von 2000 kcal',
+          isButton: true,
+          hasTapAction: true,
+        ),
+      );
+      expect(
+        tester.getSemantics(dayOf(DateTime(2026, 9, 12))),
+        matchesSemantics(label: 'Samstag, 12.9.'),
+      );
+    });
+
     testWidgets('leaves the days to come empty and closed', (tester) async {
       await pumpCard(
         tester,
