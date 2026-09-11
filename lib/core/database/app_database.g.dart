@@ -3262,6 +3262,283 @@ class MealEntriesCompanion extends UpdateCompanion<MealEntryRow> {
   }
 }
 
+class $CalorieTargetChangesTable extends CalorieTargetChanges
+    with TableInfo<$CalorieTargetChangesTable, CalorieTargetChangeRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CalorieTargetChangesTable(this.attachedDatabase, [this._alias]);
+  @override
+  late final GeneratedColumnWithTypeConverter<DateTime, String> validFrom =
+      GeneratedColumn<String>(
+        'valid_from',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<DateTime>($CalorieTargetChangesTable.$convertervalidFrom);
+  static const VerificationMeta _kcalMeta = const VerificationMeta('kcal');
+  @override
+  late final GeneratedColumn<int> kcal = GeneratedColumn<int>(
+    'kcal',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [validFrom, kcal, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'calorie_target_changes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CalorieTargetChangeRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('kcal')) {
+      context.handle(
+        _kcalMeta,
+        kcal.isAcceptableOrUnknown(data['kcal']!, _kcalMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {validFrom};
+  @override
+  CalorieTargetChangeRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CalorieTargetChangeRow(
+      validFrom: $CalorieTargetChangesTable.$convertervalidFrom.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}valid_from'],
+        )!,
+      ),
+      kcal: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}kcal'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CalorieTargetChangesTable createAlias(String alias) {
+    return $CalorieTargetChangesTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<DateTime, String> $convertervalidFrom =
+      const DateOnlyConverter();
+}
+
+class CalorieTargetChangeRow extends DataClass
+    implements Insertable<CalorieTargetChangeRow> {
+  /// The first day the target applies to, as `yyyy-MM-dd` — see
+  /// [DateOnlyConverter] for why this is not a `dateTime()` column.
+  final DateTime validFrom;
+
+  /// Daily calorie target in kcal. `NULL` when the target was cleared on that
+  /// day — from then on there is none, which is a state of its own rather than
+  /// a gap in the record.
+  final int? kcal;
+
+  /// Last change, kept so a later cloud sync has something to order by.
+  final DateTime updatedAt;
+  const CalorieTargetChangeRow({
+    required this.validFrom,
+    this.kcal,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    {
+      map['valid_from'] = Variable<String>(
+        $CalorieTargetChangesTable.$convertervalidFrom.toSql(validFrom),
+      );
+    }
+    if (!nullToAbsent || kcal != null) {
+      map['kcal'] = Variable<int>(kcal);
+    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  CalorieTargetChangesCompanion toCompanion(bool nullToAbsent) {
+    return CalorieTargetChangesCompanion(
+      validFrom: Value(validFrom),
+      kcal: kcal == null && nullToAbsent ? const Value.absent() : Value(kcal),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory CalorieTargetChangeRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CalorieTargetChangeRow(
+      validFrom: serializer.fromJson<DateTime>(json['validFrom']),
+      kcal: serializer.fromJson<int?>(json['kcal']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'validFrom': serializer.toJson<DateTime>(validFrom),
+      'kcal': serializer.toJson<int?>(kcal),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  CalorieTargetChangeRow copyWith({
+    DateTime? validFrom,
+    Value<int?> kcal = const Value.absent(),
+    DateTime? updatedAt,
+  }) => CalorieTargetChangeRow(
+    validFrom: validFrom ?? this.validFrom,
+    kcal: kcal.present ? kcal.value : this.kcal,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  CalorieTargetChangeRow copyWithCompanion(CalorieTargetChangesCompanion data) {
+    return CalorieTargetChangeRow(
+      validFrom: data.validFrom.present ? data.validFrom.value : this.validFrom,
+      kcal: data.kcal.present ? data.kcal.value : this.kcal,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CalorieTargetChangeRow(')
+          ..write('validFrom: $validFrom, ')
+          ..write('kcal: $kcal, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(validFrom, kcal, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CalorieTargetChangeRow &&
+          other.validFrom == this.validFrom &&
+          other.kcal == this.kcal &&
+          other.updatedAt == this.updatedAt);
+}
+
+class CalorieTargetChangesCompanion
+    extends UpdateCompanion<CalorieTargetChangeRow> {
+  final Value<DateTime> validFrom;
+  final Value<int?> kcal;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const CalorieTargetChangesCompanion({
+    this.validFrom = const Value.absent(),
+    this.kcal = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CalorieTargetChangesCompanion.insert({
+    required DateTime validFrom,
+    this.kcal = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : validFrom = Value(validFrom),
+       updatedAt = Value(updatedAt);
+  static Insertable<CalorieTargetChangeRow> custom({
+    Expression<String>? validFrom,
+    Expression<int>? kcal,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (validFrom != null) 'valid_from': validFrom,
+      if (kcal != null) 'kcal': kcal,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CalorieTargetChangesCompanion copyWith({
+    Value<DateTime>? validFrom,
+    Value<int?>? kcal,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return CalorieTargetChangesCompanion(
+      validFrom: validFrom ?? this.validFrom,
+      kcal: kcal ?? this.kcal,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (validFrom.present) {
+      map['valid_from'] = Variable<String>(
+        $CalorieTargetChangesTable.$convertervalidFrom.toSql(validFrom.value),
+      );
+    }
+    if (kcal.present) {
+      map['kcal'] = Variable<int>(kcal.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CalorieTargetChangesCompanion(')
+          ..write('validFrom: $validFrom, ')
+          ..write('kcal: $kcal, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3274,6 +3551,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CompositeFoodIngredientsTable compositeFoodIngredients =
       $CompositeFoodIngredientsTable(this);
   late final $MealEntriesTable mealEntries = $MealEntriesTable(this);
+  late final $CalorieTargetChangesTable calorieTargetChanges =
+      $CalorieTargetChangesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3286,6 +3565,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     compositeFoods,
     compositeFoodIngredients,
     mealEntries,
+    calorieTargetChanges,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -5818,6 +6098,185 @@ typedef $$MealEntriesTableProcessedTableManager =
       MealEntryRow,
       PrefetchHooks Function({bool foodId, bool compositeFoodId})
     >;
+typedef $$CalorieTargetChangesTableCreateCompanionBuilder =
+    CalorieTargetChangesCompanion Function({
+      required DateTime validFrom,
+      Value<int?> kcal,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$CalorieTargetChangesTableUpdateCompanionBuilder =
+    CalorieTargetChangesCompanion Function({
+      Value<DateTime> validFrom,
+      Value<int?> kcal,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$CalorieTargetChangesTableFilterComposer
+    extends Composer<_$AppDatabase, $CalorieTargetChangesTable> {
+  $$CalorieTargetChangesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnWithTypeConverterFilters<DateTime, DateTime, String> get validFrom =>
+      $composableBuilder(
+        column: $table.validFrom,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get kcal => $composableBuilder(
+    column: $table.kcal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CalorieTargetChangesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CalorieTargetChangesTable> {
+  $$CalorieTargetChangesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get validFrom => $composableBuilder(
+    column: $table.validFrom,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get kcal => $composableBuilder(
+    column: $table.kcal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CalorieTargetChangesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CalorieTargetChangesTable> {
+  $$CalorieTargetChangesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumnWithTypeConverter<DateTime, String> get validFrom =>
+      $composableBuilder(column: $table.validFrom, builder: (column) => column);
+
+  GeneratedColumn<int> get kcal =>
+      $composableBuilder(column: $table.kcal, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$CalorieTargetChangesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CalorieTargetChangesTable,
+          CalorieTargetChangeRow,
+          $$CalorieTargetChangesTableFilterComposer,
+          $$CalorieTargetChangesTableOrderingComposer,
+          $$CalorieTargetChangesTableAnnotationComposer,
+          $$CalorieTargetChangesTableCreateCompanionBuilder,
+          $$CalorieTargetChangesTableUpdateCompanionBuilder,
+          (
+            CalorieTargetChangeRow,
+            BaseReferences<
+              _$AppDatabase,
+              $CalorieTargetChangesTable,
+              CalorieTargetChangeRow
+            >,
+          ),
+          CalorieTargetChangeRow,
+          PrefetchHooks Function()
+        > {
+  $$CalorieTargetChangesTableTableManager(
+    _$AppDatabase db,
+    $CalorieTargetChangesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CalorieTargetChangesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CalorieTargetChangesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$CalorieTargetChangesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<DateTime> validFrom = const Value.absent(),
+                Value<int?> kcal = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CalorieTargetChangesCompanion(
+                validFrom: validFrom,
+                kcal: kcal,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required DateTime validFrom,
+                Value<int?> kcal = const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => CalorieTargetChangesCompanion.insert(
+                validFrom: validFrom,
+                kcal: kcal,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CalorieTargetChangesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CalorieTargetChangesTable,
+      CalorieTargetChangeRow,
+      $$CalorieTargetChangesTableFilterComposer,
+      $$CalorieTargetChangesTableOrderingComposer,
+      $$CalorieTargetChangesTableAnnotationComposer,
+      $$CalorieTargetChangesTableCreateCompanionBuilder,
+      $$CalorieTargetChangesTableUpdateCompanionBuilder,
+      (
+        CalorieTargetChangeRow,
+        BaseReferences<
+          _$AppDatabase,
+          $CalorieTargetChangesTable,
+          CalorieTargetChangeRow
+        >,
+      ),
+      CalorieTargetChangeRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5839,4 +6298,6 @@ class $AppDatabaseManager {
       );
   $$MealEntriesTableTableManager get mealEntries =>
       $$MealEntriesTableTableManager(_db, _db.mealEntries);
+  $$CalorieTargetChangesTableTableManager get calorieTargetChanges =>
+      $$CalorieTargetChangesTableTableManager(_db, _db.calorieTargetChanges);
 }

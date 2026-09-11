@@ -42,12 +42,14 @@ Platzhalter-Screens sind noch Training und Statistik. Der Ernährungs-Tab kennt 
 Lebensmittel; zusammengesetzte Lebensmittel (Rezepte) stehen im Datenmodell und in der
 Auswahl, angelegt werden können sie noch nicht.
 
-Die lokale Datenbank (Drift) hält die Tabellen `user_profiles`, `app_settings`,
-`body_weight_entries`, `foods`, `composite_foods`, `composite_food_ingredients` und
-`meal_entries`, dazu Repositories und Provider für Gewichtseinträge und für die Ernährung.
+Die lokale Datenbank (Drift) hält die Tabellen `user_profiles`, `calorie_target_changes`,
+`app_settings`, `body_weight_entries`, `foods`, `composite_foods`,
+`composite_food_ingredients` und `meal_entries`, dazu Repositories und Provider für Gewichtseinträge und für die Ernährung.
 Gefüllt wird `body_weight_entries` vom Onboarding und von der Gewichtskarte im Start-Tab;
 gelesen wird sie außerdem von der Ziele-Seite. `foods` und `meal_entries` füllt der
 Ernährungs-Tab; `meal_entries` liest zusätzlich die Ernährungskarte im Start-Tab.
+`calorie_target_changes` hält jede Änderung des Kalorienziels mit dem Tag, ab dem sie gilt,
+damit ein zurückliegender Tag gegen das Ziel gemessen wird, das damals galt.
 
 ## Ordnerstruktur
 

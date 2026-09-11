@@ -44,7 +44,8 @@ Aktivitätslevel) und `/settings/goals/nutrition` (Kalorienziel und Makroverteil
 samt Gramm-Werten). Ändert sich Ziel oder Aktivität, wird das Kalorienziel neu berechnet und
 mitgespeichert. Alle drei Seiten sind Listen aus Zeilen **ohne Speichern-Knopf**: Zeile
 antippen, im Editor mit dem Haken bestätigen oder mit dem Kreuz verwerfen. Die Drift-Datenbank
-hält dafür die Tabellen `user_profiles` und `app_settings`. Dazu kommt `body_weight_entries`
+hält dafür die Tabellen `user_profiles`, `calorie_target_changes` (jede Änderung des
+Kalorienziels samt Tag, ab dem sie gilt) und `app_settings`. Dazu kommt `body_weight_entries`
 samt Repository und Providern unter `lib/features/body_weight/`; die Oberfläche dazu liegt im
 Start-Tab (`lib/features/home/presentation/`), gelesen wird die Tabelle außerdem vom
 Onboarding und von der Ziele-Seite.

@@ -129,6 +129,7 @@ Vorhandene Tabellen:
 | `composite_foods` | 9 | `lib/features/nutrition/data/composite_food_tables.dart` |
 | `composite_food_ingredients` | 9 | `lib/features/nutrition/data/composite_food_tables.dart` |
 | `meal_entries` | 9 | `lib/features/nutrition/data/meal_entry_table.dart` |
+| `calorie_target_changes` | 10 | `lib/features/profile/data/calorie_target_change_table.dart` |
 
 Schema-Version 5 bringt keine neue Tabelle, sondern räumt Daten auf: `BiologicalSex` hat
 seine Option `diverse` verloren (#4), und eine Migration setzt ein gespeichertes `diverse`
@@ -202,6 +203,30 @@ Sinn. Sechs Entscheidungen hängen daran:
   die Herkunft eine Migration über Zeilen, deren Ursprung niemand mehr rekonstruieren kann.
   `barcode` ist `UNIQUE`, damit ein zweimal gescanntes Produkt den vorhandenen Datensatz
   findet.
+
+`calorie_target_changes` entsteht in Version 10 (#57) und hält **jede Änderung des
+Kalorienziels mit dem Tag, ab dem sie gilt** — eine Zeile je Änderung, nicht je Tag. Das Profil
+kennt nur das Ziel, wie es heute steht; ein zurückliegender Tag wird aber gegen das Ziel
+gemessen, unter dem er gelebt wurde, und eine Änderung auf der Ziele-Seite soll nicht jeden Tag
+davor neu bewerten. Vier Punkte dazu:
+
+- **Geschrieben wird in `UserProfileRepository.save`**, in derselben Transaktion wie das
+  Profil. Onboarding, Neuberechnung auf der Ziele-Seite und Ernährungsziele-Seite schreiben
+  alle über diesen einen Weg, der Verlauf kann also nicht an einer Stelle vergessen werden.
+  Eine Zeile entsteht nur, wenn das Ziel von dem abweicht, auf dem der heutige Tag schon
+  steht; eine zweite Änderung am selben Tag ersetzt die erste (der Tag ist Primärschlüssel).
+- **Ein gelöschtes Ziel ist eine Zeile mit `kcal = NULL`**, kein Löschen: Ab diesem Tag gibt
+  es keins, davor galt das alte weiter.
+- **Ein Tag vor der ersten Zeile fällt auf die erste Zeile zurück**
+  (`CalorieTargetHistory.targetOn`). Der Verlauf beginnt erst mit der Migration bzw. mit dem
+  Onboarding; ein Tag davor wurde trotzdem mit einem Ziel im Kopf gegessen, und das älteste
+  bekannte ist die beste Schätzung dafür.
+- **Die Migration legt eine Startzeile an** — das aktuelle Ziel aus `user_profiles`, datiert auf
+  den Tag der Migration. Ohne sie stünde eine bestehende Installation danach mit leerem
+  Verlauf da, und jeder vergangene Tag bis zur nächsten Änderung ohne Ziel.
+
+Nur das Kalorienziel hat einen Verlauf, die Makroverteilung nicht: Die Gramm-Ziele eines
+vergangenen Tages ergeben sich aus seinem Kalorienziel und der **heutigen** Verteilung.
 
 Mengen sind durchgehend Gramm. Getränke je 100 ml sind damit noch nicht abgebildet; das wäre
 eine zusätzliche Spalte für die Einheit und keine Umstellung des Schemas, und es wartet auf
