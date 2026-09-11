@@ -27,7 +27,7 @@ lib/
   features/
     onboarding/                 Erststart-Ablauf, läuft vor der Bottom-Navigation
     shell/                      Bottom-Navigation-Gerüst
-    home/                       Startseite (Ernährungs- und Körpergewicht-Widget)
+    home/                       Startseite (Woche, Ernährung heute, Körpergewicht)
     body_weight/                Gewichtseinträge, von Startseite und Statistik genutzt
     nutrition/                  Ernährungstracking, Tagessumme auch von der Startseite genutzt
     training/                   Trainingspläne und Workouts
@@ -491,6 +491,16 @@ Aufteilung gibt es nirgends — sie wäre eine erfundene Konstante. `NutritionSu
 ab, indem `targets` optional ist: gesetzt für den Tag, weggelassen für die Mahlzeit. Fehlt im
 Profil ein Kalorienziel, zeigt die Karte die blanken Summen und einen Hinweis auf die
 Ziele-Seite, statt gegen eine Null zu rechnen.
+
+**Die Wochenübersicht der Startseite ist die Kalenderwoche, nicht die letzten sieben Tage.**
+Sie läuft von Montag bis Sonntag und beginnt an einem Montag neu (#57) — so, wie eine Woche
+geplant wird; kommende Tage stehen mit leerem Ring da, damit heute seinen Platz in der Reihe
+behält. Ein Tag gilt als im Ziel, wenn er bis zu 50 kcal darüber oder darunter liegt
+(`calorieTolerance`), und wird dann grün; das Grün ist dasselbe Paar wie am Trend-Icon auf
+`/home/weight`, weil der Seed keins liefert. Anders als die Ernährungskarte darunter führt ein
+Tag in den Ernährungs-Tab: Die Navigationsleiste öffnet den Tab nur auf dem zuletzt gezeigten
+Tag, und bis zum Dienstag wäre es von dort ein Tag-für-Tag-Zurückblättern. Der Stack der
+Startseite bleibt dabei erhalten — jeder Tab hat seinen eigenen.
 
 Überschreitungen werden nicht mit `error` eingefärbt, sondern mit `tertiary`: Derselbe Balken
 trägt Kalorien und Makros, und über das Protein-Ziel zu kommen ist kein Fehler. Die Farbe ist

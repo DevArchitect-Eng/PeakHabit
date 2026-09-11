@@ -17,7 +17,10 @@ Vorhanden:
   `/settings/goals/nutrition` (Kalorienziel, Makroverteilung). Ändert sich Ziel oder
   Aktivität, wird das Kalorienziel neu berechnet und mitgespeichert.
 - **Start** mit einer Begrüßung, die den hinterlegten Benutzernamen verwendet. Darunter die
-  Ernährungskarte für **heute**: ein Ring mit den verzehrten Kalorien gegen das Tagesziel
+  Wochenübersicht: die Kalenderwoche von Montag bis Sonntag, jeder Tag ein Ring, gefüllt mit
+  den verzehrten Kalorien gegen das Ziel, das an dem Tag galt — grün mit Haken bis 50 kcal um
+  das Ziel, darüber in einer anderen Farbe mit Pfeil. Ein Tipp auf einen Tag öffnet ihn im
+  Ernährungs-Tab. Darunter die Ernährungskarte für **heute**: ein Ring mit den verzehrten Kalorien gegen das Tagesziel
   und drei kompakte Ringe für Protein, Kohlenhydrate und Fett gegen ihr Gramm-Ziel, je mit
   der Angabe, wie viel noch offen ist (bei Überschreitung „… zu viel"). Ohne hinterlegtes
   Kalorienziel stehen dort die blanken Summen und ein Hinweis auf die Ziele-Seite. Darunter

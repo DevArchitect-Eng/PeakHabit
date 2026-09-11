@@ -19,7 +19,17 @@ Fünf Tabs in der Bottom-Navigation:
 
 Aktueller Stand: Navigationsgerüst mit Platzhalter-Screens für Training und
 Statistik. Der Start-Tab zeigt eine Begrüßung mit dem im Profil hinterlegten Benutzernamen,
-darunter die Ernährungskarte und darunter die Gewichtskarte.
+darunter die Wochenübersicht, die Ernährungskarte und die Gewichtskarte.
+
+Die Wochenübersicht (`lib/features/home/presentation/week_calorie_card.dart`) steht **ganz
+oben** und zeigt immer die **Kalenderwoche** von Montag bis Sonntag, nicht die letzten sieben
+Tage — an einem Montag beginnt sie neu. Jeder Tag ist ein Ring, gefüllt mit den verzehrten
+Kalorien gegen das Kalorienziel, **das an diesem Tag galt** (`calorie_target_changes`). Liegt
+ein Tag bis 50 kcal um das Ziel, ist der Ring grün mit Haken; darüber `tertiary` mit Pfeil —
+nie nur über die Farbe. Unterschreiten bleibt unmarkiert, der Ring ist einfach nicht voll.
+Heute ist hervorgehoben, kommende Tage stehen leer und blass da. Ein Tipp auf einen Tag setzt
+`nutritionDayProvider` und wechselt in den Ernährungs-Tab auf genau diesen Tag. Ohne
+Kalorienziel steht ein Hinweis auf die Ziele-Seite unter den Ringen.
 
 Die Ernährungskarte (`lib/features/home/presentation/nutrition_card.dart`) steht **über** der
 Gewichtskarte und zeigt immer **heute**, nie den im Ernährungs-Tab gewählten Tag: ein großer

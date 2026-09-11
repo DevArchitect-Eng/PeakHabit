@@ -184,7 +184,11 @@ void main() {
       // back to its 36-pixel minimum — small enough that the figure inside it
       // paints straight over the stroke. Every text assertion above still
       // passed while that was happening, so the size is checked here.
-      final rings = find.byType(CircularProgressIndicator);
+      // Within the card: the week above it draws rings of its own.
+      final rings = find.descendant(
+        of: find.byType(NutritionCard),
+        matching: find.byType(CircularProgressIndicator),
+      );
       expect(rings, findsNWidgets(4));
       expect(tester.getSize(rings.at(0)), const Size(132, 132));
       for (final macro in [1, 2, 3]) {
@@ -202,7 +206,14 @@ void main() {
         on: storesWith(foods: [oats], mealEntries: [ate(oats, daysAgo: 0)]),
       );
 
-      expect(find.textContaining('Noch kein Kalorienziel'), findsOneWidget);
+      // Within the card: the week above it says the same for itself.
+      expect(
+        find.descendant(
+          of: find.byType(NutritionCard),
+          matching: find.textContaining('Noch kein Kalorienziel'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('370 kcal'), findsOneWidget);
       expect(find.text('P 13 g · KH 59 g · F 7 g'), findsOneWidget);
       // No remainder is invented from a target that is not there.

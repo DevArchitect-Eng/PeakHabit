@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../profile/data/user_profile_providers.dart';
 import 'body_weight_card.dart';
 import 'nutrition_card.dart';
+import 'week_calorie_card.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -25,9 +26,13 @@ class HomeScreen extends ConsumerWidget {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 16),
-          // Nutrition first: it is the card that changes several times a day,
-          // while the weight below it changes once and is the same number all
-          // day long.
+          // The week on top: it puts today in the days around it before the
+          // card under it goes into today alone.
+          const WeekCalorieCard(),
+          const SizedBox(height: 12),
+          // Nutrition before weight: it is the card that changes several
+          // times a day, while the weight below it changes once and is the
+          // same number all day long.
           const NutritionCard(),
           const SizedBox(height: 12),
           const BodyWeightCard(),
